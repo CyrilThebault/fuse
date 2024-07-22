@@ -15,6 +15,10 @@ MODULE multistats
   REAL(SP)                             :: RAW_RMSE      ! root-mean-squared-error of flow (mm day-1)
   REAL(SP)                             :: LOG_RMSE      ! root-mean-squared-error of LOG flow (mm day-1)
   REAL(SP)                             :: NASH_SUTT     ! Nash-Sutcliffe score
+  REAL(SP)                             :: ALPHA         ! Variability of prediction errors
+  REAL(SP)                             :: BETA          ! Bias
+  REAL(SP)                             :: R             ! Pearson correlation coefficient
+  REAL(SP)                             :: KGE           ! Kling-Gupta Efficiency score
   ! attributes of model output
   REAL(SP)                             :: NUM_RMSE      ! error of the approximate solution
   REAL(SP)                             :: NUM_FUNCS     ! number of function calls

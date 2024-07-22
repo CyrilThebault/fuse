@@ -4,6 +4,7 @@ SUBROUTINE MEAN_STATS()
 ! --------
 ! Martyn Clark, 2007
 ! Modified by Nans Addor to deal with NA values in QOBS, 2016
+! Modified by Cyril Thébault to add KGE metric, 2024
 ! ---------------------------------------------------------------------------------------
 ! Purpose:
 ! --------
@@ -38,6 +39,10 @@ REAL(SP), DIMENSION(:), ALLOCATABLE    :: RAWD        ! observed-simulated diffe
 REAL(SP), DIMENSION(:), ALLOCATABLE    :: LOGD        ! observed-simulated differences in LOG flow
 REAL(SP)                               :: XB_OBS      ! mean observed runoff
 REAL(SP)                               :: XB_SIM      ! mean simulated runoff
+REAL(SP)                               :: SD_OBS      ! standard deviation of observed runoff
+REAL(SP)                               :: SD_SIM      ! standard deviation of simulated runoff
+REAL(SP)                               :: COV         ! Covariance between observed and simulated runoff
+REAL(SP)                               :: CORR        ! Pearson correlation between observed and simulated runoff
 REAL(SP)                               :: SS_OBS      ! sum of squared observed runoff anomalies
 REAL(SP)                               :: SS_SIM      ! sum of squared simulated runoff anomalies
 REAL(SP)                               :: SS_LOBS     ! sum of squared lagged differences in observed runoff
@@ -73,6 +78,7 @@ IF (NUM_AVAIL.EQ.0) THEN
   PRINT *, 'Skiping computation of error statistics because no observed streamflow data'
   MSTATS%NASH_SUTT=-9999
   MSTATS%RAW_RMSE=-9999
+  MSTATS%KGE=-9999
 
 ELSE
 
@@ -87,8 +93,23 @@ ELSE
   										                      	! should be a copy of QSIM
                                               
   ! compute mean
-  XB_OBS = SUM(QOBS_AVAIL(:)) / REAL(NUM_AVAIL, KIND(SP))
-  XB_SIM = SUM(QSIM_AVAIL(:)) / REAL(NUM_AVAIL, KIND(SP))
+  XB_OBS  = SUM(QOBS_AVAIL(:)) / INT(NUM_AVAIL, KIND(SP))
+  XB_SIM  = SUM(QSIM_AVAIL(:)) / INT(NUM_AVAIL, KIND(SP))
+  
+  ! compute standard deviation
+  SD_OBS  = SQRT(SUM((QOBS_AVAIL(:) - XB_OBS)**2) / INT(NUM_AVAIL, KIND(SP)))
+  SD_SIM  = SQRT(SUM((QSIM_AVAIL(:) - XB_OBS)**2) / INT(NUM_AVAIL, KIND(SP)))
+  
+  ! compute covariance 
+  COV = 0
+  DO I = 1, INT(NUM_AVAIL, KIND(SP))
+    COV = COV + (QOBS_AVAIL(i) - XB_OBS) * (QSIM_AVAIL(i) - XB_SIM)
+  END DO
+  COV = COV / INT(NUM_AVAIL, KIND(SP))
+  
+  
+  ! compute correlation
+  CORR = COV / (SD_OBS * SD_SIM)
 
   ! compute the sum of squares of simulated and observed vectors
   DOBS(:) = QOBS_AVAIL(:) - XB_OBS
@@ -104,6 +125,8 @@ ELSE
   LOGD(:) = LOG(QSIM_AVAIL(:)+NO_ZERO) - LOG(QOBS_AVAIL(:)+NO_ZERO)
   SS_RAW  = DOT_PRODUCT(RAWD,RAWD)  ! = SUM( RAWD(:)*RAWD(:) )
   SS_LOG  = DOT_PRODUCT(LOGD,LOGD)  ! = SUM( LOGD(:)*LOGD(:) )
+  
+  
 
   ! ---------------------------------------------------------------------------------------
   ! (2) COMPUTE ERROR STATISTICS
@@ -112,18 +135,27 @@ ELSE
   MSTATS%QOBS_MEAN = XB_OBS
   MSTATS%QSIM_MEAN = XB_SIM
   ! compute the coefficient of variation
-  MSTATS%QOBS_CVAR = SQRT( SS_OBS / REAL(NUM_AVAIL-1, KIND(SP)) ) / (XB_OBS+NO_ZERO)
-  MSTATS%QSIM_CVAR = SQRT( SS_SIM / REAL(NUM_AVAIL-1, KIND(SP)) ) / (XB_SIM+NO_ZERO)
+  MSTATS%QOBS_CVAR = SQRT( SS_OBS / INT(NUM_AVAIL-1, KIND(SP)) ) / (XB_OBS+NO_ZERO)
+  MSTATS%QSIM_CVAR = SQRT( SS_SIM / INT(NUM_AVAIL-1, KIND(SP)) ) / (XB_SIM+NO_ZERO)
   ! compute the lag-1 correlation coefficient
   MSTATS%QOBS_LAG1 = SS_LOBS / (SQRT(SS_OBS*SS_OBS)+NO_ZERO)
   MSTATS%QSIM_LAG1 = SS_LSIM / (SQRT(SS_SIM*SS_SIM)+NO_ZERO)
   ! compute the root-mean-squared-error of flow
-  MSTATS%RAW_RMSE  = SQRT( SS_RAW / REAL(NUM_AVAIL, KIND(SP)) )
+  MSTATS%RAW_RMSE  = SQRT( SS_RAW / INT(NUM_AVAIL, KIND(SP)) )
   ! compute the root-mean-squared-error of LOG flow
-  MSTATS%LOG_RMSE  = SQRT( SS_LOG / REAL(NUM_AVAIL, KIND(SP)) )
+  MSTATS%LOG_RMSE  = SQRT( SS_LOG / INT(NUM_AVAIL, KIND(SP)) )
   ! compute the Nash-Sutcliffe score
   MSTATS%NASH_SUTT = 1. - SS_RAW/(SS_OBS+NO_ZERO)
-
+  
+  ! compute the beta component of KGE
+  MSTATS%BETA = XB_SIM/XB_OBS
+  ! compute the alpha component of KGE
+  MSTATS%ALPHA = SD_SIM/SD_OBS
+  ! compute the R component of KGE
+  MSTATS%R = CORR  
+  ! compute the KGE score
+  MSTATS%KGE = 1-SQRT((MSTATS%R - 1)**2 + (MSTATS%ALPHA - 1)**2 + (MSTATS%BETA - 1)**2)
+  
   ! ---------------------------------------------------------------------------------------
   DEALLOCATE(QOBS,QOBS_AVAIL,QSIM,QSIM_AVAIL,DOBS,DSIM,RAWD,LOGD,STAT=IERR)
   IF (IERR.NE.0) STOP ' PROBLEM DEALLOCATING SPACE IN MEAN_STATS.F90 '
@@ -131,6 +163,7 @@ ELSE
 END IF
 
 PRINT *, 'NSE = ', MSTATS%NASH_SUTT
+PRINT *, 'KGE = ', MSTATS%KGE
 PRINT *, 'RAW_RMSE = ', MSTATS%RAW_RMSE
 
 ! ---------------------------------------------------------------------------------------

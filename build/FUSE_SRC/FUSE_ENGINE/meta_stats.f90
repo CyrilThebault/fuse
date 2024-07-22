@@ -3,6 +3,7 @@ MODULE meta_stats
 ! Creator:
 ! --------
 ! Martyn Clark, 2007
+! Modified by Cyril Thébault to add KGE metric, 2024
 ! ---------------------------------------------------------------------------------------
 ! Purpose:
 ! --------
@@ -34,6 +35,11 @@ I=I+1; XNAME(I)='qsim_lag1  '; XDESC(I)='lag-1 correlation of simulated runoff  
 I=I+1; XNAME(I)='raw_rmse   '; XDESC(I)='root-mean-squared-error of flow                    '; XUNIT(I)='mm timestep-1'
 I=I+1; XNAME(I)='log_rmse   '; XDESC(I)='root-mean-squared-error of LOG flow                '; XUNIT(I)='mm timestep-1'
 I=I+1; XNAME(I)='nash_sutt  '; XDESC(I)='Nash-Sutcliffe score                               '; XUNIT(I)='-            '
+I=I+1; XNAME(I)='alpha      '; XDESC(I)='Variability of prediction errors                   '; XUNIT(I)='-            '
+I=I+1; XNAME(I)='beta       '; XDESC(I)='Bias                                               '; XUNIT(I)='-            '
+I=I+1; XNAME(I)='r          '; XDESC(I)='Pearson correlation coefficient                    '; XUNIT(I)='-            '
+I=I+1; XNAME(I)='kge        '; XDESC(I)='Kling-Gupta Efficiency score                       '; XUNIT(I)='-            '
+
 ! attributes of model output
 I=I+1; XNAME(I)='numerx_rmse'; XDESC(I)='RMSE between exact and approximate solution        '; XUNIT(I)='mm timestep-1'
 I=I+1; XNAME(I)='mean_nfuncs'; XDESC(I)='mean number function evaluations                   '; XUNIT(I)='-            '

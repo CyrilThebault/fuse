@@ -3,14 +3,15 @@ FUNCTION FUNCTN(NOPT,A)
 ! Creator:
 ! --------
 ! Martyn Clark, 2009
+! Modified by Cyril Thébault to add KGE metric, 2024
 ! ---------------------------------------------------------------------------------------
 ! Purpose:
 ! --------
 ! Wrapper for SCE (used to compute the objective function)
 ! ---------------------------------------------------------------------------------------
 USE nrtype                                            ! variable types, etc.
-USE FUSE_RMSE_MODULE                           		  ! run model and compute the root mean squared error
-USE multiforce, only: ncid_forc                           ! NetCDF forcing file ID
+USE FUSE_KGE_MODULE                           		   ! run model and compute the KGE
+USE multiforce, only: ncid_forc                       ! NetCDF forcing file ID
 
 IMPLICIT NONE
 ! input
@@ -20,10 +21,10 @@ REAL(MSP), DIMENSION(100), INTENT(IN)  :: A            ! model parameter set - c
 ! internal
 REAL(SP), DIMENSION(:), ALLOCATABLE    :: SCE_PAR     ! sce parameter set
 INTEGER(I4B)                           :: IERR        ! error code for allocate/deallocate
-INTEGER(I4B)                           :: ERR         ! error code for fuse_rmse
-CHARACTER(LEN=256)                     :: MESSAGE     ! error message for fuse_rmse
+INTEGER(I4B)                           :: ERR         ! error code for fuse_kge
+CHARACTER(LEN=256)                     :: MESSAGE     ! error message for fuse_kge
 LOGICAL(LGT)                           :: OUTPUT_FLAG ! .TRUE. = write model time series
-REAL(SP)                               :: RMSE        ! root mean squared error
+REAL(SP)                               :: KGE         ! KGE
 
 ! output
 REAL(MSP)                              :: FUNCTN      ! objective function value
@@ -35,13 +36,13 @@ SCE_PAR(1:NOPT) = A(1:NOPT)  ! convert from MSP used in SCE to SP used in FUSE
 
 OUTPUT_FLAG=.FALSE.   ! do not produce *runs.nc files only, param.nc files
 
-CALL FUSE_RMSE(SCE_PAR,.FALSE.,NCID_FORC,RMSE,OUTPUT_FLAG,1) ! 2nd argument FALSE, always return RMSE value
+CALL FUSE_KGE(SCE_PAR,.FALSE.,NCID_FORC,KGE,OUTPUT_FLAG,1) ! 2nd argument FALSE, always return KGE value
 
 ! deallocate parameter set
 DEALLOCATE(SCE_PAR, STAT=IERR); IF (IERR.NE.0) STOP ' problem deallocating space '
-print *, 'RMSE =', RMSE
+print *, 'KGE =', KGE
 
 ! save objective function value
-FUNCTN = RMSE
+FUNCTN = -KGE
 ! ---------------------------------------------------------------------------------------
 END FUNCTION FUNCTN

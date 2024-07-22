@@ -98,10 +98,11 @@ SUBROUTINE GET_SCE_PARAM(NETCDF_FILE,IMOD,MPAR,XPAR)
 ! Martyn Clark, 2009
 ! Modified by Nans Addor - previously the parameter set extracted was the last one,
 ! now it is the one associated with the lowest RMSE
+! Modified by Cyril Thébault to add KGE metric, 2024
 ! ---------------------------------------------------------------------------------------
 ! Purpose:
 ! --------
-! Read parameters in LPARAM from the parameter set with the lowest RMSE in the specified NetCDF file
+! Read parameters in LPARAM from the parameter set with the highest KGE in the specified NetCDF file
 ! ---------------------------------------------------------------------------------------
 USE nrtype                                            ! variable types, etc.
 USE fuse_fileManager, only : OUTPUT_PATH              ! define output path
@@ -118,10 +119,11 @@ INTEGER(I4B)                           :: IERR        ! error code
 INTEGER(I4B)                           :: NCID        ! NetCDF file ID
 INTEGER(I4B)                           :: IDIMID      ! NetCDF dimension ID
 INTEGER(I4B)                           :: IVARID      ! NetCDF variable ID
-INTEGER(I4B)                           :: I_RAW_RMSE  ! NetCDF RMSE ID
-INTEGER(I4B), DIMENSION(1)             :: I_OPT_PARA  ! index of the optimum parameter set (e.g. lowest RSME) - MUST BE DIMENSIONED
-REAL(DP), DIMENSION(:),ALLOCATABLE     :: RAW_RMSE    ! RMSE for each parameter set
-REAL(DP), DIMENSION(1)                 :: LOWEST_RAW_RMSE    ! LOWEST RAW RMSE
+INTEGER(I4B)                           :: I_KGE       ! NetCDF KGE ID
+INTEGER(I4B)                           :: I_OPT_PARA  ! index of the optimum parameter set (e.g. lowest RSME) - MUST BE DIMENSIONED
+REAL(DP), DIMENSION(:),ALLOCATABLE     :: KGE         ! KGE for each parameter set
+INTEGER(I4B), DIMENSION(1)             :: ARRAY_SIZE  ! Dimension of the KGE 
+REAL(DP)                               :: HIGHEST_KGE ! Highest KGE
 INTEGER(I4B)                           :: IPAR        ! loop through model parameters
 INTEGER(I4B)                           :: NPAR        ! number of parameter sets in output file
 REAL(DP)                               :: APAR        ! parameter value (single precision)
@@ -149,20 +151,29 @@ IERR = NF_OPEN(TRIM(NETCDF_FILE),NF_NOWRITE,NCID); CALL HANDLE_ERR(IERR)
  IERR = NF_INQ_DIMID(NCID,'par',IDIMID); CALL HANDLE_ERR(IERR)
  IERR = NF_INQ_DIMLEN(NCID,IDIMID,NPAR); CALL HANDLE_ERR(IERR)
 
- ! extract RMSE for each parameter set
- print *, 'Length of the par dimension (the number of parameter sets produced by SCE is lower)', NPAR
+ ! extract KGE for each parameter set
+ print *, 'Length of the par dimension (the number of parameter sets produced by SCE is higher)', NPAR
 
- ALLOCATE(RAW_RMSE(NPAR),STAT=IERR); IF(IERR.NE.0) STOP ' problem allocating space for RAW_RMSE '
+ ALLOCATE(KGE(NPAR),STAT=IERR); IF(IERR.NE.0) STOP ' problem allocating space for KGE '
 
- IERR = NF_INQ_VARID(NCID,'raw_rmse',I_RAW_RMSE); CALL HANDLE_ERR(IERR)
- IERR = NF_GET_VAR_DOUBLE(NCID,I_RAW_RMSE,RAW_RMSE); CALL HANDLE_ERR(IERR)
+ IERR = NF_INQ_VARID(NCID,'kge',I_KGE); CALL HANDLE_ERR(IERR)
+ IERR = NF_GET_VAR_DOUBLE(NCID,I_KGE,KGE); CALL HANDLE_ERR(IERR)
+ 
+ ! Find the best value lower than opt value
+ HIGHEST_KGE = -9999
+ I_OPT_PARA = -9999
+ 
+ DO IPAR = 1, NPAR
+   IF (KGE(IPAR) .LE. 9.0E+35 .AND. KGE(IPAR) .GT. HIGHEST_KGE) THEN
+     HIGHEST_KGE = KGE(IPAR)
+     I_OPT_PARA = IPAR
+   END IF
+ END DO
 
- I_OPT_PARA = MINLOC(RAW_RMSE,DIM=1) !TODO: use argument MASK to find best parameter set for each of the SCE run
- LOWEST_RAW_RMSE=RAW_RMSE(I_OPT_PARA)
- print *, 'Index of parameter set with lowest RMSE =',I_OPT_PARA
- print *, 'Lowest RMSE =',LOWEST_RAW_RMSE
+ print *, 'Index of parameter set with highest KGE =',I_OPT_PARA
+ print *, 'Highest KGE =',HIGHEST_KGE
 
- DEALLOCATE(RAW_RMSE,STAT=IERR); IF (IERR.NE.0) STOP ' problem deallocating ATIME/TDATA '
+ DEALLOCATE(KGE,STAT=IERR); IF (IERR.NE.0) STOP ' problem deallocating ATIME/TDATA '
 
  PRINT *, 'Reading from NetCDF file parameter values for best parameter set:'
 

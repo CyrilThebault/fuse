@@ -3,6 +3,7 @@ SUBROUTINE NMODEL_RUN(OUTPUT_FLAG,SSTATS_FLAG)
 ! Creator:
 ! --------
 ! Martyn Clark, 2009
+! Modified by Cyril Thébault to add KGE metric, 2024
 ! ---------------------------------------------------------------------------------------
 ! Purpose:
 ! --------
@@ -34,7 +35,7 @@ CHARACTER(LEN=CLEN)                    :: MESSAGE      ! error message
 ! ---------------------------------------------------------------------------------------
 ! allocate state vectors
 ALLOCATE(STATE0(NSTATE),STATE1(NSTATE),STAT=IERR)
-IF (IERR.NE.0) STOP ' problem allocating space for state vectors in fuse_rmse '
+IF (IERR.NE.0) STOP ' problem allocating space for state vectors in fuse_kge '
 ! increment parameter counter
 PCOUNT = PCOUNT + 1
 ! write parameters to the NetCDF file
