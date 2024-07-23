@@ -158,17 +158,9 @@ IERR = NF_OPEN(TRIM(NETCDF_FILE),NF_NOWRITE,NCID); CALL HANDLE_ERR(IERR)
 
  IERR = NF_INQ_VARID(NCID,'kge',I_KGE); CALL HANDLE_ERR(IERR)
  IERR = NF_GET_VAR_DOUBLE(NCID,I_KGE,KGE); CALL HANDLE_ERR(IERR)
- 
- ! Find the best value lower than opt value
- HIGHEST_KGE = -9999
- I_OPT_PARA = -9999
- 
- DO IPAR = 1, NPAR
-   IF (KGE(IPAR) .LE. 9.0E+35 .AND. KGE(IPAR) .GT. HIGHEST_KGE) THEN
-     HIGHEST_KGE = KGE(IPAR)
-     I_OPT_PARA = IPAR
-   END IF
- END DO
+
+ I_OPT_PARA = MAXLOC(KGE,DIM=1) !TODO: use argument MASK to find best parameter set for each of the SCE run
+ HIGHEST_KGE=KGE(I_OPT_PARA)
 
  print *, 'Index of parameter set with highest KGE =',I_OPT_PARA
  print *, 'Highest KGE =',HIGHEST_KGE
