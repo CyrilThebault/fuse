@@ -274,3 +274,8 @@ clean:
 	rm -f *.o
 	rm -f *.mod
 	rm -f *__genmod.f90
+
+# Copy the executable to the bin directory
+install:
+	mkdir -p $(EXE_PATH)
+	mv $(DRIVER_EX) $(EXE_PATH)

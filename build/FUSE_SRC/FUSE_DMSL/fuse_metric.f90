@@ -248,7 +248,10 @@ MODULE FUSE_METRIC_MODULE
 
                ! temporally integrate the ordinary differential equations
                CALL ODE_INT(FUSE_SOLVE,STATE0,STATE1,DT_SUB,DT_FULL,IERR,MESSAGE)
-               IF (IERR.NE.0) THEN; PRINT *, TRIM(MESSAGE); PAUSE; ENDIF
+               IF (IERR.NE.0) THEN 
+                 PRINT *, TRIM(MESSAGE)
+                 !PAUSE
+               ENDIF
 
               ! perform overland flow routing
               CALL Q_OVERLAND()
