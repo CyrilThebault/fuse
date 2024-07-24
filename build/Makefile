@@ -50,7 +50,7 @@ INCLUDE = -I$(NCDFF_LIB_PATH)/include -I$(NCDF_LIB_PATH)/include -I$(HDF_LIB_PAT
 # Define the driver program and associated subroutines for the fidelity test
 FUSE_DRIVER = \
   sobol.f90 \
-  fuse_rmse.f90 \
+  fuse_metric.f90 \
   functn.f90 \
   fuse_driver.f90
 DRIVER = $(patsubst %, $(DRIVER_DIR)/%, $(FUSE_DRIVER))
@@ -178,6 +178,7 @@ FUSE_PRELIM= \
 PRELIM = $(patsubst %, $(ENGINE_DIR)/%, $(FUSE_PRELIM))
 
 FUSE_MODRUN= \
+        metrics.f90 \
 	conv_funcs.f90 \
 	force_info.f90 \
 	clrsky_rad.f90 \
