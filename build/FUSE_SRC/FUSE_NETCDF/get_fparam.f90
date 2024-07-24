@@ -158,15 +158,15 @@ IERR = NF_OPEN(TRIM(NETCDF_FILE),NF_NOWRITE,NCID); CALL HANDLE_ERR(IERR)
 
  ALLOCATE(METRIC_VAL(NPAR),STAT=IERR); IF(IERR.NE.0) STOP ' problem allocating space for METRIC_VAL '
 
- IERR = NF_INQ_VARID(NCID,'metric',I_METRIC); CALL HANDLE_ERR(IERR)
+ IERR = NF_INQ_VARID(NCID,'metric_val',I_METRIC); CALL HANDLE_ERR(IERR)
  IERR = NF_GET_VAR_DOUBLE(NCID,I_METRIC,METRIC_VAL); CALL HANDLE_ERR(IERR)
 
-
+ 
  ! Use MINLOC or MAXLOC depending on the metric
  IF (METRIC=="KGE" .OR. METRIC=="KGEP" .OR. METRIC=="NSE") THEN
-   I_OPT_PARA = MAXLOC(METRIC_VAL,DIM=1) !TODO: use argument MASK to find best parameter set for each of the SCE run
+   I_OPT_PARA = MAXLOC(METRIC_VAL,DIM=1, MASK=METRIC_VAL /= -9999) !TODO: use argument MASK to find best parameter set for each of the SCE run
  ELSE IF (METRIC=="MAE" .OR. METRIC=="RMSE" ) THEN
-   I_OPT_PARA = MINLOC(METRIC_VAL,DIM=1) !TODO: use argument MASK to find best parameter set for each of the SCE run
+   I_OPT_PARA = MINLOC(METRIC_VAL,DIM=1, MASK=METRIC_VAL /= -9999) !TODO: use argument MASK to find best parameter set for each of the SCE run
  ELSE 
    STOP 'The requested metric is not available in metrics module'
  END IF
