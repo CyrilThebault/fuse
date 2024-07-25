@@ -102,8 +102,8 @@ contains
     m_sim  = sum(sim_t) / n
       
     ! compute standard deviation
-    sd_obs  = standard_deviation(sim_t)
-    sd_sim  = standard_deviation(obs_t)
+    sd_obs  = standard_deviation(obs_t)
+    sd_sim  = standard_deviation(sim_t)
               
     ! compute correlation
     r = correlation(sim_t, obs_t)  ! correlation
@@ -139,8 +139,8 @@ contains
     m_sim  = sum(sim_t) / n
       
     ! compute standard deviation
-    sd_obs  = standard_deviation(sim_t)
-    sd_sim  = standard_deviation(obs_t)
+    sd_obs  = standard_deviation(obs_t)
+    sd_sim  = standard_deviation(sim_t)
               
     ! KGEp component
     r = correlation(sim_t, obs_t)             ! correlation
@@ -169,7 +169,7 @@ contains
     
     call apply_transformation(obs_t, sim_t, transfo)
     
-    nse = 1 - (sum((obs_t - sim_t)**2) / sum((obs_t - sum(sim_t)/n)**2))
+    nse = 1 - (sum((obs_t - sim_t)**2) / sum((obs_t - (sum(obs_t)/n))**2))
     
   end function get_NSE
 
