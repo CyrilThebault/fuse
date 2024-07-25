@@ -47,7 +47,7 @@ REAL(SP)                               :: SS_LOBS     ! sum of squared lagged di
 REAL(SP)                               :: SS_LSIM     ! sum of squared lagged differences in simulated runoff
 REAL(SP)                               :: SS_RAW      ! sum of squared differences in observed - simulated
 REAL(SP)                               :: SS_LOG      ! sum of squared differences in LOG observed - LOG simulated
-REAL(SP), PARAMETER                    :: NO_ZERO=1.E-20  ! avoid divide by zero
+REAL(SP)                               :: NO_ZERO     ! avoid divide by zero
 
 ! ---------------------------------------------------------------------------------------
 ! (1) PRELIMINARIES
@@ -92,10 +92,13 @@ ELSE
   QSIM_AVAIL=PACK(QSIM,QOBS_MASK,QSIM_AVAIL)  ! moves QSIM time steps indicated by QOBS_MASK to QSIM_AVAIL
   											                      ! if no values is missing (i.e. NS = NUM_AVAIL) then QSIM_AVAIL
   										                      	! should be a copy of QSIM
-                                              
+                                                                 
   ! compute mean
   XB_OBS  = SUM(QOBS_AVAIL(:)) / INT(NUM_AVAIL, KIND(SP))
   XB_SIM  = SUM(QSIM_AVAIL(:)) / INT(NUM_AVAIL, KIND(SP))
+  
+  ! define NO_ZERO as 1% of the observed mean flow
+  NO_ZERO = XB_OBS/100
 
   ! compute the sum of squares of simulated and observed vectors
   DOBS(:) = QOBS_AVAIL(:) - XB_OBS
