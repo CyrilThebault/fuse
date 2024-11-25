@@ -163,7 +163,7 @@ IERR = NF_OPEN(TRIM(NETCDF_FILE),NF_NOWRITE,NCID); CALL HANDLE_ERR(IERR)
 
  
  ! Use MINLOC or MAXLOC depending on the metric
- IF (METRIC=="KGE" .OR. METRIC=="KGEP" .OR. METRIC=="NSE") THEN
+ IF (METRIC=="KGE" .OR. METRIC=="KGEP" .OR. METRIC=="NSE".OR. METRIC=="KGECOMP") THEN
    I_OPT_PARA = MAXLOC(METRIC_VAL,DIM=1, MASK=METRIC_VAL /= -9999) !TODO: use argument MASK to find best parameter set for each of the SCE run
  ELSE IF (METRIC=="MAE" .OR. METRIC=="RMSE" ) THEN
    I_OPT_PARA = MINLOC(METRIC_VAL,DIM=1, MASK=METRIC_VAL /= -9999) !TODO: use argument MASK to find best parameter set for each of the SCE run

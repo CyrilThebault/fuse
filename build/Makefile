@@ -228,7 +228,7 @@ ifeq "$(FC)" "ifort"
  FLAGS_FIXED = -O2 -c -fixed
 endif
 ifeq "$(FC)" "gfortran"
- FLAGS_NORMA = -O3 -ffree-line-length-none -fmax-errors=0 -cpp -fallow-argument-mismatch
+ FLAGS_NORMA = -O3 -ffree-line-length-none -fmax-errors=0 -cpp -Wno-argument-mismatch
  FLAGS_DEBUG = -p -g -Wall -ffree-line-length-none -fmax-errors=0 -fbacktrace -fcheck=bounds -cpp
  FLAGS_DEBUG = -p -Og -ffree-line-length-none -fmax-errors=0 -fcheck=bounds -cpp # without -warn all
  FLAGS_FIXED = -O2 -c -ffixed-form
@@ -256,17 +256,12 @@ ifeq "$(MODE)" "distributed"
 
 endif
 
-# Compile SCE code written in Fortran 77
-sce_16plus.o: $(SCE_DIR)/sce_16plus.f
-	$(FC) -O2 -c -ffixed-form -o $@ $<
-
 # Compile
 all: compile install clean
 
 # compile FUSE into a static library
 compile: sce_16plus.o
-	$(FC) -O3 -ffree-line-length-none -fmax-errors=0 -cpp -fallow-argument-mismatch \
-	$(FUSE_ALL) $(DRIVER) \
+	$(FC) $(FLAGS) $(FUSE_ALL) $(DRIVER) \
 	$(LIBRARIES) $(INCLUDE) $(MPI_FLAGS) -o $(DRIVER_EX)
 
 # Remove object files
@@ -279,3 +274,7 @@ clean:
 install:
 	mkdir -p $(EXE_PATH)
 	mv $(DRIVER_EX) $(EXE_PATH)
+
+# describe how to compile SCE code written in Fortran 77
+sce_16plus.o: $(SCE_DIR)/sce_16plus.f
+	$(FC) $(FLAGS_FIXED) $(SCE_DIR)/sce_16plus.f

@@ -44,7 +44,7 @@ DEALLOCATE(SCE_PAR, STAT=IERR); IF (IERR.NE.0) STOP ' problem deallocating space
 print *, 'METRIC_VAL [Metric:',METRIC,' / Transfo:',TRANSFO,'] =', METRIC_VAL
 
 ! save objective function value: SCE is a minimization algorithm
-IF (METRIC=="KGE" .OR. METRIC=="KGEP" .OR. METRIC=="NSE") THEN
+IF (METRIC=="KGE" .OR. METRIC=="KGEP" .OR. METRIC=="NSE".OR. METRIC=="KGECOMP") THEN
   FUNCTN = -METRIC_VAL
 ELSE IF (METRIC=="MAE" .OR. METRIC=="RMSE" ) THEN
   FUNCTN = METRIC_VAL

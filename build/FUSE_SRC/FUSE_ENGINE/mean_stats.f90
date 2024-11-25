@@ -76,7 +76,10 @@ IF (NUM_AVAIL.EQ.0) THEN
   PRINT *, 'Skiping computation of error statistics because no observed streamflow data'
   MSTATS%NASH_SUTT=-9999
   MSTATS%RAW_RMSE=-9999
+  MSTATS%MAE=-9999
   MSTATS%KGE=-9999
+  MSTATS%KGEP=-9999  
+  MSTATS%KGECOMP=-9999
   MSTATS%METRIC_VAL=-9999
 
 ELSE
@@ -148,6 +151,9 @@ ELSE
   ! Compute MAE using the metrics module
   MSTATS%MAE = get_MAE(QOBS_AVAIL, QSIM_AVAIL, '1')         ! No transformation
   
+  ! Compute MAE using the metrics module
+  MSTATS%KGECOMP = get_composite_KGE(QOBS_AVAIL, QSIM_AVAIL)         ! Transformation 1 & -1
+  
   ! Compute the metric chosen as objective function using the metrics module
   
   IF (METRIC == "KGE") THEN
@@ -160,6 +166,8 @@ ELSE
     MSTATS%METRIC_VAL = get_RMSE(QOBS_AVAIL, QSIM_AVAIL, TRANSFO) 
   ELSE IF (METRIC == "MAE") THEN
     MSTATS%METRIC_VAL = get_MAE(QOBS_AVAIL, QSIM_AVAIL, TRANSFO) 
+  ELSE IF (METRIC == "KGECOMP") THEN
+    MSTATS%METRIC_VAL = get_composite_KGE(QOBS_AVAIL, QSIM_AVAIL) 
   ELSE
     STOP 'The requested metric is not available in metrics module'
   END IF
@@ -172,6 +180,7 @@ END IF
 PRINT *, 'NSE = ',          MSTATS%NASH_SUTT
 PRINT *, 'KGE = ',          MSTATS%KGE
 PRINT *, 'KGEP = ',         MSTATS%KGEP
+PRINT *, 'KGECOMP = ',      MSTATS%KGECOMP
 PRINT *, 'MAE = ',          MSTATS%MAE
 PRINT *, 'RAW_RMSE = ',     MSTATS%RAW_RMSE
 PRINT *, 'LOG_RMSE = ',     MSTATS%LOG_RMSE

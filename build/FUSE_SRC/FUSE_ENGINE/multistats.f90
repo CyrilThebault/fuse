@@ -17,6 +17,7 @@ MODULE multistats
   REAL(SP)                             :: NASH_SUTT     ! Nash-Sutcliffe score
   REAL(SP)                             :: KGE           ! Kling-Gupta Efficiency score
   REAL(SP)                             :: KGEP          ! Kling-Gupta Efficiency' score
+  REAL(SP)                             :: KGECOMP       ! Kling-Gupta Efficiency composite score
   REAL(SP)                             :: MAE           ! Mean absolute error
   REAL(SP)                             :: METRIC_VAL    ! value of the metric chosen as objective function
   ! attributes of model output

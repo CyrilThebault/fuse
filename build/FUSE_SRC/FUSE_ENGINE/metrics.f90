@@ -2,7 +2,7 @@ module metrics
   use nrtype
   implicit none
   private
-  public :: get_KGE, get_KGEp, get_NSE, get_MAE, get_RMSE
+  public :: get_KGE, get_KGEp, get_composite_KGE, get_NSE, get_MAE, get_RMSE
 
 contains
 
@@ -219,6 +219,25 @@ contains
     rmse = sqrt(sum((obs_t - sim_t)**2) / n)
     
   end function get_RMSE
+
+
+  ! Compute composite KGE
+  function get_composite_KGE(obs, sim) result(composite_kge)
+
+    real(SP), intent(in) :: obs(:), sim(:)           ! Observed and simulated streamflow time series
+    real(SP)           :: composite_kge             ! Composite KGE
+    real(SP)           :: kge1, kge2                ! KGE values for different transformations
+      
+    ! Compute KGE for transfo = 1
+    kge1 = get_KGE(obs, sim, "1")
+    
+    ! Compute KGE for transfo = -1
+    kge2 = get_KGE(obs, sim, "-1")
+    
+    ! Compute composite KGE
+    composite_kge = (kge1 + kge2) / 2.0
+    
+  end function get_composite_KGE
 
 
 ! ---------------------------------------------------------------------------------------
