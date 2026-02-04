@@ -23,6 +23,8 @@ MODULE FUSE_METRIC_MODULE
     ! data modules
     USE model_defn, ONLY:NSTATE,SMODL                        ! number of state variables
     USE model_defnames                                       ! integer model definitions
+    USE globaldata, ONLY: isPrint                            ! flag for printing progress to screen
+    USE globaldata, only: nFUSE_eval                         ! number of fuse evaluations
     USE multiparam, ONLY: LPARAM,NUMPAR,MPARAM               ! list of model parameters
     USE multiforce, ONLY: MFORCE,AFORCE,DELTIM,ISTART        ! model forcing data
     USE multiforce, ONLY: numtim_in, itim_in                 ! length of input time series and associated index
@@ -356,6 +358,8 @@ MODULE FUSE_METRIC_MODULE
       PRINT *, 'Calculating performance metrics...'
       CALL MEAN_STATS()
       METRIC_VAL = MSTATS%METRIC_VAL
+
+      write(*,'(i6,1x,a12,1x,f12.6)') nFUSE_eval, "METRIC_VAL =", METRIC_VAL
 
     ENDIF
 

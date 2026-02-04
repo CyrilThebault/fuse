@@ -13,6 +13,7 @@ USE nrtype                                            ! variable types, etc.
 USE fuse_metric_module                                ! run model and compute the metric chosen as objective function
 USE multiforce, only: ncid_forc                       ! NetCDF forcing file ID
 USE fuse_fileManager,only:METRIC, TRANSFO             ! metric and transformation requested in the filemanager
+USE globaldata, only: nFUSE_eval                      ! # fuse evaluations
 
 IMPLICIT NONE
 ! input
@@ -31,6 +32,9 @@ REAL(SP)                               :: METRIC_VAL  ! value of the metric chos
 REAL(MSP)                              :: FUNCTN      ! objective function value
 
 ! ---------------------------------------------------------------------------------------
+
+nFUSE_eval = nFUSE_eval + 1
+
 ! get SCE parameter set
 ALLOCATE(SCE_PAR(NOPT), STAT=IERR); IF (IERR.NE.0) STOP ' problem allocating space '
 SCE_PAR(1:NOPT) = A(1:NOPT)  ! convert from MSP used in SCE to SP used in FUSE

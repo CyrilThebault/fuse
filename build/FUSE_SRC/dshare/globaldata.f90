@@ -31,6 +31,6 @@ MODULE globaldata
  integer(i4b), parameter :: iPERR=7   ! not a snow parameter, but used here
 
  ! number of fuse evaluations
- integer(i4b), save      :: nFUSE_eval    
+ integer(i4b), save      :: nFUSE_eval
 
 end MODULE globaldata
