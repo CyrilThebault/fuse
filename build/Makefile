@@ -177,7 +177,9 @@ FUSE_TYPES += multistate_types.f90
 FUSE_TYPES += multi_flux_types.f90
 FUSE_TYPES += multiroute_types.f90
 FUSE_TYPES += multistats_types.f90
-#FUSE_TYPES += data_types.f90
+FUSE_TYPES += work_types.f90
+FUSE_TYPES += info_types.f90
+FUSE_TYPES += data_types.f90
 TYPES = $(patsubst %, $(TYPES_DIR)/%, $(FUSE_TYPES))
 
 # combined type+data (mimic legacy code)
@@ -230,7 +232,7 @@ NR_SUB = $(patsubst %, $(NUMREC_DIR)/%, $(FUSE_NR_SUB))
 # FUSE physics (differentiable model)
 FUSE_PHYSICS =
 FUSE_PHYSICS += smoothers.f90
-FUSE_PHYSICS += get_parent.f90
+FUSE_PHYSICS += get_bundle.f90
 FUSE_PHYSICS += update_swe_diff.f90
 FUSE_PHYSICS += qsatexcess_diff.f90
 FUSE_PHYSICS += evap_upper_diff.f90
@@ -342,7 +344,7 @@ FUSE_ALL += $(DATAMS)
 FUSE_ALL += $(UTILMS)
 FUSE_ALL += $(TIMUTILS)
 FUSE_ALL += $(NR_SUB)
-#FUSE_ALL += $(PHYSICS)
+FUSE_ALL += $(PHYSICS)
 FUSE_ALL += $(MODGUT)
 FUSE_ALL += $(SOLVER)
 FUSE_ALL += $(PRELIM)

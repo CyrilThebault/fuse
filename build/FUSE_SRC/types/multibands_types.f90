@@ -12,20 +12,10 @@ MODULE multibands_types
 
  public :: BANDS, BANDS_INFO, BANDS_VAR
 
-
- TYPE BANDS ! for catchment scale modeling
-  INTEGER(I4B)                         :: NUM             ! band number (-)
-  REAL(SP)                             :: Z_MID           ! band mid-point elevation (m)
-  REAL(SP)                             :: AF              ! fraction of basin area in band (-)
-  REAL(SP)                             :: SWE             ! band snowpack water equivalent (mm)
-  REAL(SP)                             :: SNOWACCMLTN     ! new snow accumulation in band (mm day-1)
-  REAL(SP)                             :: SNOWMELT        ! snowmelt in band (mm day-1)
-  REAL(SP)                             :: DSWE_DT         ! rate of change of band SWE (mm day-1)
- ENDTYPE BANDS
-
- ! for distributed modeling MBANDS is split between time-independent and time-dependent charactertistics
+ ! MBANDS is split between time-independent and time-dependent charactertistics
 
  TYPE BANDS_INFO ! invariant characteristics
+  INTEGER(I4B)                         :: NUM             ! band number (-)
   REAL(SP)                             :: Z_MID           ! band mid-point elevation (m)
   REAL(SP)                             :: AF              ! fraction of basin area in band (-)
  ENDTYPE BANDS_INFO
@@ -36,5 +26,12 @@ MODULE multibands_types
   REAL(SP)                             :: SNOWMELT        ! snowmelt in band (mm day-1)
   REAL(SP)                             :: DSWE_DT         ! rate of change of band SWE (mm day-1)
  ENDTYPE BANDS_VAR
+
+ ! Combined structure
+
+ TYPE BANDS
+  type(BANDS_INFO)                     :: info
+  type(BANDS_VAR)                      :: var
+ ENDTYPE BANDS
 
 END MODULE multibands_types

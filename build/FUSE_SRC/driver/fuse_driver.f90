@@ -59,6 +59,7 @@ USE selectmodl_module                                     ! reads model control 
 USE getpar_str_module                                     ! extracts parameter metadata
 USE par_insert_module                                     ! inserts model parameters
 USE force_info_module,only:force_info                     ! get forcing info for NetCDF files
+USE def_output_module,only:def_output                     ! define NetCDF output file
 USE get_gforce_module,only:read_ginfo                     ! get dimension lengths from the NetCDF file
 USE get_gforce_module,only:get_varid                      ! get netCDF ID for forcing variables
 USE get_gforce_module,only:get_gforce_3d                  ! get forcing
@@ -386,7 +387,7 @@ ENDIF
 
 CALL DEF_PARAMS(NUMPSET)                ! define model parameters (initial CREATE)
 CALL DEF_SSTATS()                            ! define summary statistics (REDEF)
-CALL DEF_OUTPUT(nSpat1,nSpat2,NUMPSET,numtim_sim)    ! define model output time series (REDEF)
+CALL DEF_OUTPUT(nSpat1,nSpat2,N_BANDS,NUMPSET,numtim_sim)    ! define model output time series (REDEF)
 
 ! ---------------------------------------------------------------------------------------
 ! RUN FUSE IN DESIRED MODE
