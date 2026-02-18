@@ -74,7 +74,7 @@ USE time_io
 USE model_numerix                                         ! defines decisions on model numerix
 
 ! access to model simulation modules
-USE fuse_metric_module                                    ! run model and compute the metric chosen as objective function
+USE fuse_evaluate_module, only: fuse_evaluate             ! run model and compute the metric chosen as objective function
 
 #ifdef __MPI__
 use mpi
@@ -389,7 +389,7 @@ IF(fuse_mode == 'run_def')THEN ! run FUSE with default parameter values
   OUTPUT_FLAG=.TRUE.
 
   print *, 'Running FUSE with default parameter values'
-  CALL FUSE_METRIC(APAR,GRID_FLAG,NCID_FORC,METRIC_VAL,OUTPUT_FLAG,NUMPSET)
+  CALL FUSE_evaluate(APAR,GRID_FLAG,NCID_FORC,METRIC_VAL,OUTPUT_FLAG,NUMPSET)
   print *, 'Done running FUSE with default parameter values'
 
 ELSE IF(fuse_mode == 'run_pre')THEN ! run FUSE with pre-defined parameter values
@@ -403,7 +403,7 @@ ELSE IF(fuse_mode == 'run_pre')THEN ! run FUSE with pre-defined parameter values
   CALL GET_PRE_PARAM(FNAME_NETCDF_PARA_PRE,IPSET,ONEMOD,NUMPAR,APAR)
 
   print *, 'Running FUSE with pre-defined parameter set'
-  CALL FUSE_METRIC(APAR,GRID_FLAG,NCID_FORC,METRIC_VAL,OUTPUT_FLAG,1) ! last argument IPSET=1
+  CALL FUSE_evaluate(APAR,GRID_FLAG,NCID_FORC,METRIC_VAL,OUTPUT_FLAG,1) ! last argument IPSET=1
   print *, 'Done running FUSE with pre-defined parameter set'
 
 ELSE IF(fuse_mode == 'calib_sce')THEN ! calibrate FUSE using SCE
@@ -459,7 +459,7 @@ ELSE IF(fuse_mode == 'run_best')THEN ! run FUSE with "best" parameter set from a
   CALL GET_SCE_PARAM(FNAME_NETCDF_PARA_SCE,ONEMOD,NUMPAR,APAR)
 
   print *, 'Running FUSE with best SCE parameter set'
-  CALL FUSE_METRIC(APAR,GRID_FLAG,NCID_FORC,METRIC_VAL,OUTPUT_FLAG,NUMPSET)
+  CALL FUSE_evaluate(APAR,GRID_FLAG,NCID_FORC,METRIC_VAL,OUTPUT_FLAG,NUMPSET)
   print *, 'Done running FUSE with best SCE parameter set'
 
 ELSE
