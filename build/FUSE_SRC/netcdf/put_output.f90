@@ -81,7 +81,7 @@ MODULE PUT_OUTPUT_MODULE
 
   ! define dimension list (include parameter derivatives)
   start4_param = (/1,1,1,istart_sim/)
-  count4_param = (/nspat1,nspat2,n_bands,numtim/)
+  count4_param = (/nspat1,nspat2,NUMPAR,numtim/)
 
   ! open file
   IERR = NF_OPEN(TRIM(FNAME_NETCDF_RUNS),NF_WRITE,ncid_out)

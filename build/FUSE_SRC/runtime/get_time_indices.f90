@@ -12,13 +12,14 @@ MODULE GET_TIME_INDICES_MODULE
     ! convert start and end date of the NetCDF input file to julian day (Julian day is the continuous
     ! count of days since the beginning of the Julian Period around 4700 BC)
 
-    USE multiforce, ONLY: timeUnits,time_steps,julian_day_input    ! time data
-    USE multiforce, only: numtim_in, itim_in, istart               ! length of input time series and associated index
-    USE multiforce, only: numtim_sim, itim_sim                ! length of simulated time series and associated index
-    USE multiforce, only: numtim_sub, itim_sub                ! length of subperiod time series and associated index
-    USE multiforce, only: sim_beg,sim_end                     ! timestep indices
-    USE multiforce, only: eval_beg,eval_end                   ! timestep indices
-    USE multiforce, only: SUB_PERIODS_FLAG                    ! .true. if subperiods are used to run FUSE
+    USE multiforce, ONLY: timeUnits,time_steps,julian_day_input ! time data
+    USE multiforce, only: numtim_in                             ! length of input time series
+    USE multiforce, only: numtim_sim                            ! length of simulated time series
+    USE multiforce, only: numtim_sub                            ! length of subperiod time series
+    USE multiforce, only: istart                                ! timestep indices (istart=sim_beg)
+    USE multiforce, only: sim_beg,sim_end                       ! timestep indices
+    USE multiforce, only: eval_beg,eval_end                     ! timestep indices
+    USE multiforce, only: SUB_PERIODS_FLAG                      ! .true. if subperiods are used to run FUSE
 
     USE fuse_fileManager,only:date_start_sim,date_end_sim,&
               date_start_eval,date_end_eval,&
@@ -28,7 +29,7 @@ MODULE GET_TIME_INDICES_MODULE
     INTEGER(I4B)                           :: ERR             ! error code
     CHARACTER(LEN=1024)                    :: MESSAGE         ! error message
 
-    ! dummies
+    ! local variables
     integer(i4b)                           :: iy,im,id,ih,imin  ! to temporarily store year, month, day, hour, min
     real(sp)                               :: isec              ! to temporarily store sec
     real(sp)                               :: jdate             ! to temporarily store a julian date

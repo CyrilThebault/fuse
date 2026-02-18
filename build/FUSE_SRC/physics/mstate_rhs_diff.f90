@@ -35,9 +35,10 @@ contains
   ! -------------------------------------------------------------------------------------------------
   ! associate variables with elements of data structure
   associate(&
-   M_FLUX => fuseStruct%flux         , &  ! fluxes
-   MPARAM => fuseStruct%param_adjust , &  ! adjustable model parameters
-   DX_DT  => fuseStruct%dx_dt          &  ! time derivative in states
+   M_FLUX => fuseStruct%step%flux         , &  ! fluxes
+   DX_DT  => fuseStruct%step%dx_dt        , &  ! time derivative in states
+   df_dS  => fuseStruct%adj%df_dS         , &  ! derivative in fluxes w.r.t. states
+   MPARAM => fuseStruct%par%param_adjust    &  ! adjustable model parameters
    ) ! (associate)
   ! -------------------------------------------------------------------------------------------------
 
@@ -68,7 +69,7 @@ contains
   ! compute Jacobian
   if(comp_dflux)then
     if(SMODL%iARCH1 /= iopt_onestate_1) stop "mstate_rhs: only iopt_onestate_1 currently implemented"
-    J_g(1,:) = -M_FLUX%EFF_PPT*fuseStruct%df_dS%SATAREA - fuseStruct%df_dS%EVAP_1 - fuseStruct%df_dS%QPERC_12
+    J_g(1,:) = -M_FLUX%EFF_PPT*df_dS%SATAREA - df_dS%EVAP_1 - df_dS%QPERC_12
   endif
 
   ! ---------------------------------------------------------------------------------------
@@ -96,7 +97,7 @@ contains
   ! NOTE: assume M_FLUX%EVAP_2=0 and M_FLUX%OFLOW_2=0
   if(comp_dflux)then
     if(SMODL%iARCH2 == iopt_tens2pll_2) stop "mstate_rhs: iopt_tens2pll_2 not currently implemented"
-    J_g(2,:) = fuseStruct%df_dS%QPERC_12 - fuseStruct%df_dS%QBASE_2
+    J_g(2,:) = df_dS%QPERC_12 - df_dS%QBASE_2
   endif
 
   ! ---------------------------------------------------------------------------------------
@@ -106,7 +107,7 @@ contains
   ! ---------------------------------------------------------------------------------------
 
   ! extract dx_dt from fuse structure
-  call STR_2_XTRY(fuseStruct%dx_dt, g_x) 
+  call STR_2_XTRY(dx_dt, g_x) 
   ! ---------------------------------------------------------------------------------------
 
   end associate  ! end association with variables in the data structures

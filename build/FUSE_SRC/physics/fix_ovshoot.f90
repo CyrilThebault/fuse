@@ -101,8 +101,8 @@ contains
   REAL(SP)                               :: XMIN        ! very small number
   INTEGER(I4B)                           :: ISTT        ! loop through model states
   ! ---------------------------------------------------------------------------------------
-  associate(MPARAM => fuseStruct%param_adjust, &        ! adjuustable model parameters
-            DPARAM => fuseStruct%param_derive)          ! derived model parameters
+  associate(MPARAM => fuseStruct%par%param_adjust, &        ! adjuustable model parameters
+            DPARAM => fuseStruct%par%param_derive)          ! derived model parameters
   ! ---------------------------------------------------------------------------------------
   XMIN=FRACSTATE_MIN ! used to avoid zero derivatives
   ! ---------------------------------------------------------------------------------------

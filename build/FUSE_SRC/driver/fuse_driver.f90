@@ -36,9 +36,9 @@ USE multiforce, ONLY: valDat                              ! response data
 USE multiforce, only: DELTIM
 USE multiforce, only: ISTART                              ! index for start of inference
 USE multiforce, ONLY: timeUnits,time_steps,julian_day_input    ! time data
-USE multiforce, only: numtim_in, itim_in                  ! length of input time series and associated index
-USE multiforce, only: numtim_sim, itim_sim                ! length of simulated time series and associated index
-USE multiforce, only: numtim_sub, itim_sub                ! length of subperiod time series and associated index
+USE multiforce, only: numtim_in                           ! length of input time series
+USE multiforce, only: numtim_sim                          ! length of simulated time series
+USE multiforce, only: numtim_sub                          ! length of subperiod time series
 USE multiforce, only: sim_beg,sim_end                     ! timestep indices
 USE multiforce, only: eval_beg,eval_end                   ! timestep indices
 USE multiforce, only: SUB_PERIODS_FLAG                    ! .true. if subperiods are used to run FUSE

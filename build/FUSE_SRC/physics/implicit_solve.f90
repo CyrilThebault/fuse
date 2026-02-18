@@ -40,7 +40,7 @@ module implicit_solve_module
  comp_dflux = present(J_g)
 
  ! put data in structure
- call XTRY_2_STR(x_try, fuseStruct%state1)
+ call XTRY_2_STR(x_try, fuseStruct%step%state1)
 
  ! run the fuse physics
  if (present(J_g)) then
@@ -196,7 +196,7 @@ module implicit_solve_module
  call get_bounds(fuseStruct, lower, upper)
 
  ! put state vector into the fuse data structure
- call XTRY_2_STR(x0, fuseStruct%state0)
+ call XTRY_2_STR(x0, fuseStruct%step%state0)
  
  ! intialize state vector (and soft clamp)
  x_try  = x0
@@ -346,7 +346,7 @@ module implicit_solve_module
    x_try = x0 + dt*g_best
 
    ! test bounds violations: if bounds exceeded, then clamp and disaggregate fluxes (conserve mass)
-   call XTRY_2_STR(x_try, fuseStruct%state1)
+   call XTRY_2_STR(x_try, fuseStruct%step%state1)
    call conserve_clamp(fuseStruct, dt, isClamped)
    print*, 'WARNING: '//trim(message)//"failed to converge: use best function evaluation. Clamp = ", isClamped
 

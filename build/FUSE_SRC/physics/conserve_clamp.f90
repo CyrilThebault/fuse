@@ -40,11 +40,11 @@ module conserve_clamp_module
   ! ---------------------------------------------------------------------------------------
   ! associate variables with elements of data structure
   associate(&
-   M_FLUX => fuseStruct%flux         , &  ! fluxes
-   BSTATE => fuseStruct%state0       , &  ! state variables (start of step)
-   ESTATE => fuseStruct%state1       , &  ! trial state variables (end of step)
-   MPARAM => fuseStruct%param_adjust , &  ! adjustable model parameters
-   DPARAM => fuseStruct%param_derive   &  ! derived model parameters
+   M_FLUX => fuseStruct%step%flux         , &  ! fluxes
+   BSTATE => fuseStruct%step%state0       , &  ! state variables (start of step)
+   ESTATE => fuseStruct%step%state1       , &  ! trial state variables (end of step)
+   MPARAM => fuseStruct%par%param_adjust  , &  ! adjustable model parameters
+   DPARAM => fuseStruct%par%param_derive    &  ! derived model parameters
    ) ! (associate)
   ! ---------------------------------------------------------------------------------------
   ERROR_FLAG=.FALSE.   ! initialize with no extrapolation error
