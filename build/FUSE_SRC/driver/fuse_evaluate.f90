@@ -301,6 +301,8 @@ MODULE fuse_evaluate_module
   ! initialize summary statistics + timer
   call init_stats()
 
+  print*, 'end of initialize'
+
   end subroutine initialize_run
 
   ! -------------------------------------------------------------------------------------------------------------------
@@ -319,7 +321,7 @@ MODULE fuse_evaluate_module
   use time_io,           only: get_modtim
   use getPETgrid_module, only: getPETgrid
   use get_gforce_module, only: get_gforce_3d
-  use put_output_module, only: put_goutput_3d
+  use put_output_module, only: put_output
 
   implicit none
 
@@ -436,7 +438,7 @@ MODULE fuse_evaluate_module
     ! write model output
     IF (OUTPUT_FLAG) THEN
       if(isPrint) PRINT *, 'Write output for ',chunk_len,' time steps starting at indices', chunk_start_sim
-      CALL PUT_GOUTPUT_3D(chunk_start_sim, chunk_start_in, chunk_len)
+      CALL PUT_OUTPUT(ctx%fuseStruct, chunk_start_sim, chunk_start_in, chunk_len)
       if(isPrint) PRINT *, 'Done writing output'
     ELSE
       if(isPrint) PRINT *, 'OUTPUT_FLAG is set on FALSE, no output written'
