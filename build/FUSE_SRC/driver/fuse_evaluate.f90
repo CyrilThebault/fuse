@@ -215,7 +215,8 @@ MODULE fuse_evaluate_module
   use multistate,  only: FSTATE, gState_3d
   use multistats,  only: PCOUNT
   use multibands
-  
+ 
+  use par_derive_module, only: par_derive 
   use par_insert_module
   use str_2_xtry_module
   use xtry_2_str_module

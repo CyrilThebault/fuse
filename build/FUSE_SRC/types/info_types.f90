@@ -6,6 +6,7 @@ module info_types
 
  private
  public :: cli_options
+ public :: time_info
  public :: fuse_info
 
  ! --------------------------------------------------------------------------------------

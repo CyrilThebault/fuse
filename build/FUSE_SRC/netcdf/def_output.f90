@@ -61,8 +61,6 @@ contains
     ! Time-varying output vars
     do ivar = 1, NOUTVAR
 
-      print*, trim(VNAME(ivar))
-
       if (Q_ONLY) then
         write_var = .false.
         if (trim(VNAME(ivar)) == "q_instnt") write_var = .true.
@@ -89,7 +87,9 @@ contains
         ierr = nf90_put_att(ncid_out, varid, "_FillValue", NA_VALUE_OUT); call handle_err(ierr)
       end if
 
-    end do
+    end do  ! looping through variables
+
+    print*, 'coordinate variables'
 
     ! Coordinate variables
     ierr = nf90_def_var(ncid_out, "time", NF90_FLOAT, (/dim_time/), varid_time); call handle_err(ierr)
@@ -119,22 +119,32 @@ contains
     ! Leave define mode
     ierr = nf90_enddef(ncid_out); call handle_err(ierr)
 
+    print*, 'coordinate data'
+
+    print*, nSpat1, nSpat2
+    print*, latitude
+    print*, longitude
+
     ! Write coordinate data
     latitude_msp  = latitude
     longitude_msp = longitude
 
+    print*, 'hello1'
+
     ierr = nf90_put_var(ncid_out, varid_lat, latitude_msp);  call handle_err(ierr)
     ierr = nf90_put_var(ncid_out, varid_lon, longitude_msp); call handle_err(ierr)
 
+    print*, 'hello1'
     band_i  = [(ib, ib=1,n_bands)]
     param_i = [(ip, ip=1,NUMPAR)]
 
+    print*, 'hello1'
     ierr = nf90_put_var(ncid_out, varid_band,  band_i);  call handle_err(ierr)
     ierr = nf90_put_var(ncid_out, varid_param, param_i); call handle_err(ierr)
+    
+    ierr = nf90_close(ncid_out); call handle_err(ierr)
 
     print *, 'NetCDF file for model runs defined with dimensions', nSpat1, nSpat2, n_bands, NUMPAR
-
-    ierr = nf90_close(ncid_out); call handle_err(ierr)
 
   END SUBROUTINE DEF_OUTPUT
 
