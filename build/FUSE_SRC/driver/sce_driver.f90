@@ -1,6 +1,11 @@
 module sce_driver_MODULE
 
   USE nrtype
+  use info_types,  only: fuse_info
+  use work_types,  only: fuse_work
+  use data_types,  only: domain_data
+
+  use sce_callback_context, only: set_sce_context, clear_sce_context 
 
   implicit none
 
@@ -9,7 +14,7 @@ module sce_driver_MODULE
 
 contains
 
-  subroutine sce_driver(APAR, BL, BU)
+  subroutine sce_driver(info, work, domain, APAR, BL, BU)
   USE multiparam, only: MAXN    ! maximum number of trials before optimization is terminated 
   USE multiparam, only: KSTOP   ! number of shuffling loops the value must change by PCENTO
   USE multiparam, only: PCENTO  ! the percentage
@@ -18,10 +23,13 @@ contains
   USE globaldata, only: nFUSE_eval ! # FUSE evaluations 
   USE model_defn, only: FNAME_TEMPRY, FNAME_ASCII
   implicit none
-  ! input variables
-  real(sp), intent(in)                   :: APAR(:)  ! model parameter set
-  real(sp), intent(in)                   :: BL(:)    ! vector of lower parameter bounds
-  real(sp), intent(in)                   :: BU(:)    ! vector of upper parameter bounds
+  ! input/output
+  type(fuse_info)       , intent(inout)  :: info     ! info structures (runtime settings etc.)
+  type(fuse_work)       , intent(inout)  :: work     ! work structures that depend on npar/nState
+  type(domain_data)     , intent(inout)  :: domain   ! the fuse domain structure that stores data arrays
+  real(sp)              , intent(in)     :: APAR(:)  ! model parameter set
+  real(sp)              , intent(in)     :: BL(:)    ! vector of lower parameter bounds
+  real(sp)              , intent(in)     :: BU(:)    ! vector of upper parameter bounds
   ! internal variables
   REAL(MSP)                              :: AF_MSP    ! objective function value
   REAL(MSP), DIMENSION(:), ALLOCATABLE   :: APAR_MSP  ! ! lower bound of model parameters
@@ -57,9 +65,13 @@ contains
   ALLOCATE(APAR_MSP(NUMPAR), BL_MSP(NUMPAR), BU_MSP(NUMPAR))
   APAR_MSP=APAR; BL_MSP=BL; BU_MSP=BU
 
+  ! pass the FUSE structures to the context setter
+  ! NOTE: in sce_context_set, info/work/domain have the target attribute so can point to them
+  call set_sce_context(info, work, domain)
+
   ! open up ASCII output file
   ISCE = 96 ! (file unit)
-  FNAME_ASCII = FNAME_TEMPRY//'_sce_output.txt'
+  FNAME_ASCII = trim(FNAME_TEMPRY)//'_sce_output.txt'
   print *, 'Creating SCE output file:', trim(FNAME_ASCII)
   OPEN(96, FILE=TRIM(FNAME_ASCII) )
 
@@ -78,6 +90,10 @@ contains
   ! close ASCII output file
   CLOSE(ISCE)
 
+  ! nullify pointers in the context setter
+  call clear_sce_context()
+
+  ! deallocate space for real32 vectors
   DEALLOCATE(APAR_MSP, BL_MSP, BU_MSP)
   
   end subroutine sce_driver

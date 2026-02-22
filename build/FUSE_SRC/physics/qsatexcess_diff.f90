@@ -46,6 +46,9 @@ contains
   logical(lgt)                           :: comp_dflux  ! flag to compute flux derivatives
   integer(i4b)                           :: iState      ! state index  
   real(sp), parameter                    :: ms=1.e-4_sp ! smoothing in smax function 
+
+  real(sp) :: w, wmax, b
+  
   ! -------------------------------------------------------------------------------------------------
   ! associate variables with elements of data structure
   associate(&
@@ -69,8 +72,11 @@ contains
    CASE(iopt_arno_x_vic)
   
     ! define variables
-    associate(w=>TSTATE%WATR_1, wmax=>MPARAM%MAXWATR_1, b=>MPARAM%AXV_BEXP)
-    
+    !associate(w=>TSTATE%WATR_1, wmax=>MPARAM%MAXWATR_1, b=>MPARAM%AXV_BEXP)
+    w    = TSTATE%WATR_1
+    wmax = MPARAM%MAXWATR_1
+    b    = MPARAM%AXV_BEXP
+
     ! ----- compute flux ----------------------------------------------------------------------------
     u  = 1._sp - w/wmax
     xp = smax(u, 0._sp, ms)   ! smooth version of max(u,0)
@@ -98,7 +104,7 @@ contains
 
     endif  ! if want derivatives
 
-    end associate
+    !end associate
 
    ! ------------------------------------------------------------------------------------------------
    ! ----- PRMS variant (fraction of upper tension storage) ----------------------------------------- 

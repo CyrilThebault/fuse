@@ -17,30 +17,26 @@ contains
 
   ! access subroutines
   use netcdf, only: nf90_open, nf90_nowrite, nf90_strerror     ! NetCDF functions
-  USE fuse_fileManager,     only: fuse_SetDirsUndPhiles        ! sets directories and filenames
-  USE fuse_fileManager,     only: export_filemanager_to_domain ! populates domain%info structure
-  USE fuse_fileManager,     only: finalize_domain_config       ! compute additional filenames/variables 
-  USE fuse_fileManager,     only: export_domain_to_legacy      ! populates legacy modules
+  USE fuse_fileManager,      only: fuse_SetDirsUndPhiles        ! sets directories and filenames
+  USE fuse_fileManager,      only: export_filemanager_to_domain ! populates domain%info structure
+  USE fuse_fileManager,      only: finalize_domain_config       ! compute additional filenames/variables 
+  USE fuse_fileManager,      only: export_domain_to_legacy      ! populates legacy modules
 
-  USE force_info_module,    only: force_info                   ! get forcing info for NetCDF files
+  USE force_info_module,     only: force_info                   ! get forcing info for NetCDF files
+  USE get_gforce_module,     only: get_varID                    ! list of var ids
 
-  USE get_gforce_module,    only: read_ginfo                   ! get dimension lengths from the NetCDF file
-  USE get_gforce_module,    only: get_varID                    ! list of var ids
+  USE domain_dims_module,    only: get_domain_dims              ! get nx, ny, nt, and nbands
+  USE domain_decomp_module,  only: get_domain_decomp_indices    ! get MPI domain decomposition indices
   
-  USE get_mbands_module,    only: GET_MBANDS_INFO              ! get elevation bands for snow modeling 
-  
-  USE domain_decomp_module, only: read_forcing_dimensions      ! get forcing dimensions for MPI domain decomposition
-  USE domain_decomp_module, only: get_domain_decomp_indices    ! get MPI domain decomposition indices
-  
-  USE time_windows_module,  only: get_time_windows             ! get info on the rolling time windows
-  USE time_windows_module,  only: export_time_to_multiforce    ! populate legacy multiforce modules
+  USE time_windows_module,   only: get_time_windows             ! get info on the rolling time windows
+  USE time_windows_module,   only: export_time_to_multiforce    ! populate legacy multiforce modules
 
-  USE alloc_domain_module,  only: allocate_domain_data         ! allocate space for data arrays in the domain structure
-  USE alloc_domain_module,  only: set_legacy_arrays            ! copy arrays in the domain%data structure to legacy arrays 
+  USE get_gforce_module,     only: read_latlon_2d               ! read lat/lon
+  USE read_elevbands_module, only: read_elevbands               ! read elevation bands
 
-  ! shared data: TODO move into domain structure
-  USE multiforce, only: ncid_forc
-  
+  USE alloc_domain_module,   only: allocate_domain_data         ! allocate space for data arrays in the domain structure
+  USE alloc_domain_module,   only: set_legacy_arrays            ! copy arrays in the domain%data structure to legacy arrays 
+
   implicit none
   
   ! input
@@ -70,7 +66,7 @@ contains
   call export_filemanager_to_domain(opts, info)
 
   ! derive filenames + parse config strings 
-  call finalize_domain_config(opts, info, ierr, message)
+  call finalize_domain_config(opts, info, ierr, cmessage)
   if (ierr/=0)then; message=trim(message)//trim(cmessage); ierr=20; return; endif
 
   ! populate legacy modules
@@ -83,56 +79,67 @@ contains
   CALL GETNUMERIX(IERR,CMESSAGE)
   if (ierr/=0)then; message=trim(message)//trim(cmessage); ierr=20; return; endif
   
+  ! ----- read domain metadata ------------------------------------------------------------
+  
   ! get forcing info from the txt file
+  ! NOTE: This will soon be replaced with the TOML file so keeping it visible for now
   !   -- forcing info is text that describes the forcing NetCDF files (TODO: needs improvement)
   call force_info(ierr,cmessage)
   if (ierr/=0)then; message=trim(message)//trim(cmessage); ierr=20; return; endif
-  if(isPrint) print *, 'Open forcing file:', trim(INPUT_PATH)//trim(forcefile)
-  
+ 
+  ! populate domain structure with dimension lengths
+  !   -- nx_global, ny_global, nt_global, n_bands
+  call get_domain_dims(info, ierr, cmessage)
+  if (ierr/=0)then; message=trim(message)//trim(cmessage); ierr=20; return; endif
+
   ! ----- read grid info and define indices for MPI domain decomposition ------------------
  
   ! open NetCDF forcing file
-  ierr = nf90_open(trim(INPUT_PATH)//trim(forcefile), nf90_nowrite, ncid_forc)
+  ierr = nf90_open(trim(INPUT_PATH)//trim(forcefile), nf90_nowrite, info%files%ncid_forc)
   if (ierr/=0)then; message=trim(message)//' nf90_open failed: '//trim(nf90_strerror(ierr)); return; endif
-  if(isPrint) PRINT *, 'NCID_FORC is', ncid_forc
- 
-  ! get NetCDF ID for each variable of the forcing file
-  ! NOTE: populates data structures in multiforce
-  call get_varID(ncid_forc, ierr, cmessage)
-  if (ierr/=0)then; message=trim(message)//trim(cmessage); ierr=20; return; endif
-
-  ! populate domain structure with (x,y,t) dimension lengths
-  !   -- nx_global, ny_global, nt_global
-  call read_forcing_dimensions(ncid_forc, info, ierr, cmessage)
-  if (ierr/=0)then; message=trim(message)//trim(cmessage); ierr=20; return; endif
+  if(isPrint) print *, 'Open forcing file:', trim(INPUT_PATH)//trim(forcefile)
+  if(isPrint) PRINT *, 'NCID_FORC is', info%files%ncid_forc
  
   ! get indices for MPI decomposition of the spatial domain: y_start_global, ny_local 
   ! NOTE: These indices will be used later to read different subsets of forcing data for different ranks
   call get_domain_decomp_indices(info)
-  
+
   ! ----- Compute time indices for sim/eval windows and subperiod chunk size --------------
   
-  call get_time_windows(ncid_forc, info, ierr, cmessage)
+  call get_time_windows(info, ierr, cmessage)
   if (ierr/=0)then; message=trim(message)//trim(cmessage); ierr=20; return; endif
 
   ! export info%time -> multiforce to keep legacy code working
   call export_time_to_multiforce(info)
 
-  ! ----- Get information on elevation bands ----------------------------------------------
- 
-  ! get elevation band info, in particular N_BANDS, from NetCDF file
-  CALL GET_MBANDS_INFO(info, ierr, cmessage) 
-  if (ierr/=0)then; message=trim(message)//trim(cmessage); ierr=20; return; endif
-  
   ! ----- Allocate space for domain data --------------------------------------------------
 
   ! allocate space for the arrays in the domain%data structure
   call allocate_domain_data(info, domain, ierr, cmessage)
   if (ierr/=0)then; message=trim(message)//trim(cmessage); ierr=20; return; endif
 
+  ! ----- Read lat/lon and elevation band arrays  -----------------------------------------
+
+  ! read lat/lon and store in the domain%data%coords structure
+  call read_latlon_2d(info%files%ncid_forc, info, domain%coords, ierr, message)
+  if (ierr/=0)then; message=trim(message)//trim(cmessage); ierr=20; return; endif
+
+  ! read elevation bands information and store in the domain%data structure
+  call read_elevbands(info, domain, ierr, message)
+
+  ! ----- Routines that use the old structures --------------------------------------------
+
   ! copy arrays in the domain structure to legacy arrays
   call set_legacy_arrays(info, domain, ierr, cmessage)
   if (ierr/=0)then; message=trim(message)//trim(cmessage); ierr=20; return; endif
+
+  ! get NetCDF ID for each variable of the forcing file
+  ! NOTE: populates data structures in multiforce
+  call get_varID(info%files%ncid_forc, ierr, cmessage)
+  if (ierr/=0)then; message=trim(message)//trim(cmessage); ierr=20; return; endif
+
+
+  print*, 'end of setup_domain'
 
   end associate
   end subroutine setup_domain

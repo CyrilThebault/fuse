@@ -3,6 +3,7 @@ module setup_model_definition_MODULE
   USE nrtype
   USE info_types, only: fuse_info 
   USE info_types, only: cli_options
+  USE data_types, only: domain_data
   USE multiparam_types, only: PARATT 
 
   implicit none
@@ -12,7 +13,7 @@ module setup_model_definition_MODULE
 
 contains
 
-  subroutine setup_model_definition(opts, info, APAR, BL, BU, err, message)
+  subroutine setup_model_definition(opts, info, domain, APAR, BL, BU, err, message)
 
   ! access subroutines
   use uniquemodl_module, only: uniquemodl                   ! Defines unique strings for all FUSE models
@@ -39,6 +40,7 @@ contains
   ! input
   type(cli_options)   , intent(in)                  :: opts            ! command line interface options
   type(fuse_info)     , intent(inout)               :: info            ! the fuse info structure that stores "everything"
+  type(domain_data)   , intent(in)                  :: domain          ! the fuse domain structure that stores data arrays
   
   ! output
   real(sp)            , intent(out) , allocatable   :: aPar(:)         ! parameter vector
@@ -88,7 +90,7 @@ contains
 
   ! get number of parameter sets
   ! will be used to define the parameter set dimension of the NetCDF files
-  select case(opts%runmode)
+  select case(trim(opts%runmode))
     
     ! options that run with a single parameter set
     case('def', 'idx', 'opt'); NUMPSET = 1
@@ -97,7 +99,9 @@ contains
     case('sce');               NUMPSET = int(1.2_sp * real(MAXN, sp)) 
       
     ! check
-    err=20; message=trim(message)//'opts%runmode is unknown: '//trim(opts%runmode)
+    case default
+     message=trim(message)//'opts%runmode is unknown: '//trim(opts%runmode)
+     err=20; return
 
   end select
 
@@ -116,9 +120,9 @@ contains
   nSet = info%config%nSets
   nPar = info%config%nParam
 
-  CALL DEF_PARAMS(nSet)                ! define model parameters
-  CALL DEF_OUTPUT(nx,ny,nb,nPar)       ! define model output time series (nPar used for parameter derivatives)
-  CALL DEF_SSTATS()                    ! define summary statistics (REDEF)
+  CALL DEF_PARAMS(nSet)                         ! define model parameters
+  CALL DEF_OUTPUT(domain%coords,nx,ny,nb,nPar)  ! define model output time series (nPar used for parameter derivatives)
+  CALL DEF_SSTATS()                             ! define summary statistics (REDEF)
  
   ! get parameter bounds and random numbers
   ALLOCATE(APAR(NUMPAR),BL(NUMPAR),BU(NUMPAR))

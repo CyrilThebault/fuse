@@ -14,24 +14,22 @@ module time_windows_module
 
   contains
 
-  subroutine get_time_windows(ncid, info, ierr, message)
+  subroutine get_time_windows(info, ierr, message)
     
-    integer(i4b),      intent(in)    :: ncid
     type(fuse_info),   intent(inout) :: info
     integer(i4b),      intent(out)   :: ierr
     character(*),      intent(out)   :: message
 
     integer(i4b) :: nt
-    real(sp), allocatable :: time_steps(:)
     character(len=1024) :: units_local
     integer(i4b) :: ios
     character(len=1024) :: cmessage
-    
+
     ierr=0; message="get_time_windows/"
 
     ! ----- read forcing time axis ------------------------------------------------------
 
-    call read_time_axis(ncid, time_steps, units_local, nt, ierr, cmessage)
+    call read_time_axis(info%files%ncid_forc, info%time%time_steps, units_local, nt, ierr, cmessage)
     if(ierr/=0)then; message=trim(message)//trim(cmessage); return; endif
 
     info%time%nt_global = nt
@@ -39,7 +37,7 @@ module time_windows_module
 
     ! ----- build julian-day axis -------------------------------------------------------
     
-    call build_julian_axis(time_steps, trim(units_local), info%time%jdate_ref, info%time%jdate, ierr, cmessage)
+    call build_julian_axis(info%time%time_steps, trim(units_local), info%time%jdate_ref, info%time%jdate, ierr, cmessage)
     if(ierr/=0)then; message=trim(message)//trim(cmessage); return; endif
 
     ! ----- compute indices for sim/eval windows ----------------------------------------
@@ -80,19 +78,6 @@ module time_windows_module
       ! keep nt_window as user-chosen chunk size
     endif
 
-    ! ----- validate time-window configuration (subperiods allowed only in grid mode) ---
-    if( (.not. info%space%grid_flag) .and. info%time%use_subperiods ) then
-      ierr = 1
-      message = trim(message)// &
-                "catchment mode requires running the full time series in one chunk; " // &
-                "set numtim_sub = -9999 in the filemanager."
-      return
-    endif
-
-    ! ----- finalize --------------------------------------------------------------------
-
-    if(allocated(time_steps)) deallocate(time_steps)
-
   end subroutine get_time_windows
 
   ! -------------------------------------------------------------------------------------
@@ -104,15 +89,19 @@ module time_windows_module
   ! - Legacy routines still read multiforce globals (sim_beg, sim_end, numtim_sub, ...).
 
   subroutine export_time_to_multiforce(info)
+    use multiforce, only: time_steps, timeUnits
     use multiforce, only: sim_beg, sim_end, eval_beg, eval_end, numtim_sim, numtim_sub, &
                           SUB_PERIODS_FLAG, istart
     implicit none
     type(fuse_info), intent(in) :: info
    
-    sim_beg = info%time%sim_beg
-    sim_end = info%time%sim_end
-    eval_beg = info%time%eval_beg
-    eval_end = info%time%eval_end
+    time_steps = info%time%time_steps
+    timeUnits  = info%time%units
+
+    sim_beg    = info%time%sim_beg
+    sim_end    = info%time%sim_end
+    eval_beg   = info%time%eval_beg
+    eval_end   = info%time%eval_end
    
     numtim_sim = info%time%nt_sim
     numtim_sub = info%time%nt_window

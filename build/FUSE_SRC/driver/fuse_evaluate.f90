@@ -2,24 +2,15 @@ MODULE fuse_evaluate_module
 
   use nrtype
   use multi_flux_types, only: fluxes
+  use info_types, only: fuse_info
   use work_types, only: fuse_work
+  use data_types, only: domain_data
 
   IMPLICIT NONE
 
-  ! temporary type: run context
-  type :: run_ctx
-
-    ! scratch state vectors
-    real(sp), allocatable :: state0(:), state1(:)
-
-    ! differentiable work struct
-    type(fuse_work) :: fuseStruct
-
-  end type run_ctx
-
   CONTAINS
   
-  SUBROUTINE fuse_evaluate(XPAR,GRID_FLAG,NCID_FORC,METRIC_VAL,OUTPUT_FLAG,IPSET,MPARAM_FLAG)
+    SUBROUTINE fuse_evaluate(XPAR, info, work, domain, OUTPUT_FLAG, METRIC_VAL)
 
     ! ---------------------------------------------------------------------------------------
     ! Creator:
@@ -50,18 +41,14 @@ MODULE fuse_evaluate_module
     IMPLICIT NONE
 
     ! input
-    REAL(SP),DIMENSION(:),INTENT(IN)       :: XPAR           ! model parameter set
-    LOGICAL(LGT), INTENT(IN)               :: GRID_FLAG      ! .TRUE. if running FUSE on a grid
-    INTEGER(I4B), INTENT(IN)               :: NCID_FORC      ! NetCDF ID for the forcing file
-    LOGICAL(LGT), INTENT(IN)               :: OUTPUT_FLAG    ! .TRUE. if desire time series output
-    INTEGER(I4B), INTENT(IN)               :: IPSET          ! index parameter set
-    LOGICAL(LGT), INTENT(IN), OPTIONAL     :: MPARAM_FLAG    ! .FALSE. (used to turn off writing statistics)
+    REAL(SP),DIMENSION(:) , intent(in)     :: XPAR           ! model parameter set
+    type(fuse_info)       , intent(in)     :: info           ! info structures (runtime settings etc.)
+    type(fuse_work)       , intent(inout)  :: work           ! work structures that depend on npar/nState
+    type(domain_data)     , intent(inout)  :: domain         ! the fuse domain structure that stores data arrays
+    LOGICAL(LGT)          , intent(in)     :: OUTPUT_FLAG    ! .TRUE. if desire time series output
 
     ! output
     REAL(SP),INTENT(OUT)                   :: METRIC_VAL     ! metric 
-
-    ! run context
-    type(run_ctx)                          :: ctx            ! container for allocatable structures
 
     ! error control
     integer(i4b)                           :: err, ierr
@@ -71,23 +58,20 @@ MODULE fuse_evaluate_module
     real(sp)                               :: t1, t2
 
     ! ---------------------------------------------------------------------------------------
-    ! allocate run-time data structures
-    call allocate_run(ctx, NSTATE, NUMPAR, N_BANDS, NPAR_SNOW, nspat1, nspat2, numtim_sub, ierr)
-    if (ierr /= 0) stop "problem allocating run context in fuse_evaluate"
 
     ! allocate 3d data structure for fluxes
     allocate(w_flux_3d(nspat1, nspat2, numtim_sub), stat=ierr)
     if (ierr /= 0) stop "problem allocating w_flux_3d in fuse_evaluate"
 
     ! populate parameter structures and initialize states
-    call initialize_run(ctx, XPAR, GRID_FLAG, MPARAM_FLAG, ierr, message)
+    call initialize_run(XPAR, work, ierr, message)
     if (ierr /= 0) stop trim(message)
     
     ! initialize timing
     CALL CPU_TIME(T1)
 
     ! run fuse for the entire time series
-    call run_time_loop(ctx, GRID_FLAG, NCID_FORC, OUTPUT_FLAG, err, message)
+    call run_time_loop(info, work, OUTPUT_FLAG, err, message)
     if (err /= 0) stop trim(message)
 
     ! get timing information
@@ -95,7 +79,8 @@ MODULE fuse_evaluate_module
     if(isPrint) WRITE(*,*) "TIME ELAPSED = ", t2-t1
 
     ! calculate mean summary statistics
-    IF(.NOT.GRID_FLAG)THEN
+    ! NOTE: .NOT.GRID_FLAG means catchment mode (lumped or distributed)
+    if( .not. info%space%grid_flag)then
 
       if(isPrint) PRINT *, 'Calculating performance metrics...'
       CALL MEAN_STATS()
@@ -104,14 +89,10 @@ MODULE fuse_evaluate_module
       write(*,'(i6,1x,a6,1x,f12.6,1x,a20,1x,f12.6)') nFUSE_eval, "NSE = ", MSTATS%NASH_SUTT, "; TIME ELAPSED = ", t2-t1
       !if(nFUSE_eval > 10) stop "checking results"
 
-    ENDIF
+    endif ! if catchment mode (lumped or distributed)
 
     if(isPrint) PRINT *, 'Writing model statistics...'
     CALL PUT_SSTATS(PCOUNT)
-
-    ! deallocate run context
-    call deallocate_run(ctx, n_bands, ierr)
-    if (ierr /= 0) stop "problem deallocating run context in fuse_evaluate"
 
     ! deallocate output buffer
     DEALLOCATE(W_FLUX_3d); IF (IERR.NE.0) STOP ' problem deallocating W_FLUX_3d in fuse_metric '
@@ -122,89 +103,10 @@ MODULE fuse_evaluate_module
   ! -------------------------------------------------------------------------------------------------------------------
 
   ! -------------------------------------------------------------------------------------------------------------------
-  ! ----- private subroutine allocate_run: allocate run-time variables ------------------------------------------------
-  ! -------------------------------------------------------------------------------------------------------------------
-
-  subroutine allocate_run(ctx, nState, numpar, n_bands, npar_snow, nspat1, nspat2, numtim_sub, ierr)
-  implicit none
-
-  type(run_ctx), intent(inout) :: ctx
-  integer(i4b), intent(in)     :: nState, numpar, n_bands, npar_snow, nspat1, nspat2, numtim_sub
-  integer(i4b), intent(out)    :: ierr
-
-  integer(i4b) :: iBands
-
-  ierr = 0
-
-  ! allocate state vectors
-  allocate(ctx%state0(nState), ctx%state1(nState), stat=ierr)
-  if (ierr /= 0) return
-
-  ! allocate flux derivative vectors (inside fuseStruct)
-  allocate(ctx%fuseStruct%adj%df_dS(nState), ctx%fuseStruct%adj%df_dPar(numpar), ctx%fuseStruct%adj%dL_dPar(numpar), stat=ierr)
-  if (ierr /= 0) return
-
-  ! allocate elevation bands
-  allocate(ctx%fuseStruct%snow%sbands(n_bands), stat=ierr)
-  if (ierr /= 0) return
-
-  ! allocate parameter derivative for each elevation band
-  do iBands = 1, n_bands
-
-    allocate(ctx%fuseStruct%snow%sbands(iBands)%var%dSWE_dParam(npar_snow), stat=ierr)
-    if (ierr /= 0) return
-  
-    ctx%fuseStruct%snow%sbands(iBands)%var%dSWE_dParam(:) = 0._sp
-  
-  end do
-
-  end subroutine allocate_run
-
-  ! -------------------------------------------------------------------------------------------------------------------
-  ! -------------------------------------------------------------------------------------------------------------------
-
-  ! -------------------------------------------------------------------------------------------------------------------
-  ! ----- private subroutine deallocate_run: deallocate run-time variables --------------------------------------------
-  ! -------------------------------------------------------------------------------------------------------------------
-
-  subroutine deallocate_run(ctx, n_bands, ierr)
-  implicit none
-
-  type(run_ctx), intent(inout) :: ctx
-  integer(i4b), intent(in)     :: n_bands
-  integer(i4b), intent(out)    :: ierr
-  integer(i4b)                 :: iBands
-
-  ierr = 0
-
-  ! deallocate parameter derivative vectors
-  do iBands=1,n_bands
-   deallocate(ctx%fuseStruct%snow%sbands(iBands)%var%dSWE_dParam, stat=ierr)
-   if (ierr /= 0) return
-  end do
-
-  ! deallocate state vectors
-  DEALLOCATE(ctx%STATE0,ctx%STATE1,STAT=IERR)
-  if (ierr /= 0) return
-  
-  ! deallocate flux derivative vectors
-  deallocate(ctx%fuseStruct%adj%df_dS, ctx%fuseStruct%adj%df_dPar, ctx%fuseStruct%adj%dL_dPar, stat=ierr)
-  if (ierr /= 0) return
-
-  ! deallocate elevation bands
-  deallocate(ctx%fuseStruct%snow%sbands, stat=ierr)
-  if (ierr /= 0) return
-
-  end subroutine deallocate_run
-
-  ! -------------------------------------------------------------------------------------------------------------------
-  ! -------------------------------------------------------------------------------------------------------------------
-
-  ! -------------------------------------------------------------------------------------------------------------------
   ! ----- private subroutine initialize_run: populate param sets and initialize states  -------------------------------
   ! -------------------------------------------------------------------------------------------------------------------
 
-  subroutine initialize_run(ctx, xpar, grid_flag, mparam_flag, err, message)
+  subroutine initialize_run(xpar, work, err, message)
   
   use globaldata,  only: isPrint, fracstate0
   use model_defn,  only: SMODL
@@ -223,13 +125,11 @@ MODULE fuse_evaluate_module
   use put_params_module, only: put_params
   implicit none
 
-  type(run_ctx), intent(inout)               :: ctx
-  real(sp), dimension(:), intent(in)         :: xpar
-  logical(lgt), intent(in)                   :: grid_flag
-  logical(lgt), intent(in), optional         :: mparam_flag
+  real(sp), dimension(:) , intent(in)      :: xpar
+  type(fuse_work)        , intent(inout)   :: work
 
-  integer(i4b), intent(out)                  :: err
-  character(len=*), intent(out)              :: message
+  integer(i4b)           , intent(out)     :: err
+  character(len=*)       , intent(out)     :: message
 
   integer(i4b) :: iSpat1, iSpat2, iBands
 
@@ -237,11 +137,7 @@ MODULE fuse_evaluate_module
   message = ""
 
   ! increment parameter counter for model output
-  if (.not. present(mparam_flag)) then
-    PCOUNT = PCOUNT + 1
-  else
-    if (mparam_flag) PCOUNT = PCOUNT + 1
-  end if
+  PCOUNT = PCOUNT + 1
 
   ! add parameter set to the data structure
   call put_parset(xpar)
@@ -258,10 +154,8 @@ MODULE fuse_evaluate_module
   end if
 
   ! get elevation bands (if catchment)
-  if (SMODL%iSNOWM == iopt_temp_index .and. .not. grid_flag) then
-    Z_FORCING      = Z_FORCING_grid(1,1)
-    MBANDS(:)%info = MBANDS_INFO_3d(1,1,:)
-  end if
+  Z_FORCING      = Z_FORCING_grid(1,1)
+  MBANDS(:)%info = MBANDS_INFO_3d(1,1,:)
 
   if (isPrint) print *, 'Writing parameter values...'
   call put_params(PCOUNT)
@@ -270,8 +164,8 @@ MODULE fuse_evaluate_module
   do iSpat2 = 1, nSpat2
     do iSpat1 = 1, nSpat1
       call init_state(fracstate0)
-      call str_2_xtry(FSTATE, ctx%state0)
-      call xtry_2_str(ctx%state0, FSTATE)
+      call str_2_xtry(FSTATE, work%num%x0)
+      call xtry_2_str(work%num%x0, FSTATE)
       gState_3d(iSpat1, iSpat2, 1) = FSTATE
     end do
   end do
@@ -282,16 +176,16 @@ MODULE fuse_evaluate_module
   if (SMODL%iSNOWM == iopt_temp_index) then
 
     ! initialize template once
-    ctx%fuseStruct%snow%sbands(:)%var%SWE         = 0._sp
-    ctx%fuseStruct%snow%sbands(:)%var%SNOWACCMLTN = 0._sp
-    ctx%fuseStruct%snow%sbands(:)%var%SNOWMELT    = 0._sp
-    ctx%fuseStruct%snow%sbands(:)%var%DSWE_DT     = 0._sp
+    work%snow%sbands(:)%var%SWE         = 0._sp
+    work%snow%sbands(:)%var%SNOWACCMLTN = 0._sp
+    work%snow%sbands(:)%var%SNOWMELT    = 0._sp
+    work%snow%sbands(:)%var%DSWE_DT     = 0._sp
 
     ! copy to every grid cell (legacy staging)
     do iSpat2 = 1, nSpat2
       do iSpat1 = 1, nSpat1
         do iBands = 1, n_bands
-          MBANDS_VAR_4d(iSpat1, iSpat2, iBands, 1) = ctx%fuseStruct%snow%sbands(iBands)%var%bands_var
+          MBANDS_VAR_4d(iSpat1, iSpat2, iBands, 1) = work%snow%sbands(iBands)%var%bands_var
         end do
       end do
     end do
@@ -302,8 +196,6 @@ MODULE fuse_evaluate_module
   ! initialize summary statistics + timer
   call init_stats()
 
-  print*, 'end of initialize'
-
   end subroutine initialize_run
 
   ! -------------------------------------------------------------------------------------------------------------------
@@ -313,7 +205,7 @@ MODULE fuse_evaluate_module
   ! ----- private subroutine run_time_loop: run fuse for the entire time series  --------------------------------------
   ! -------------------------------------------------------------------------------------------------------------------
 
-  subroutine run_time_loop(ctx, grid_flag, ncid_forc, output_flag, ierr, message)
+  subroutine run_time_loop(info, work, output_flag, ierr, message)
 
   use globaldata, only: isPrint
   use multiforce, only: nspat1, nspat2, DELTIM, sim_beg, sim_end, numtim_sub
@@ -326,13 +218,12 @@ MODULE fuse_evaluate_module
 
   implicit none
 
-  type(run_ctx), intent(inout) :: ctx
-  logical(lgt),  intent(in)    :: grid_flag
-  integer(i4b),  intent(in)    :: ncid_forc
-  logical(lgt),  intent(in)    :: output_flag
+  type(fuse_info)   , intent(in)    :: info           ! info structures that include "everything"
+  type(fuse_work)   , intent(inout) :: work           ! work structures that depend on npar/nState
+  logical(lgt)      , intent(in)    :: output_flag
 
-  integer(i4b),  intent(out)   :: ierr
-  character(len=*), intent(out):: message
+  integer(i4b)      , intent(out)   :: ierr
+  character(len=*)  , intent(out)   :: message
 
   ! time management
   integer(i4b) :: sim_idx           ! index of simulation: 1..numtim_sim
@@ -349,7 +240,7 @@ MODULE fuse_evaluate_module
   integer(i4b) :: iSpat1, iSpat2, iBands
 
   ierr = 0
-  message = ""
+  message = "run_time_loop/"
 
   ! This version of FUSE enables the user to load slices of the forcing
   !
@@ -393,7 +284,7 @@ MODULE fuse_evaluate_module
 
     ! load forcing for desired period into gForce_3d
     if(isPrint) PRINT *, 'New subperiod: loading forcing for ',chunk_len,' time steps'
-    CALL get_gforce_3d(chunk_start_in,chunk_len,ncid_forc,ierr,message)
+    call get_gforce_3d(info, chunk_start_in, chunk_len, ierr, message)
     IF(ierr/=0) stop 'Error while extracting 3d forcing: '//trim(message)
     if(isPrint) PRINT *, 'Forcing loaded. Running FUSE...'
     
@@ -407,9 +298,9 @@ MODULE fuse_evaluate_module
       ! get indices in the input file (in_idx) and the simulation period (sim_idx)
       in_idx  = chunk_start_in + sub_idx - 1
       sim_idx = chunk_start_sim + sub_idx - 1
-      
+
       ! get the model time
-      CALL get_modtim(in_idx,ncid_forc,ierr,message)
+      CALL get_modtim(info%files%ncid_forc, in_idx, ierr, message)
       IF(ierr/=0) stop TRIM(message)
    
       ! compute potential ET
@@ -419,15 +310,19 @@ MODULE fuse_evaluate_module
       ! loop through grid points and run the model for one time step
       DO iSpat2=1,nSpat2
         DO iSpat1=1,nSpat1
-   
+  
           ! run fuse for one grid cell
-          call advance_one_cell(ctx, grid_flag, sub_idx, iSpat1, iSpat2, dt_sub, dt_full, ierr, message)
+          call advance_one_cell(work, sub_idx, iSpat1, iSpat2, dt_sub, dt_full, ierr, message)
           if (ierr /= 0)  stop trim(message)
-   
+  
+          !if(sub_idx > 100) stop "check"
+
         END DO  ! (looping thru 2nd spatial dimension)
       END DO  ! (looping thru 1st spatial dimension)
 
     end do  ! looping through subperiod
+
+    !stop "looping through time period"
 
     ! -----------------------------------------------------------------------------------------------------------------
     
@@ -439,7 +334,7 @@ MODULE fuse_evaluate_module
     ! write model output
     IF (OUTPUT_FLAG) THEN
       if(isPrint) PRINT *, 'Write output for ',chunk_len,' time steps starting at indices', chunk_start_sim
-      CALL PUT_OUTPUT(ctx%fuseStruct, chunk_start_sim, chunk_start_in, chunk_len)
+      CALL PUT_OUTPUT(work, chunk_start_sim, chunk_start_in, chunk_len)
       if(isPrint) PRINT *, 'Done writing output'
     ELSE
       if(isPrint) PRINT *, 'OUTPUT_FLAG is set on FALSE, no output written'
@@ -467,7 +362,7 @@ MODULE fuse_evaluate_module
   ! ----- private subroutine advance_one_cell: run fuse for one grid cell ---------------------------------------------
   ! -------------------------------------------------------------------------------------------------------------------
 
-  subroutine advance_one_cell(ctx, grid_flag, sub_idx, iSpat1, iSpat2, dt_sub, dt_full, err, message)
+  subroutine advance_one_cell(work, sub_idx, iSpat1, iSpat2, dt_sub, dt_full, err, message)
 
   ! switches / options
   use globaldata,   only: NA_VALUE_SP
@@ -498,19 +393,18 @@ MODULE fuse_evaluate_module
 
   implicit none
 
-  type(run_ctx), intent(inout) :: ctx
-  logical(lgt),  intent(in)    :: grid_flag
-  integer(i4b),  intent(in)    :: sub_idx, iSpat1, iSpat2
-  real(sp),      intent(inout) :: dt_sub, dt_full
-  integer(i4b),  intent(out)   :: err
-  character(len=*), intent(out):: message
+  type(fuse_work)       , intent(inout) :: work           ! work structures that depend on npar/nState
+  integer(i4b)          , intent(in)    :: sub_idx, iSpat1, iSpat2
+  real(sp)              , intent(inout) :: dt_sub, dt_full
+  integer(i4b)          , intent(out)   :: err
+  character(len=*)      , intent(out)   :: message
 
   ! locals
-  integer(i4b)        :: ierr
-  character(len=1024) :: cmessage
+  integer(i4b)              :: ierr
+  character(len=1024)       :: cmessage
 
   err = 0
-  message = ""
+  message = "advance_one_cell/"
   ierr = 0
   cmessage = ""
 
@@ -546,14 +440,14 @@ MODULE fuse_evaluate_module
     ! extract model states for this grid cell and time step
     FSTATE = gState_3d(iSpat1,iSpat2,sub_idx)
     MSTATE = FSTATE
-    call STR_2_XTRY(FSTATE, ctx%STATE0)
+    call STR_2_XTRY(FSTATE, work%num%x0)
 
     ! initialize model fluxes
     ! If INITFLUXES lives somewhere else in your tree, swap this line accordingly.
     call INITFLUXES()
 
     ! populate fuse work structure (diff path only)
-    if (diff_mode == differentiable) call get_bundle(ctx%fuseStruct)
+    if (diff_mode == differentiable) call get_bundle(work)
 
     ! -------------------------
     ! snow module
@@ -567,16 +461,16 @@ MODULE fuse_evaluate_module
         MBANDS(:)%var  = MBANDS_VAR_4d(iSpat1,iSpat2,:,sub_idx)
 
         if (diff_mode == differentiable) then
-          ctx%fuseStruct%snow%z_forcing               = Z_FORCING
-          ctx%fuseStruct%snow%sbands(:)%info          = MBANDS(:)%info
-          ctx%fuseStruct%snow%sbands(:)%var%bands_var = MBANDS(:)%var
+          work%snow%z_forcing               = Z_FORCING
+          work%snow%sbands(:)%info          = MBANDS(:)%info
+          work%snow%sbands(:)%var%bands_var = MBANDS(:)%var
         end if
 
         select case(diff_mode)
           case(original)
             call UPDATE_SWE(DELTIM)
           case(differentiable)
-            call UPDATE_SWE_DIFF(ctx%fuseStruct, DELTIM)
+            call UPDATE_SWE_DIFF(work, DELTIM)
           case default
             err=1; message='advance_one_cell: cannot identify diff_mode (snow)'; return
         end select
@@ -595,17 +489,18 @@ MODULE fuse_evaluate_module
     select case(diff_mode)
 
       case(original)
-        call ODE_INT(FUSE_SOLVE, ctx%STATE0, ctx%STATE1, dt_sub, dt_full, ierr, cmessage)
+        call ODE_INT(FUSE_SOLVE, work%num%x0, work%num%x1, dt_sub, dt_full, ierr, cmessage)
         if (ierr /= 0) then
           err=1; message=trim(cmessage); return
         end if
+        !print*, 'original = ', mstate%watr_1, mstate%watr_2, w_flux%QSURF, w_flux%QBASE_2
 
       case(differentiable)
-        call implicit_solve(ctx%fuseStruct, ctx%state0, ctx%state1, nState, ierr, cmessage)
+        call implicit_solve(work, work%num%x0, work%num%x1, nState, ierr, cmessage)
         if (ierr /= 0) then
           err=1; message=trim(cmessage); return
         end if
-        W_FLUX = ctx%fuseStruct%step%flux
+        W_FLUX = work%step%flux
 
       case default
         err=1; message='advance_one_cell: cannot identify diff_mode (soil)'; return
@@ -622,7 +517,7 @@ MODULE fuse_evaluate_module
     end if
 
     ! write back to 3D buffers
-    call XTRY_2_STR(ctx%STATE1, FSTATE)
+    call XTRY_2_STR(work%num%x1, FSTATE)
     gState_3d(iSpat1,iSpat2,sub_idx+1) = FSTATE
     W_FLUX_3d(iSpat1,iSpat2,sub_idx)   = W_FLUX
     AROUTE_3d(iSpat1,iSpat2,sub_idx)   = MROUTE
@@ -630,9 +525,9 @@ MODULE fuse_evaluate_module
     if (SMODL%iSNOWM == iopt_temp_index) then
 
       if (diff_mode == differentiable) then
-        Z_FORCING      = ctx%fuseStruct%snow%z_forcing
-        MBANDS(:)%info = ctx%fuseStruct%snow%sbands(:)%info
-        MBANDS(:)%var  = ctx%fuseStruct%snow%sbands(:)%var%bands_var
+        Z_FORCING      = work%snow%z_forcing
+        MBANDS(:)%info = work%snow%sbands(:)%info
+        MBANDS(:)%var  = work%snow%sbands(:)%var%bands_var
       end if
 
       gState_3d(iSpat1,iSpat2,sub_idx+1)%SWE_TOT = sum(MBANDS(:)%var%SWE * MBANDS(:)%info%AF)
@@ -641,10 +536,8 @@ MODULE fuse_evaluate_module
     end if
 
     ! forcing diagnostics
-    if (grid_flag) then
-      aForce(sub_idx)%ppt = sum(gForce_3d(:,:,sub_idx)%ppt) / real(size(gForce_3d(:,:,sub_idx)), kind=sp)
-      aForce(sub_idx)%pet = sum(gForce_3d(:,:,sub_idx)%pet) / real(size(gForce_3d(:,:,sub_idx)), kind=sp)
-    end if
+    aForce(sub_idx)%ppt = sum(gForce_3d(:,:,sub_idx)%ppt) / real(size(gForce_3d(:,:,sub_idx)), kind=sp)
+    aForce(sub_idx)%pet = sum(gForce_3d(:,:,sub_idx)%pet) / real(size(gForce_3d(:,:,sub_idx)), kind=sp)
 
     ! stats
     call COMP_STATS()

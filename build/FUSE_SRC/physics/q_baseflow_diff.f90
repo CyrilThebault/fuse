@@ -38,8 +38,8 @@ contains
    TSTATE => fuseStruct%step%state1       , &  ! trial state variables (end of step)
    M_FLUX => fuseStruct%step%flux         , &  ! fluxes
    dfx_dS => fuseStruct%adj%df_dS         , &  ! deriv in fluxes w.r.t. states
-   MPARAM => fuseStruct%par%param_adjust , &  ! adjustable model parameters
-   DPARAM => fuseStruct%par%param_derive   &  ! derived model parameters
+   MPARAM => fuseStruct%par%param_adjust  , &  ! adjustable model parameters
+   DPARAM => fuseStruct%par%param_derive    &  ! derived model parameters
    ) ! (associate)
 
   ! check the need to compute flux derivatives

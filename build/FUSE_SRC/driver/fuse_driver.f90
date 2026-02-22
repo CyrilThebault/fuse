@@ -15,6 +15,7 @@ PROGRAM DISTRIBUTED_DRIVER
 USE nrtype                                                ! variable types, etc.
 USE info_types, only: cli_options                         ! command line interface options
 USE info_types, only: fuse_info                           ! info structure (includes "everything")
+USE work_types, only: fuse_work                           ! structures that depend on nState/nPar 
 USE data_types, only: domain_data                         ! domain data
 USE multistats, only: PCOUNT                              ! counter 
 
@@ -23,7 +24,7 @@ USE globaldata, only: isPrint
 USE globaldata, only: ncid_out
 USE multiparam, only: NUMPAR
 USE multiforce, only: NUMPSET
-USE multiforce, only: ncid_forc, GRID_FLAG, SUB_PERIODS_FLAG
+USE multiforce, only: SUB_PERIODS_FLAG
 USE multiForce, only: AFORCE, gForce, gForce_3d, aValid
 USE multiState, only: gState, gState_3d
 USE multiRoute, only: aRoute, AROUTE_3d
@@ -33,6 +34,7 @@ USE netcdf                                                       ! NetCDF librar
 USE parse_command_args_MODULE, only: parse_command_args          ! parse command line arguments
 USE setup_domain_module, only: setup_domain                      ! initialize the model domain
 USE setup_model_definition_module, only: setup_model_definition  ! setup the FUSE model configuration
+USE alloc_scratch_module, only: init_fuse_work                   ! initialze work structure
 
 ! model run: external subroutines/functions
 USE get_fparam_module, only: GET_PRE_PARAM, GET_SCE_PARAM ! read parameters from netcdf file
@@ -60,7 +62,7 @@ REAL(SP), DIMENSION(:), ALLOCATABLE    :: BU      ! vector of upper parameter bo
 REAL(SP), DIMENSION(:), ALLOCATABLE    :: APAR    ! model parameter set
 
 ! function  evaluation
-REAL(SP)                               :: RMSE    ! sim-obs differences
+REAL(SP)                               :: METRIC_VAL      ! sim-obs differences
 
 ! model output
 LOGICAL(LGT)                           :: OUTPUT_FLAG     ! .TRUE. = write time series output
@@ -68,6 +70,7 @@ INTEGER(I4B)                           :: ONEMOD=1        ! just specify one mod
 
 ! global domain data
 type(fuse_info)                        :: info            ! includes "everything"
+type(fuse_work)                        :: work            ! structures that depend on nState/nPar
 type(domain_data)                      :: domain          ! 3d/4d output buffers
 
 ! ---------------------------------------------------------------------------------------
@@ -109,7 +112,13 @@ if(err/=0) stop trim(message)
 ! ----- initialize model configurations -------------------------------------------------
 
 ! choose model, load parameter metadata, derive parameters, and define NetCDF output files
-call setup_model_definition(cli_opts, info, APAR, BL, BU, err, message)
+call setup_model_definition(cli_opts, info, domain, APAR, BL, BU, err, message)
+if(err/=0) stop trim(message)
+
+! ----- initialize work structures ------------------------------------------------------
+
+! allocate space for work structures that depend on number of states and parameters
+call init_fuse_work(info, work, err, message)
 if(err/=0) stop trim(message)
 
 ! ----- set initial counters ------------------------------------------------------------
@@ -118,14 +127,12 @@ if(err/=0) stop trim(message)
 ONEMOD=1                 ! one file per model (i.e., model dimension = 1)
 PCOUNT=0                 ! counter for parameter sets evaluated (shared in MODULE multistats)
 
-stop '** finished preliminaries'
-
 ! ---------------------------------------------------------------------------------------
 ! ----- run different FUSE modes --------------------------------------------------------
 ! ---------------------------------------------------------------------------------------
 
 ! select fuse mode
-select case(cli_opts%runmode)
+select case(trim(cli_opts%runmode))
 
   ! ----- single parameter set ----------------------------------------------------------
 
@@ -144,14 +151,14 @@ select case(cli_opts%runmode)
     endif
 
     ! run FUSE
-    CALL FUSE_EVALUATE(APAR, GRID_FLAG, NCID_FORC, RMSE, OUTPUT_FLAG, NUMPSET)
+    CALL FUSE_EVALUATE(APAR, info, work, domain, OUTPUT_FLAG, METRIC_VAL)
 
 
   ! ----- SCE calibration run -----------------------------------------------------------
 
   case('sce')
 
-    call sce_driver(APAR, BL, BU)
+    call sce_driver(info, work, domain, APAR, BL, BU)
 
   case default
     stop "cannot identify FUSE mode"
@@ -167,15 +174,13 @@ if(err/=0)then; write(*,*) 'unable to deallocate space for parameter vectors'; s
 DEALLOCATE(aForce, aRoute, aValid, stat=err)
 if(err/=0)then; write(*,*) 'unable to deallocate space for catchment modeling'; stop; endif
 
-DEALLOCATE(gForce, gState, gForce_3d, gState_3d, AROUTE_3d, stat=err)
+DEALLOCATE(gForce_3d, gState_3d, AROUTE_3d, stat=err)
 if(err/=0)then; write(*,*) 'unable to deallocate space for grid modeling'; stop; endif
 
 ! close NetCDF files
-IF(GRID_FLAG)THEN
-  PRINT *, 'Closing forcing file'
-  err = nf90_close(ncid_forc)
-  if(err/=0)then; message=trim(message)//' nf90_close failed: '//trim(nf90_strerror(err)); return; endif
-ENDIF
+PRINT *, 'Closing forcing file'
+err = nf90_close(info%files%ncid_forc)
+if(err/=0)then; message=trim(message)//' nf90_close failed: '//trim(nf90_strerror(err)); return; endif
 
 PRINT *, 'Closing output file'
 err = nf90_close(ncid_out)

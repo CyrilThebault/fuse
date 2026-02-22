@@ -6,48 +6,9 @@ module domain_decomp_module
   implicit none
 
   private
-  public :: read_forcing_dimensions
   public :: get_domain_decomp_indices
 
 contains
-
-  ! -------------------------------------------------------------------------------------
-  ! -------------------------------------------------------------------------------------
-
-  ! ----- read forcing dimensions (used for domain decomposition) -----------------------
-
-  subroutine read_forcing_dimensions(ncid, info, ierr, message)
-    use netcdf
-    USE multiforce,only:vname_aprecip ! name of precip variable
-    implicit none
-    integer(i4b),      intent(in)    :: ncid
-    type(fuse_info),   intent(inout) :: info
-    integer(i4b), intent(out)   :: ierr
-    character(*), intent(out)   :: message
-   
-    integer(i4b) :: ivarid
-    integer(i4b), parameter :: ndims=3
-    integer(i4b) :: dimids(ndims), dimLen
-    associate(nx_global => info%space%nx_global, &
-              ny_global => info%space%ny_global, &
-              nt_global => info%time%nt_global   )
-
-    ierr=0; message="read_forcing_dimensions/"
-  
-    ! pick one required variable to identify shape (in this case precip)
-    ierr = nf90_inq_varid(ncid, trim(vname_aprecip), ivarid)
-
-    ! get dimension IDs (x,y,t)
-    ierr = nf90_inquire_variable(ncid, ivarid, dimids=dimids)
-    if(ierr/=0)then; message=trim(message)//trim(nf90_strerror(ierr)); return; endif
-   
-    ! get dimsension lengths (nx,ny,nt)
-    ierr = nf90_inquire_dimension(ncid, dimids(1), len=nx_global); if(ierr/=0) return
-    ierr = nf90_inquire_dimension(ncid, dimids(2), len=ny_global); if(ierr/=0) return
-    ierr = nf90_inquire_dimension(ncid, dimids(3), len=nt_global); if(ierr/=0) return
-
-    end associate
-  end subroutine read_forcing_dimensions
 
   ! -------------------------------------------------------------------------------------
   ! -------------------------------------------------------------------------------------
@@ -61,7 +22,6 @@ contains
     type(fuse_info), intent(inout) :: info
    
     associate(&
-        grid_flag      => info%space%grid_flag,      &
         nx_global      => info%space%nx_global,      &
         ny_global      => info%space%ny_global,      &
         nx_local       => info%space%nx_local,       &
@@ -72,16 +32,13 @@ contains
         nproc          => info%mpi%nproc,            &
         rank           => info%mpi%rank   )
    
-    ! Set flag to toggle between grid and lumped catchment modes
-    grid_flag = (nx_global>1 .or. ny_global>1) 
-   
     ! Copy globals
     nx_local = nx_global
     ny_local = ny_global
     y_start_global = 1
    
     ! Get indices for split dimensions
-    if(grid_flag .and. mpi_enabled .and. nproc>1) then
+    if(mpi_enabled .and. nproc>1) then
       call split_1d(ny_global, rank, nproc, &  ! input
                     y_start_global, ny_local)  ! output
     endif

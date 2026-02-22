@@ -17,6 +17,7 @@ SUBROUTINE MEAN_STATS()
 USE nrtype                                            ! variable types, etc.
 USE metrics                                           ! available metrics and transformations
 USE fuse_fileManager,only:METRIC, TRANSFO             ! metric and transformation requested in the filemanager
+USE globaldata, only: isPrint
 ! FUSE modules
 USE multiforce                                        ! model forcing data (obs streamflow)
 USE multiroute                                        ! routed runoff
@@ -54,7 +55,6 @@ REAL(SP)                               :: NO_ZERO     ! avoid divide by zero
 ! ---------------------------------------------------------------------------------------
 ! define sample size
 NS =  eval_end-eval_beg+1
-PRINT *, 'Number of time steps in evaluation period (EP) = ', NS
 
 ! allocate space for observed and simulated runoff
 ALLOCATE(QOBS(NS),QOBS_MASK(NS),QSIM(NS),STAT=IERR)
@@ -67,9 +67,12 @@ QOBS = aValid(1,1,eval_beg-sim_beg+1:eval_end-sim_beg+1)%OBSQ
 
 ! check for missing QOBS values
 QOBS_MASK = QOBS.ne.REAL(NA_VALUE, KIND(SP)) ! find the time steps for which QOBS is available
-NUM_AVAIL = COUNT(QOBS_MASK)	! number of time steps for which QOBS is available
+NUM_AVAIL = COUNT(QOBS_MASK) ! number of time steps for which QOBS is available
 
-PRINT *, 'Number of time steps with observed streamflow in EP = ', NUM_AVAIL
+if(isPrint)then
+  PRINT *, 'Number of time steps in evaluation period (EP) = ', NS
+  PRINT *, 'Number of time steps with observed streamflow in EP = ', NUM_AVAIL
+endif
 
 IF (NUM_AVAIL.EQ.0) THEN
 
@@ -85,13 +88,12 @@ ELSE
   ALLOCATE(QOBS_AVAIL(NUM_AVAIL),QSIM_AVAIL(NUM_AVAIL),DOBS(NUM_AVAIL),DSIM(NUM_AVAIL),RAWD(NUM_AVAIL),LOGD(NUM_AVAIL),STAT=IERR)
   IF (IERR /= 0) STOP ' PROBLEM ALLOCATING SPACE FOR AVAILABLE DATA IN MEAN_STATS.F90 '
 
-  
   QOBS_AVAIL=PACK(QOBS,QOBS_MASK,QOBS_AVAIL)  ! moves QOBS time steps indicated by QOBS_MASK to QOBS_AVAIL,
-  											                      ! if no values is missing (i.e. NS = NUM_AVAIL) then QOBS_AVAIL
-  											                      ! should be a copy of QOBS
+                                              ! if no values is missing (i.e. NS = NUM_AVAIL) then QOBS_AVAIL
+                                              ! should be a copy of QOBS
   QSIM_AVAIL=PACK(QSIM,QOBS_MASK,QSIM_AVAIL)  ! moves QSIM time steps indicated by QOBS_MASK to QSIM_AVAIL
-  											                      ! if no values is missing (i.e. NS = NUM_AVAIL) then QSIM_AVAIL
-  										                      	! should be a copy of QSIM
+                                              ! if no values is missing (i.e. NS = NUM_AVAIL) then QSIM_AVAIL
+                                              ! should be a copy of QSIM
                                                                  
   ! compute mean
   XB_OBS  = SUM(QOBS_AVAIL(:)) / INT(NUM_AVAIL, KIND(SP))
@@ -149,7 +151,7 @@ ELSE
   MSTATS%MAE = get_MAE(QOBS_AVAIL, QSIM_AVAIL, '1')         ! No transformation
   
   ! Compute the metric chosen as objective function using the metrics module
-  
+ 
   IF (METRIC == "KGE") THEN
     MSTATS%METRIC_VAL = get_KGE(QOBS_AVAIL, QSIM_AVAIL, TRANSFO) 
   ELSE IF (METRIC == "KGEP") THEN
@@ -169,13 +171,15 @@ ELSE
 
 END IF
 
-PRINT *, 'NSE = ',          MSTATS%NASH_SUTT
-PRINT *, 'KGE = ',          MSTATS%KGE
-PRINT *, 'KGEP = ',         MSTATS%KGEP
-PRINT *, 'MAE = ',          MSTATS%MAE
-PRINT *, 'RAW_RMSE = ',     MSTATS%RAW_RMSE
-PRINT *, 'LOG_RMSE = ',     MSTATS%LOG_RMSE
-PRINT *, 'METRIC_VAL [Metric:',METRIC,' / Transfo:',TRANSFO,'] =',   MSTATS%METRIC_VAL
+if(isPrint)then
+  PRINT *, 'NSE = ',          MSTATS%NASH_SUTT
+  PRINT *, 'KGE = ',          MSTATS%KGE
+  PRINT *, 'KGEP = ',         MSTATS%KGEP
+  PRINT *, 'MAE = ',          MSTATS%MAE
+  PRINT *, 'RAW_RMSE = ',     MSTATS%RAW_RMSE
+  PRINT *, 'LOG_RMSE = ',     MSTATS%LOG_RMSE
+  PRINT *, 'METRIC_VAL [Metric:',METRIC,' / Transfo:',TRANSFO,'] =',   MSTATS%METRIC_VAL
+endif
 
 ! ---------------------------------------------------------------------------------------
 ! (3§) COMPUTE STATISTICS ON NUMERICAL ACCURACY AND EFFICIENCY

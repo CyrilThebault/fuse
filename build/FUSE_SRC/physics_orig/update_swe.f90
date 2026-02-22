@@ -128,4 +128,5 @@ DO ISNW=1,N_BANDS
  end associate
 
 END DO  ! looping through bands
+
 END SUBROUTINE UPDATE_SWE

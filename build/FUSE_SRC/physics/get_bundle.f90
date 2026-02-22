@@ -14,7 +14,7 @@ contains
   use multistate, only: mState
   use multi_flux, only: m_flux
   use multiparam, only: parMeta,mParam,dParam
-  
+
   implicit none
   type(fuse_work), intent(inout) :: fuseStruct
   integer(i4b)                   :: iState
