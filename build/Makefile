@@ -48,13 +48,13 @@ $(VERSIONFILE): | $(GENINC)
 	  printf "character(len=FUSE_GITHASH_LEN),   parameter :: FUSE_GITHASH    = '%s'\n" "$(GITHASH)"; \
 	} > $@
 
-#========================================================================
-# Define the libraries, driver programs, and executables
-#========================================================================
-
 # default Fortran compiler is set to `gfortran`
 # other options: ifort
 FC = gfortran
+
+#========================================================================
+# Define the NetCDF libraries
+#========================================================================
 
 # find HDF5
 # Check if pkg-config is available for HDF5
@@ -112,6 +112,44 @@ endif
 INCLUDES += -I$(HDF5_INCLUDE_DIR) -I$(NETCDF_C_INCLUDE) -I$(NETCDF_F_INCLUDE)
 LIBS += -L$(HDF5_LIB_DIR) -lhdf5 -lhdf5_hl -L$(NETCDF_F_LIB) -lnetcdff -L$(NETCDF_C_LIB) -lnetcdf
 
+#========================================================================
+# Define the TOML-f libraries
+#========================================================================
+
+# Optional user override: set TOMLF_PREFIX=/path/to/toml-f/prefix
+# Otherwise prefer pkgconf, then Homebrew.
+ifeq ($(strip $(TOMLF_PREFIX)),)
+  # No user override: try pkgconf first
+  ifneq ($(shell pkgconf --exists toml-f && echo yes),)
+    TOMLF_PREFIX  := $(shell pkgconf --variable=prefix toml-f)
+    TOMLF_INCLUDE := $(shell pkgconf --variable=includedir toml-f)/toml-f
+    TOMLF_LIB     := $(shell pkgconf --variable=libdir toml-f)
+  else
+    # Fallback to Homebrew
+    TOMLF_PREFIX  := $(shell brew --prefix toml-f 2>/dev/null)
+    TOMLF_INCLUDE := $(TOMLF_PREFIX)/include/toml-f
+    TOMLF_LIB     := $(TOMLF_PREFIX)/lib
+  endif
+else
+  # User override provided
+  TOMLF_INCLUDE := $(TOMLF_PREFIX)/include/toml-f
+  TOMLF_LIB     := $(TOMLF_PREFIX)/lib
+endif
+
+# toml-f module directory (where *.mod live on Homebrew)
+TOMLF_MODDIR := $(TOMLF_INCLUDE)/modules
+
+# RPATH (macOS: runtime search path for dylibs)
+RPATHS += -Wl,-rpath,$(TOMLF_LIB)
+
+# add toml-f include+lib
+INCLUDES += -I$(TOMLF_MODDIR) -I$(TOMLF_INCLUDE)
+LIBS     += -L$(TOMLF_LIB) -ltoml-f
+
+$(info TOMLF_PREFIX  = $(TOMLF_PREFIX))
+$(info TOMLF_INCLUDE = $(TOMLF_INCLUDE))
+$(info TOMLF_MODDIR  = $(TOMLF_MODDIR))
+$(info TOMLF_LIB     = $(TOMLF_LIB))
 $(info INCLUDES are $(INCLUDES))
 $(info LIBS are $(LIBS))
 
@@ -423,7 +461,7 @@ all: compile install clean
 # compile target
 compile: sce_16plus.o $(VERSIONFILE)
 	$(FC) $(FUSE_ALL) $(DRIVER) \
-	$(FFLAGS) $(LIBS) $(INCLUDES) -o $(DRIVER_EX)
+	$(FFLAGS) $(LIBS) $(RPATHS) $(INCLUDES) -o $(DRIVER_EX)
 
 # Remove object files
 clean:

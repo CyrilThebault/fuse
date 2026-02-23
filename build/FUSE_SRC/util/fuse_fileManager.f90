@@ -1,6 +1,3 @@
-!******************************************************************
-! (C) Copyright 2009-2010  ---  Dmitri Kavetski and Martyn Clark ---  All rights reserved
-!******************************************************************
 ! Edited by Brian Henn to include snow model, 7/2013
 ! Edited by Nans Addor to set simulation and evaluation periods, 11/2017
 ! Modified by Martyn Clark to populate domain structure, 12/2025
@@ -14,23 +11,22 @@ MODULE fuse_filemanager
   implicit none
   private
 
-  public :: fuse_SetDirsUndPhiles
-  public :: export_filemanager_to_domain 
-  public :: finalize_domain_config
+  public :: read_fuse_control_file
   public :: export_domain_to_legacy
+
+  ! ----- all of these legacy globals are stored in the "info" data structure ---------------------
 
   ! expose legacy globals
   public :: SETNGS_PATH, INPUT_PATH, OUTPUT_PATH
   public :: suffix_forcing, suffix_elev_bands
-  public :: FORCINGINFO, CONSTRAINTS, MOD_NUMERIX, M_DECISIONS
-  public :: MBANDS_INFO, MBANDS_NC
+  public :: M_DECISIONS, CONSTRAINTS, MOD_NUMERIX, FORCINGINFO, MBANDS_NC
   public :: FMODEL_ID, Q_ONLY_STR, Q_ONLY
   public :: date_start_sim, date_end_sim, date_start_eval, date_end_eval, numtim_sub_str
   public :: METRIC, TRANSFO
   public :: KSTOP_str, MAXN_str, PCENTO_str
 
   ! FUSE-wide pathlength
-  integer(mik),parameter::fusePathLen=512
+  integer(i4b),parameter::fusePathLen=512
 
   ! defines the path for data files
   CHARACTER(LEN=fusePathLen)  :: SETNGS_PATH
@@ -46,7 +42,6 @@ MODULE fuse_filemanager
   CHARACTER(LEN=fusePathLen)  :: CONSTRAINTS       ! definition of parameter constraints
   CHARACTER(LEN=fusePathLen)  :: MOD_NUMERIX       ! definition of numerical solution technique
   CHARACTER(LEN=fusePathLen)  :: FORCINGINFO       ! info on forcing data files
-  CHARACTER(LEN=fusePathLen)  :: MBANDS_INFO       ! info on basin band data files ! not needed anymore
   CHARACTER(LEN=fusePathLen)  :: MBANDS_NC         ! netcdf file defining the elevation bands
   
   ! content of output directory
@@ -72,321 +67,239 @@ MODULE fuse_filemanager
 
 contains
 
-  ! ----- copies the globals into the domain structure ----------------------------------
+  ! -------------------------------------------------------------------------------------
+  ! -------------------------------------------------------------------------------------
 
-  ! NOTE: this should be called after call fuse_SetDirsUndPhiles(fuseFileManagerIn, ..)
+  subroutine read_fuse_control_file(fuseFileManagerIn, opts, info, err, message)
 
-  subroutine export_filemanager_to_domain(cli_opts, info)
-  
-    implicit none
-    type(cli_options), intent(in)    :: cli_opts  ! command line interface options
-    type(fuse_info),   intent(inout) :: info
+use tomlf_all, only: toml_table, toml_error, toml_key, toml_value ! data types
+use tomlf_all, only: toml_load, get_value                         ! procedures
+! or: use tomlf, only: toml_table, toml_load, toml_error
+!     use tomlf_type_keyval, only: toml_key   (if toml_key not re-exported)
+  ! Purpose: Reads FUSE control file (TOML version) AND populates info structure
+  implicit none
+
+  ! dummies
+  character(*),      intent(in)     :: fuseFileManagerIn
+  type(cli_options), intent(in)     :: opts
+  type(fuse_info),   intent(inout)  :: info
+  integer(i4b),      intent(out)    :: err
+  character(*),      intent(out)    :: message
+
+  ! TOML table
+  type(toml_table), allocatable :: tbl         ! root TOML table
+  type(toml_table), pointer     :: subtable    ! sub-table for a given section
+  type(toml_key),   allocatable :: sections(:) ! top-level sections
+  type(toml_key),   allocatable :: keys(:)     ! sub-table keys
+  type(toml_error), allocatable :: error
+
+  ! locals
+  integer(i4b) :: istat
+  integer(i4b) :: n, i, j
+  character(len=256) :: lookup
+
+  ! create file paths
+  character(len=256) :: dom_id, tag, run_mode
+
+  err = 0
+  message = "read_fuse_control_file/"
+
+  ! ----- load the root TOML table -----
+  call toml_load(tbl, trim(fuseFileManagerIn), error=error)
+  if (allocated(error)) then
+    message = "problem loading toml file['"//trim(fuseFileManagerIn)//"']: "//trim(error%message)
+    err=10; return
+  endif
+
+  ! ----- get the top-level sections -----
+  call tbl%get_keys(sections)
+  if(.not.allocated(sections)) then
+    message = "problem loading toml sections['"//trim(fuseFileManagerIn)//"']"
+    err=10; return
+  endif
+
+  ! ----- loop through sections -----
+  do i = 1, size(sections)
+
+    ! ----- load the TOML sub-table for the current section -----
+    call get_value(tbl, trim(sections(i)%key), subtable, requested=.false.) 
+    if(.not.associated(subtable)) then
+      message = "problem loading toml sub-sections['"//trim(fuseFileManagerIn)//"']:"//trim(sections(i)%key)
+      err=10; return
+    endif
+
+    ! ----- get keys for a given section (sub-table) -----
+    call subtable%get_keys(keys)
     
-    ! ----- file information ------------------------------------------------------------
+    ! ----- loop through the sub-table -----
+    do j = 1, size(keys)
 
-    ! directories
-    info%files%setngs_path = trim(SETNGS_PATH)
-    info%files%input_path  = trim(INPUT_PATH)
-    info%files%output_path = trim(OUTPUT_PATH)
-   
-    ! suffixes
-    info%files%suffix_forcing    = trim(suffix_forcing)
-    info%files%suffix_elev_bands = trim(suffix_elev_bands)
-   
-    ! settings filenames
-    info%files%forcinginfo = trim(FORCINGINFO)
-    info%files%constraints = trim(CONSTRAINTS)
-    info%files%mod_numerix = trim(MOD_NUMERIX)
-    info%files%m_decisions = trim(M_DECISIONS)
-   
-    ! ----- configuration options -------------------------------------------------------
-   
-    ! Convenience alias (already available via config%cli_opts%control_file)
-    info%config%file_manager_file = trim(cli_opts%control_file)
 
-    ! provenance: CLI options
-    info%config%cli_opts = cli_opts ! control file, tags, etc.
+      ! ---------------------------------------------------------------------------------------------------------------
+      ! ---------------------------------------------------------------------------------------------------------------
 
-    ! runtime information
-    info%config%fmodel_id         = trim(FMODEL_ID)
-    info%config%q_only            = Q_ONLY
-   
-    ! user-defined simulation/evaluation time periods: strings
-    info%config%date_start_sim    = trim(date_start_sim)
-    info%config%date_end_sim      = trim(date_end_sim)
-    info%config%date_start_eval   = trim(date_start_eval)
-    info%config%date_end_eval     = trim(date_end_eval)
-   
-    ! user-defined sub-window time slice length
-    info%config%numtim_sub_str    = trim(numtim_sub_str)
-   
-    ! user-defined SCE control parameters (used for SCE calibration runs)
-    info%config%maxn_str          = trim(MAXN_str)
-    info%config%kstop_str         = trim(KSTOP_str)
-    info%config%pcento_str        = trim(PCENTO_str)
+      ! ----- control file assignment block ---------------------------------------------------------------------------
 
-  end subroutine export_filemanager_to_domain
+      lookup = trim(sections(i)%key)//'.'//trim(keys(j)%key)
+
+      select case(lookup)
+        
+        ! ---- files: paths ----
+        case ("paths.input_path"       ); call get_value(subtable, trim(keys(j)%key), info%files%input_path       , stat=istat)
+        case ("paths.output_path"      ); call get_value(subtable, trim(keys(j)%key), info%files%output_path      , stat=istat)
+        case ("paths.setngs_path"      ); call get_value(subtable, trim(keys(j)%key), info%files%setngs_path      , stat=istat)
+
+        ! ---- files: suffixes ----
+        case ("input.suffix_forcing"   ); call get_value(subtable, trim(keys(j)%key), info%files%suffix_forcing   , stat=istat)
+        case ("input.suffix_elev_bands"); call get_value(subtable, trim(keys(j)%key), info%files%suffix_elev_bands, stat=istat)
+
+        ! ---- files: settings filenames ----
+        case ("settings.forcinginfo"   ); call get_value(subtable, trim(keys(j)%key), info%files%forcinginfo      , stat=istat)
+        case ("settings.constraints"   ); call get_value(subtable, trim(keys(j)%key), info%files%constraints      , stat=istat)
+        case ("settings.mod_numerix"   ); call get_value(subtable, trim(keys(j)%key), info%files%mod_numerix      , stat=istat)
+        case ("settings.m_decisions"   ); call get_value(subtable, trim(keys(j)%key), info%files%m_decisions      , stat=istat)
+
+        ! ---- config: runtime ----
+        case ("output.fmodel_id"       ); call get_value(subtable, trim(keys(j)%key),  info%config%fmodel_id      , stat=istat)
+        case ("output.q_only"          ); call get_value(subtable, trim(keys(j)%key),  info%config%q_only         , stat=istat)
+
+        ! ---- config: periods ----
+        case ("periods.date_start_sim" ); call get_value(subtable, trim(keys(j)%key), info%config%date_start_sim  , stat=istat)
+        case ("periods.date_end_sim"   ); call get_value(subtable, trim(keys(j)%key), info%config%date_end_sim    , stat=istat)
+        case ("periods.date_start_eval"); call get_value(subtable, trim(keys(j)%key), info%config%date_start_eval , stat=istat)
+        case ("periods.date_end_eval"  ); call get_value(subtable, trim(keys(j)%key), info%config%date_end_eval   , stat=istat)
+        case ("periods.numtim_sub_str" ); call get_value(subtable, trim(keys(j)%key), info%config%numtim_sub_str  , stat=istat)
+
+        ! ---- config: calibration ----
+        case ("calibration.metric"     ); call get_value(subtable, trim(keys(j)%key), info%config%metric          , stat=istat)
+        case ("calibration.transfo"    ); call get_value(subtable, trim(keys(j)%key), info%config%transfo         , stat=istat)
+
+        ! ---- config: SCE (read numeric, then next populate legacy strings) ----
+        case ("sce.maxn"               ); call get_value(subtable, trim(keys(j)%key), info%config%maxn            , stat=istat)
+        case ("sce.kstop"              ); call get_value(subtable, trim(keys(j)%key), info%config%kstop           , stat=istat)
+        case ("sce.pcento"             ); call get_value(subtable, trim(keys(j)%key), info%config%pcento          , stat=istat)
+
+        ! ---- default case (something in the table that is not specified above) -----
+        case default
+          message = trim(message)// "unexpected entry: section = "//trim(sections(i)%key)//"; sub-section = "//trim(keys(j)%key)
+          err=20; return
+      
+      end select ! (select key/value pair based on lookup)
+
+      ! ---- error checking -----
+      if(istat /= 0)then
+        message=trim(message)// "get_value error: section = "//trim(sections(i)%key)//"; sub-section = "//trim(keys(j)%key)
+        err=20; return
+      endif
+
+    end do  ! (looping through sub-sections)
+  end do  ! (looping through sections)
+
+  ! ---- populate legacy strings ----
+  write(info%config%maxn_str,  '(i0)'     ) info%config%maxn
+  write(info%config%kstop_str, '(i0)'     ) info%config%kstop
+  write(info%config%pcento_str,'(es20.10)') info%config%pcento
+
+  ! ---- domain id, run mode and tag for output files ----
+  dom_id   = trim(opts%domain_id)
+  run_mode = trim(opts%runmode)
+
+  tag = ""
+  if(allocated(opts%tag)) tag = trim(opts%tag)
+
+  ! ---- derived input filenames ----
+  info%files%forcing_file   = trim(dom_id)//trim(info%files%suffix_forcing)
+  info%files%elevbands_file = trim(dom_id)//trim(info%files%suffix_elev_bands)
+
+  ! ---- derived output base name ----
+  info%files%fname_tempry = trim(info%files%output_path)// &
+                            trim(dom_id)//'_'//trim(info%config%fmodel_id)//'_'//trim(tag)
+
+  ! ---- final filenames ----
+  info%files%fname_netcdf_forc = trim(info%files%input_path)//trim(info%files%forcing_file)
+  info%files%fname_netcdf_runs = trim(info%files%fname_tempry)//'_runs_'//trim(run_mode)//'.nc'
+  info%files%fname_netcdf_para = trim(info%files%fname_tempry)//'_para_'//trim(run_mode)//'.nc'
+
+  end subroutine read_fuse_control_file
 
   ! -------------------------------------------------------------------------------------
   ! -------------------------------------------------------------------------------------
-
-  subroutine finalize_domain_config(cli_opts, info, ierr, message)
-
-    implicit none
-   
-    type(cli_options), intent(in)    :: cli_opts
-    type(fuse_info),   intent(inout) :: info
-    integer(i4b),      intent(out)   :: ierr
-    character(*),      intent(out)   :: message
-   
-    character(len=256) :: dom_id, tag, run_mode
-    integer(i4b) :: ios
-   
-    ierr=0; message="finalize_domain_config/"
-   
-    dom_id   = trim(cli_opts%domain_id)
-    run_mode = trim(cli_opts%runmode)
-   
-    tag = ""
-    if(allocated(cli_opts%tag)) tag = trim(cli_opts%tag)
-   
-    ! ---- derived input filenames ----
-    info%files%forcing_file   = trim(dom_id)//trim(info%files%suffix_forcing)
-    info%files%elevbands_file = trim(dom_id)//trim(info%files%suffix_elev_bands)
-   
-    ! ---- derived output base name ----
-    info%files%fname_tempry = trim(info%files%output_path)// &
-                              trim(dom_id)//'_'//trim(info%config%fmodel_id)//'_'//trim(tag)
-   
-    info%files%fname_netcdf_runs = trim(info%files%fname_tempry)//'_runs_'//trim(run_mode)//'.nc'
-    info%files%fname_netcdf_para = trim(info%files%fname_tempry)//'_para_'//trim(run_mode)//'.nc'
-   
-    ! ---- parse numeric config ----
-    read(info%config%maxn_str,  *, iostat=ios) info%config%maxn
-    if(ios/=0) then; ierr=1; message=trim(message)//"cannot parse MAXN"; return; endif
-   
-    read(info%config%kstop_str, *, iostat=ios) info%config%kstop
-    if(ios/=0) then; ierr=1; message=trim(message)//"cannot parse KSTOP"; return; endif
-   
-    read(info%config%pcento_str,*, iostat=ios) info%config%pcento
-    if(ios/=0) then; ierr=1; message=trim(message)//"cannot parse PCENTO"; return; endif
-
-  end subroutine finalize_domain_config
-
-  ! -------------------------------------------------------------------------------------
-  ! -------------------------------------------------------------------------------------
-
+  
   ! ----- export domain config variables to legacy modules ------------------------------
 
   subroutine export_domain_to_legacy(info)
-    use model_defn, only: FNAME_TEMPRY, FNAME_NETCDF_RUNS, FNAME_NETCDF_PARA
-    use multiparam, only: MAXN, KSTOP, PCENTO
-    use multiforce, only: forcefile
- 
-    type(fuse_info), intent(in)  :: info
+  use model_defn, only: FNAME_TEMPRY, FNAME_NETCDF_RUNS, FNAME_NETCDF_PARA
+  use multiparam, only: MAXN, KSTOP, PCENTO
+  use multiforce, only: forcefile
 
-    ! populate module model_defn
-    FNAME_TEMPRY      = trim(info%files%fname_tempry)
-    FNAME_NETCDF_RUNS = trim(info%files%fname_netcdf_runs)
-    FNAME_NETCDF_PARA = trim(info%files%fname_netcdf_para)
+  implicit none
 
-    ! populate module multiforce
-    forcefile = trim(info%files%forcing_file)
+  type(fuse_info), intent(in)  :: info
 
-    ! populate shared public variable in this module (fuse_filemanager)
-    MBANDS_NC = trim(info%files%elevbands_file)
-    
-    ! populate module multiparam
-    MAXN   = info%config%maxn
-    KSTOP  = info%config%kstop
-    PCENTO = info%config%pcento
+  ! ---- populate legacy module globals  ----
 
+  SETNGS_PATH       = trim(info%files%setngs_path)
+  INPUT_PATH        = trim(info%files%input_path)
+  OUTPUT_PATH       = trim(info%files%output_path)
+  suffix_forcing    = trim(info%files%suffix_forcing)
+  suffix_elev_bands = trim(info%files%suffix_elev_bands)
+  FORCINGINFO       = trim(info%files%forcinginfo)
+  CONSTRAINTS       = trim(info%files%constraints)
+  MOD_NUMERIX       = trim(info%files%mod_numerix)
+  M_DECISIONS       = trim(info%files%m_decisions)
+
+  FMODEL_ID         = trim(info%config%fmodel_id)
+  Q_ONLY            = info%config%q_only
+
+  date_start_sim    = trim(info%config%date_start_sim)
+  date_end_sim      = trim(info%config%date_end_sim)
+  date_start_eval   = trim(info%config%date_start_eval)
+  date_end_eval     = trim(info%config%date_end_eval)
+  numtim_sub_str    = trim(info%config%numtim_sub_str)
+
+  METRIC            = trim(info%config%metric)
+  TRANSFO           = trim(info%config%transfo)
+
+  MAXN              = info%config%maxn
+  KSTOP             = info%config%kstop
+  PCENTO            = info%config%pcento
+
+  MAXN_str          = trim(info%config%maxn_str)
+  KSTOP_str         = trim(info%config%kstop_str)
+  PCENTO_str        = trim(info%config%pcento_str)
+
+  ! populate module model_defn
+  FNAME_TEMPRY      = trim(info%files%fname_tempry)
+  FNAME_NETCDF_RUNS = trim(info%files%fname_netcdf_runs)
+  FNAME_NETCDF_PARA = trim(info%files%fname_netcdf_para)
+  
+  ! populate module multiforce
+  forcefile = trim(info%files%forcing_file)
+  
+  ! populate shared public variable in this module (fuse_filemanager)
+  MBANDS_NC = trim(info%files%elevbands_file)
+  
+  ! populate module multiparam
+  MAXN   = info%config%maxn
+  KSTOP  = info%config%kstop
+  PCENTO = info%config%pcento
+  
+  ! ---- logging ----
+  print *, 'Paths defined in file manager:'
+  print *, 'SETNGS_PATH:', trim(info%files%setngs_path)
+  print *, 'INPUT_PATH:',  trim(info%files%input_path)
+  print *, 'OUTPUT_PATH:', trim(info%files%output_path)
+  
+  print *, 'Dates defined in file manager:'
+  print *, 'date_start_sim:',  trim(info%config%date_start_sim)
+  print *, 'date_end_sim:',    trim(info%config%date_end_sim)
+  print *, 'date_start_eval:', trim(info%config%date_start_eval)
+  print *, 'date_end_eval:',   trim(info%config%date_end_eval)
+  print *, 'numtim_sub_str:',  trim(info%config%numtim_sub_str)
+  
+  print *, 'Q_ONLY', info%config%q_only
+  
   end subroutine export_domain_to_legacy
 
-  ! -------------------------------------------------------------------------------------
-  ! -------------------------------------------------------------------------------------
-
-  ! ----- sets directories and filenames for FUSE --------------------------------------
-
-  subroutine fuse_SetDirsUndPhiles(fuseMusterDirektorIn,fuseFileManagerIn,err,message)
-  ! Purpose: Sets direcotries and philenames for FUSE.
-  ! ---
-  ! Programmer: Dmitri Kavetski
-  ! History:
-  !   Darby St,   18/10/2009 AD - leid out basik frammenverk
-  !   Sonnental,  17/06/2012 AD - more general path handling
-  ! ---
-  ! Usage
-  ! fuseMusterDirektorIn  = master direktor file (path to filemanager)
-  ! fuseFileManagerIn     = global names/path file
-  ! ---
-  ! Comments:
-  ! 1. If present will try to use fuseMasterIn, otherwise default file.
-  !    if default not present in EXE path then uses default options
-  ! ---
-  use utilities_dmsl_kit_FUSE,only:getSpareUnit
-  
-  implicit none
-  
-  ! dummies
-  character(*),intent(in),optional::fuseMusterDirektorIn,fuseFileManagerIn
-  integer(mik),intent(out)::err
-  character(*),intent(out)::message
-  
-  ! registered settings
-  character(*),parameter::procnam="fuseSetDirsUndPhiles"
-  character(*),parameter::pathDelim="/\",defpathSymb="*",blank=" "
-  character(*),parameter::fuseMusterDirektorHeader="FUSE_MUSTERDIREKTOR_V1.0"
-  character(*),parameter::fuseFileManagerHeader="FUSE_FILEMANAGER_V1.5"
-  
-  ! locals
-  logical(mlk)::haveFMG,haveMUS
-  character(LEN=fusePathLen)::fuseMusterDirektor,fuseFileManager,defpath
-  character(LEN=100)::temp
-  integer(mik)::unt,i
-  
-  ! Start procedure here
-  err=0; message=procnam//"/ok"; defpath=blank
-
-  haveMUS=present(fuseMusterDirektorIn); haveFMG=present(fuseFileManagerIn)
-  if(haveMUS)haveMUS=len_trim(fuseMusterDirektorIn)>0
-  if(haveFMG)haveFMG=len_trim(fuseFileManagerIn)>0  ! check for zero-string
-  if(haveMUS.and.haveFMG)then
-    message="f-"//procnam//"/mustSpecifyEither(notBoth)&
-             &[fuseMusterDirektor.or.fuseFileManager]"
-    err=10; return
-  
-  elseif(haveFMG)then
-    fuseFileManager=fuseFileManagerIn
-    i=scan(fuseFileManager,pathDelim,back=.true.)
-    if(i>0)defpath=fuseFileManager(:i-1)//pathDelim(1:1)
-    print *, 'fuseFileManager:', TRIM(fuseFileManager)
-  
-  elseif(haveMUS)then
-    fuseMusterDirektor=fuseMusterDirektorIn
-    i=scan(fuseMusterDirektor,pathDelim,back=.true.)
-    if(i>0)defpath=fuseMusterDirektor(:i-1)//pathDelim(1:1)
-    print *, 'fuseMusterDirektor:', TRIM(fuseMusterDirektor)
-  
-  else
-    message="f-"//procnam//"/mustSpecifyEither&
-             &[fuseMusterDirektor.or.fuseFileManager]"
-    err=20; return
-  endif
-  
-  call getSpareUnit(unt,err,message) ! make sure 'unt' is actually available
-  
-  if(err/=0)then
-    message="f-"//procnam//"/weird/&"//message
-    err=100; return
-  endif
-  
-  ! Open muster-direktor and read it
-  if(.not.haveFMG)then  ! grab it from the muster-direktor
-  
-    open(unt,file=fuseMusterDirektor,status="old",action="read",iostat=err)
-    if(err/=0)then
-      message="f-"//procnam//"/musterDirektorFileOpenError['"//trim(fuseMusterDirektor)//"']"
-      err=10; return
-    endif
-  
-    read(unt,*)temp
-  
-    if(temp/=fuseMusterDirektorHeader)then
-      message="f-"//procnam//"/unknownHeader&[file='"//trim(fuseMusterDirektor)//"']&&
-        &[header='"//trim(temp)//"']"
-      err=20; return
-    endif
-  
-    read(unt,*)fuseFileManager
-    close(unt)
-  
-  endif
-  
-  ! open file manager file
-  open(unt,file=fuseFileManager,status="old",action="read",iostat=err)
-  if(err/=0)then
-    message="f-"//procnam//"/fileManagerOpenError['"//trim(fuseFileManager)//"']"
-    err=10; return
-  endif
-
-  read(unt,*)temp
-  if(temp/=fuseFileManagerHeader)then
-    message="f-"//procnam//"/unknownHeader&[file='"//trim(fuseFileManager)//"']&&
-      &[header="//trim(temp)//"]"
-  
-    message='This version of FUSE requires the file manager to follow the following format:  '//trim(fuseFileManagerHeader)//' not '//trim(temp)
-  
-    err=20; return
-  endif
-  
-  read(unt,'(a)')temp
-  read(unt,*)SETNGS_PATH
-  read(unt,*)INPUT_PATH
-  read(unt,*)OUTPUT_PATH
-  
-  read(unt,'(a)')temp
-  read(unt,*)suffix_forcing
-  read(unt,*)suffix_elev_bands
-  
-  read(unt,'(a)')temp
-  read(unt,*)FORCINGINFO
-  read(unt,*)CONSTRAINTS
-  read(unt,*)MOD_NUMERIX
-  read(unt,*)M_DECISIONS
-  
-  read(unt,'(a)')temp
-  read(unt,*)FMODEL_ID
-  read(unt,*)Q_ONLY_STR
-  
-  read(unt,'(a)')temp
-  read(unt,*)date_start_sim
-  read(unt,*)date_end_sim
-  read(unt,*)date_start_eval
-  read(unt,*)date_end_eval
-  read(unt,*)numtim_sub_str
- 
-  read(unt,'(a)')temp
-  read(unt,*)METRIC
-  read(unt,*)TRANSFO
-
-  read(unt,'(a)')temp
-  read(unt,*)MAXN_STR
-  read(unt,*)KSTOP_STR
-  read(unt,*)PCENTO_STR
-  
-  close(unt)
-  
-  ! Convert Q_ONLY to logical
-  if(Q_ONLY_STR=='TRUE')then
-    Q_ONLY = .TRUE.
-  elseif(Q_ONLY_STR=='FALSE')then
-    Q_ONLY = .FALSE.
-  else
-    message="Q_ONLY must be either TRUE or FALSE"
-    err=20; return
-  endif
-  
-  PRINT*, 'Q_ONLY', Q_ONLY
-  
-  ! process paths a bit
-  if(SETNGS_PATH(1:1)==defpathSymb)SETNGS_PATH=trim(defpath)//SETNGS_PATH(2:)
-  if( INPUT_PATH(1:1)==defpathSymb) INPUT_PATH=trim(defpath)//INPUT_PATH (2:)
-  if(OUTPUT_PATH(1:1)==defpathSymb)OUTPUT_PATH=trim(defpath)//OUTPUT_PATH(2:)
-  
-  PRINT *, 'Paths defined in file manager:'
-  PRINT *, 'SETNGS_PATH:', TRIM(SETNGS_PATH)
-  PRINT *, 'INPUT_PATH:', TRIM(INPUT_PATH)
-  PRINT *, 'OUTPUT_PATH:', TRIM(OUTPUT_PATH)
-  
-  PRINT *, 'Dates defined in file manager:'
-  PRINT *, 'date_start_sim:', TRIM(date_start_sim)
-  PRINT *, 'date_end_sim:', TRIM(date_end_sim)
-  PRINT *, 'date_start_eval:', TRIM(date_start_eval)
-  PRINT *, 'date_end_eval:', TRIM(date_end_eval)
-  PRINT *, 'numtim_sub_str:', TRIM(numtim_sub_str)
-  
-  ! End procedure here
-  endsubroutine fuse_SetDirsUndPhiles
 !----------------------------------------------------
 END MODULE fuse_filemanager
