@@ -1,4 +1,4 @@
-SUBROUTINE GETNUMERIX(err,message)
+SUBROUTINE GETNUMERIX(err, message)
 ! ---------------------------------------------------------------------------------------
 ! Creator:
 ! --------

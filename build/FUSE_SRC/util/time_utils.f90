@@ -1,72 +1,13 @@
-module time_io
+module time_utils
 
   use nrtype
-  use netcdf
   implicit none
 
-  public::get_modtim
+  public :: date_extractor
+  public :: juldayss
+  public :: caldatss
 
   contains
-
-    SUBROUTINE get_modtim(ncid, itim, ierr, message)
-    ! ---------------------------------------------------------------------------------------
-    ! Creator:
-    ! --------
-    ! Martyn Clark, 2012
-    ! ---------------------------------------------------------------------------------------
-    ! Purpose:
-    ! --------
-    ! Read NetCDF time variable for a given time step
-    ! ---------------------------------------------------------------------------------------
-    ! Modules Modified:
-    ! -----------------
-    ! MODULE multiforce -- populate structure timDat%(*)
-    ! ---------------------------------------------------------------------------------------
-    USE fuse_fileManager,only:INPUT_PATH                   ! defines data directory
-    USE multiforce,only:forcefile                          ! name of forcing file
-    USE multiforce,only:vname_dtime                        ! variable name: time since reference time
-    USE multiforce,only:timDat                             ! time data strructure
-    USE multiforce,only:jdayRef                            ! reference time (days)
-    USE multiforce,only:latUnits,lonUnits,timeUnits        ! units string for time
-
-    IMPLICIT NONE
-    ! input
-    integer(i4b), intent(in)                :: ncid        ! NetCDF file ID
-    integer(i4b), intent(in)                :: itim        ! index of model time step
-    ! output
-    integer(i4b), intent(out)               :: ierr        ! error code
-    character(*), intent(out)               :: message     ! error message
-    ! internal
-    integer(i4b),parameter                  :: strLen=1024 ! length of character string
-    character(len=strLen)                   :: cmessage    ! error message of downwind routine
-    integer(i4b)                            :: iVarID      ! NetCDF variable ID
-    integer(i4b)                            :: iy,im,id    ! time of year
-    integer(i4b)                            :: ih          ! time of day
-    real(sp),dimension(1)                   :: atime       ! time array
-    ! ---------------------------------------------------------------------------------------
-    ! initialize error control
-    ierr=0; message='get_modtim/'
-
-    ! get variable ID for time
-    ierr = nf90_inq_varid(ncid, trim(vname_dtime), iVarID)
-    if(ierr/=0)then; message=trim(message)//trim(nf90_strerror(ierr))//'[variable='//trim(vname_dtime)//']'; return; endif
-
-    ! identify reference time
-    call date_extractor(timeUnits,iy,im,id,ih)
-    call juldayss(iy,im,id,ih,jdayRef,ierr,cmessage)
-    if(ierr/=0)then; message=trim(message)//trim(cmessage); return; endif
-
-    ! get the time
-    ierr = nf90_get_var(ncid, iVarID, aTime, start=(/iTim/), count=(/1/))
-    if(ierr/=0)then; message=trim(message)//trim(nf90_strerror(ierr)); return; endif
-
-    ! put the time into the structure
-    timDat%dtime = aTime(1)
-
-    ! compute the year, month, day, hour, minute, second
-    call caldatss(jdayRef+timDat%dtime,timDat%iy,timDat%im,timDat%id,timDat%ih,timDat%imin,timDat%dsec)
-
-    END SUBROUTINE get_modtim
 
     subroutine date_extractor(refDate,iy,im,id,ih)
     ! used to extract the date from a units string
@@ -218,4 +159,4 @@ module time_io
     if(julian.lt.0)iyyy=iyyy-100*(1-julian/36525)
     END SUBROUTINE caldatss
 
-end module time_io
+end module time_utils

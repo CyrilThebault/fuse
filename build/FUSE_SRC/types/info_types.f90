@@ -83,7 +83,9 @@ module info_types
    real(sp)       :: jdate_ref = 0._sp
    real(sp), allocatable :: time_steps(:)   ! time since reference time (transferred to output)
    real(sp), allocatable :: jdate(:)        ! julian day for each forcing record
- 
+
+   real(sp)              :: deltim_days     ! forcing time step in units of days
+
  end type time_info
 
  ! -------------------------------------------------------------------------------------
@@ -94,6 +96,15 @@ module info_types
 
  ! -------------------------------------------------------------------------------------
  
+ ! --- forcing_vars used in file_info
+ 
+ type :: forcing_vars
+  character(len=64), allocatable :: name(:)   ! NFORC
+  integer(i4b),      allocatable :: varid(:)  ! NFORC
+ end type
+
+ ! ---
+
  type :: file_info
 
    ! directories
@@ -101,7 +112,7 @@ module info_types
    character(len=:), allocatable :: input_path
    character(len=:), allocatable :: output_path
   
-   ! settings filenames (relative or absolute)
+   ! settings filenames
    character(len=:), allocatable :: forcinginfo
    character(len=:), allocatable :: constraints
    character(len=:), allocatable :: mod_numerix
@@ -112,8 +123,8 @@ module info_types
    character(len=:), allocatable :: suffix_elev_bands
   
    ! actual input filenames for this domain (derived once dom_id known)
-   character(len=:), allocatable :: forcing_file    ! dom_id//suffix_forcing
-   character(len=:), allocatable :: elevbands_file  ! dom_id//suffix_elev_bands
+   character(len=512) :: forcing_file    ! dom_id//suffix_forcing
+   character(len=512) :: elevbands_file  ! dom_id//suffix_elev_bands
   
    ! output base name + concrete outputs
    character(len=512) :: fname_tempry
@@ -122,7 +133,18 @@ module info_types
    character(len=512) :: fname_netcdf_para
 
    ! NetCDF forcing file info
-   integer(i4b)       :: ncid_forc = -9999  ! NetCDF file ID for forcing data
+   integer(i4b)                  :: ncid_forc = -9999  ! NetCDF file ID for forcing data
+
+   character(len=:), allocatable :: time_name          ! name of coordinate variables
+   character(len=:), allocatable :: latitude_name      ! name of coordinate variables
+   character(len=:), allocatable :: longitude_name     ! name of coordinate variables
+   
+   character(len=:), allocatable :: precip_name        ! name of forcing variables   
+   character(len=:), allocatable :: temp_name          ! name of forcing variables   
+   character(len=:), allocatable :: pet_name           ! name of forcing variables  
+   character(len=:), allocatable :: qobs_name          ! name of forcing variables
+
+   type(forcing_vars)            :: forc               ! name/varid table
 
  end type file_info
 

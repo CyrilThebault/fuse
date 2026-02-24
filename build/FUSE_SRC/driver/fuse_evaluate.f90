@@ -208,10 +208,11 @@ MODULE fuse_evaluate_module
   subroutine run_time_loop(info, work, output_flag, ierr, message)
 
   use globaldata, only: isPrint
+  use multiforce, only: timDat  ! NOTE: used in legacy cides
   use multiforce, only: nspat1, nspat2, DELTIM, sim_beg, sim_end, numtim_sub
   use multistate, only: gState_3d
   use multibands, only: MBANDS_VAR_4d
-  use time_io,           only: get_modtim
+  use time_utils,        only: caldatss
   use getPETgrid_module, only: getPETgrid
   use get_gforce_module, only: get_gforce_3d
   use put_output_module, only: put_output
@@ -300,9 +301,10 @@ MODULE fuse_evaluate_module
       sim_idx = chunk_start_sim + sub_idx - 1
 
       ! get the model time
-      CALL get_modtim(info%files%ncid_forc, in_idx, ierr, message)
-      IF(ierr/=0) stop TRIM(message)
-   
+      call caldatss(info%time%jdate(in_idx), work%step%time%iy, work%step%time%im, work%step%time%id, &
+                                             work%step%time%ih, work%step%time%imin, work%step%time%dsec)
+      timDat = work%step%time ! NOTE: used in the legacy data structures
+
       ! compute potential ET
       IF(computePET) CALL getPETgrid(ierr,message)
       IF(ierr/=0) stop TRIM(message)

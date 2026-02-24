@@ -238,16 +238,12 @@ SHARE = $(patsubst %, $(SHARE_DIR)/%, $(FUSE_SHARE))
 # combine data modules together
 DATAMS = $(G_DATA) $(MODDEF) $(TYPES) $(SHARE)
 
-# Time I/O modules
-FUSE_TIMEMS =
-FUSE_TIMEMS += time_io.f90
-TIMUTILS = $(patsubst %, $(TIME_DIR)/%, $(FUSE_TIMEMS))
-
 # Utility modules
 FUSE_UTILMS =
 FUSE_UTILMS += fuse_fileManager.f90
 FUSE_UTILMS += alloc_domain.f90
 FUSE_UTILMS += alloc_scratch.f90
+FUSE_UTILMS += time_utils.f90
 FUSE_UTILMS += metaoutput.f90
 FUSE_UTILMS += metaparams.f90
 FUSE_UTILMS += meta_stats.f90
@@ -325,7 +321,6 @@ FUSE_PRELIM += parse_command_args.f90
 FUSE_PRELIM += ascii_util.f90
 FUSE_PRELIM += uniquemodl.f90
 FUSE_PRELIM += getnumerix.f90
-FUSE_PRELIM += force_info.f90
 FUSE_PRELIM += getparmeta.f90
 FUSE_PRELIM += assign_stt.f90
 FUSE_PRELIM += assign_flx.f90

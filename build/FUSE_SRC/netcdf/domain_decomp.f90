@@ -1,6 +1,5 @@
 module domain_decomp_module
 
-  use nrtype
   use info_types, only: fuse_info
 
   implicit none
