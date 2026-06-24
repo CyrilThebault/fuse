@@ -19,12 +19,16 @@ MODULE GET_TIME_INDICES_MODULE
     USE multiforce, only: sim_beg,sim_end                     ! timestep indices
     USE multiforce, only: eval_beg,eval_end                   ! timestep indices
     USE multiforce, only: SUB_PERIODS_FLAG                    ! .true. if subperiods are used to run FUSE
+    
+    USE time_io,    only: time_units_to_days, INPUT_DT_DAYS   ! Add by Cyril Thebault
 
     USE fuse_fileManager,only:date_start_sim,date_end_sim,&
               date_start_eval,date_end_eval,&
               numtim_sub_str
 
     real(sp)                               :: jdate_ref_netcdf
+    real(sp)                               :: time_factor_days ! Conversion factor from NetCDF time units to days.
+    
     INTEGER(I4B)                           :: ERR             ! error code
     CHARACTER(LEN=1024)                    :: MESSAGE         ! error message
 
@@ -43,7 +47,18 @@ MODULE GET_TIME_INDICES_MODULE
     call juldayss(iy,im,id,ih,            &          ! convert it to julian day
                     jdate_ref_netcdf,err,message)
 
-    julian_day_input=jdate_ref_netcdf+time_steps ! julian day of each time step of the input file
+    time_factor_days = time_units_to_days(timeUnits) ! Add by Cyril Thebault for the hourly time step
+    julian_day_input = jdate_ref_netcdf + time_steps * time_factor_days ! julian day of each time step of the input file
+    
+    ! Store the physical duration of one forcing timestep in days. Add by Cyril Thebault
+    ! This assumes a regular input timestep.
+    IF (SIZE(time_steps) > 1) THEN
+      INPUT_DT_DAYS = (time_steps(2) - time_steps(1)) * time_factor_days
+    ELSE
+      INPUT_DT_DAYS = time_factor_days
+    ENDIF
+    
+    PRINT *, 'INPUT_DT_DAYS = ', INPUT_DT_DAYS
 
     call caldatss(julian_day_input(1),iy,im,id,ih,imin,isec)
     print *, 'Start date input file=',iy,im,id

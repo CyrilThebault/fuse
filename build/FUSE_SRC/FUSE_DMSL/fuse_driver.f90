@@ -19,7 +19,7 @@ USE fuse_fileManager,only:fuse_SetDirsUndPhiles,&         ! sets directories and
           FMODEL_ID,&
           suffix_forcing,suffix_elev_bands,&
           numtim_sub_str,&
-          KSTOP_str, MAXN_str, PCENTO_str
+          KSTOP_str, MAXN_str, PCENTO_str, SEED_str
 
 ! data modules
 USE model_defn,nstateFUSE=>nstate                         ! model definition structures
@@ -125,6 +125,7 @@ REAL(SP), DIMENSION(:), ALLOCATABLE    :: BL      ! vector of lower parameter bo
 REAL(SP), DIMENSION(:), ALLOCATABLE    :: BU      ! vector of upper parameter bounds
 REAL(SP), DIMENSION(:), ALLOCATABLE    :: APAR    ! model parameter set
 INTEGER(KIND=4)                        :: ISEED   ! seed for the random sequence
+INTEGER                                :: count   ! used to create a random value based on clock time
 REAL(KIND=4),DIMENSION(:), ALLOCATABLE :: URAND   ! vector of quasi-random numbers U[0,1]
 REAL(SP)                               :: METRIC_VAL     ! error from the simulation
 
@@ -349,6 +350,20 @@ ELSE IF(fuse_mode == 'calib_sce')THEN ! calibrate FUSE using SCE
   READ (MAXN_STR,*) MAXN		 ! maximum number of trials before optimization is terminated
   READ (KSTOP_STR,*) KSTOP   ! number of shuffling loops the value must change by PCENTO (MAX=9)
   READ (PCENTO_STR,*) PCENTO    ! the percentage
+  
+
+  ! SCE random seed.
+  ! SEED_STR = -9999 means use random seed.
+  ! SEED_STR > 0 means use fixed user-defined seed.
+  READ (SEED_STR,*) ISEED
+    
+  IF (ISEED <= 0) THEN
+    CALL SYSTEM_CLOCK(count)
+    ISEED = ABS(count)
+  ENDIF
+    
+  PRINT *, 'SCE seed = ', ISEED
+
 
   PRINT *, 'SCE parameters read from file manager:'
   PRINT *, 'Maximum number of trials before SCE optimization is stopped (MAXN) = ', MAXN_STR

@@ -43,6 +43,7 @@ CHARACTER(len=20)           :: TRANSFO           ! streamflow transformation
 CHARACTER(len=20)           :: KSTOP_str         ! number of shuffling loops the value must change by PCENTO
 CHARACTER(len=20)           :: MAXN_str          ! maximum number of trials before optimization is terminated
 CHARACTER(len=20)           :: PCENTO_str        ! the percentage
+CHARACTER(len=20)           :: SEED_str          ! SCE seed; -9999 keeps legacy seed loop. Add by Cyril Thebault
 
 !----------------------------------------------------
 contains
@@ -170,6 +171,7 @@ read(unt,'(a)')temp
 read(unt,*)MAXN_STR
 read(unt,*)KSTOP_STR
 read(unt,*)PCENTO_STR
+read(unt,*)SEED_STR
 close(unt)
 
 ! Convert Q_ONLY to logical

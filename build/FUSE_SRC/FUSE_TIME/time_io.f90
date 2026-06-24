@@ -6,7 +6,51 @@ module time_io
 
   public::get_modtim
 
+  ! Physical duration of one input timestep in days. Add by Cyril Thebault.
+  ! daily  = 1.0
+  ! hourly = 1.0 / 24.0
+  ! Used to convert historical day-based process rates to mm/timestep.
+  REAL(SP), SAVE :: INPUT_DT_DAYS = 1.0_SP
+
   contains
+  
+  
+   ! ---------------------------------------------------------------------------------------
+   !
+   ! Add by Cyril Thebault
+   !
+   ! ---------------------------------------------------------------------------------------
+  
+     REAL(SP) FUNCTION time_units_to_days(timeUnits) ! Converts NetCDF time units to days per time unit.
+      CHARACTER(*), INTENT(IN) :: timeUnits
+      CHARACTER(LEN=1024) :: units_lc
+      INTEGER(I4B) :: i
+    
+      units_lc = ADJUSTL(timeUnits)
+    
+      ! lower-case simple
+      DO i=1,LEN_TRIM(units_lc)
+        IF (units_lc(i:i) >= 'A' .AND. units_lc(i:i) <= 'Z') &
+          units_lc(i:i) = ACHAR(IACHAR(units_lc(i:i)) + 32)
+      END DO
+    
+      IF (INDEX(units_lc,'seconds since') > 0) THEN
+        time_units_to_days = 1.0_SP / 86400.0_SP
+      ELSEIF (INDEX(units_lc,'minutes since') > 0) THEN
+        time_units_to_days = 1.0_SP / 1440.0_SP
+      ELSEIF (INDEX(units_lc,'hours since') > 0) THEN
+        time_units_to_days = 1.0_SP / 24.0_SP
+      ELSEIF (INDEX(units_lc,'days since') > 0) THEN
+        time_units_to_days = 1.0_SP
+      ELSE
+        PRINT *, 'Error: unsupported NetCDF time units: ', TRIM(timeUnits)
+        STOP
+      ENDIF
+
+    END FUNCTION time_units_to_days
+  
+  
+  
 
     SUBROUTINE get_modtim(itim,ncid,ierr,message)
     ! ---------------------------------------------------------------------------------------
@@ -21,6 +65,9 @@ module time_io
     ! Modules Modified:
     ! -----------------
     ! MODULE multiforce -- populate structure timDat%(*)
+    !
+    ! Modified to work at the hourly time step by Cyril Thebault
+    !
     ! ---------------------------------------------------------------------------------------
     USE fuse_fileManager,only:INPUT_PATH                   ! defines data directory
     USE multiforce,only:forcefile                          ! name of forcing file
@@ -61,7 +108,7 @@ module time_io
     if(ierr/=0)then; message=trim(message)//trim(nf90_strerror(ierr)); return; endif
 
     ! put the time into the structure
-    timDat%dtime = aTime(1)
+    timDat%dtime = aTime(1) * time_units_to_days(timeUnits)
 
     ! compute the year, month, day, hour, minute, second
     call caldatss(jdayRef+timDat%dtime,timDat%iy,timDat%im,timDat%id,timDat%ih,timDat%imin,timDat%dsec)

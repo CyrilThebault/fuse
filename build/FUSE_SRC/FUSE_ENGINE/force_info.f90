@@ -37,7 +37,7 @@ contains
  USE multiforce,only:vname_dtime                            ! name of time variable (time since reference time)
  USE multiforce,only:deltim                                 ! model timestep (days)
  USE multiforce,only:istart,numtim_sim                      ! index for start of inference, and number steps in the reduced array
- USE multiforce,only:amult_ppt,amult_pet,amult_q            ! used to convert fluxes to mm/day
+ USE multiforce,only:amult_ppt,amult_pet,amult_q            ! used to convert input flux units to FUSE internal units
  USE multiforce,only:numtim_sub                             ! number of time steps of subperiod (will be kept in memory)
 
  IMPLICIT NONE
@@ -229,7 +229,7 @@ contains
  real(sp),parameter                     :: hrprday=24._sp      ! number of hours per day
  ! initialize error control
  ierr=0; message='get_multiplier/'
- ! if units are undefined, assume mm/day and have an early return
+ ! if units are undefined, assume no unit conversion and have an early return
  if(trim(cunits)=='undefined')then; amult=1._sp; return; endif
  ! find the position of the "/" character
  ipos = index(trim(cunits),'/')

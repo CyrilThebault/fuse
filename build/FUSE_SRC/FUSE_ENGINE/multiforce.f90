@@ -22,7 +22,7 @@ MODULE multiforce
   ENDTYPE TDATA
   ! the response structure (will not have a spatial dimension)
   TYPE VDATA
-     REAL(SP)                             :: OBSQ       ! observed runoff (mm day-1)
+     REAL(SP)                             :: OBSQ       ! observed runoff (mm per timestep)
   END TYPE VDATA
   ! ancillary forcing variables used to compute ET (will have a spatial dimension)
   TYPE ADATA
@@ -34,9 +34,9 @@ MODULE multiforce
   END TYPE ADATA
   ! the forcing data structure (will have a spatial dimension)
   TYPE FDATA
-     REAL(SP)                             :: PPT        ! water input: rain + melt (mm day-1)
+     REAL(SP)                             :: PPT        ! water input: rain + melt (mm per timestep)
      REAL(SP)                             :: TEMP       ! temperature for snow model (deg.C)
-     REAL(SP)                             :: PET        ! energy input: potential ET (mm day-1)
+     REAL(SP)                             :: PET        ! energy input: potential ET (mm per timestep)
   ENDTYPE FDATA
   ! --------------------------------------------------------------------------------------
   ! general
@@ -74,7 +74,7 @@ MODULE multiforce
 
   INTEGER(i4b)                          :: istart=-1                 ! index for start of inference period (in reduced array)
   REAL(sp)                              :: jdayRef                   ! reference time (days)
-  REAL(sp)                              :: deltim=-1._dp             ! length of time step (days)
+  REAL(sp)                              :: deltim=-1._dp             ! length of time step
 
   LOGICAL(LGT)                          :: SUB_PERIODS_FLAG          ! .true. if subperiods are used to run FUSE
 
@@ -148,9 +148,9 @@ MODULE multiforce
   INTEGER(i4b)                          :: ivarid_q=-1               ! variable ID for runoff
 
   ! multipliers for variables to convert fluxes to mm/day
-  REAL(sp)                              :: amult_ppt=-1._dp          ! convert precipitation to mm/day
-  REAL(sp)                              :: amult_pet=-1._dp          ! convert potential ET to mm/day
-  REAL(sp)                              :: amult_q=-1._dp            ! convert runoff to mm/day
+  REAL(sp)                              :: amult_ppt=-1._dp          ! precipitation unit multiplier
+  REAL(sp)                              :: amult_pet=-1._dp          ! potential ET unit multiplier
+  REAL(sp)                              :: amult_q=-1._dp            ! runoff unit multiplier
 
   ! missing values
   INTEGER(I4B),PARAMETER                :: NA_VALUE=-9999            ! integer designating missing values - TODO: retrieve from NetCDF file

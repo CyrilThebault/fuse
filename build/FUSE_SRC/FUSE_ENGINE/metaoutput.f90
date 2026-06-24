@@ -27,8 +27,8 @@ CONTAINS
 SUBROUTINE VARDESCRIBE()
 I=0  ! initialize counter
 ! model forcing
-I=I+1; VNAME(I)='ppt        '; LNAME(I)='precipitation rate                                 '; VUNIT(I)='mm day-1     '
-I=I+1; VNAME(I)='pet        '; LNAME(I)='potential evapotranspiration rate                  '; VUNIT(I)='mm day-1     '
+I=I+1; VNAME(I)='ppt        '; LNAME(I)='precipitation rate                                 '; VUNIT(I)='mm timestep-1     '
+I=I+1; VNAME(I)='pet        '; LNAME(I)='potential evapotranspiration rate                  '; VUNIT(I)='mm timestep-1     '
 I=I+1; VNAME(I)='temp       '; LNAME(I)='mean air temperature                               '; VUNIT(I)='deg.C        '
 I=I+1; VNAME(I)='obsq       '; LNAME(I)='observed runoff                                    '; VUNIT(I)='mm timestep-1'
 ! model states

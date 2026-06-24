@@ -306,6 +306,7 @@ contains
  ! MODULE multiforce -- populate structure GFORCE(*,*)%(*)
  ! ---------------------------------------------------------------------------------------
  USE fuse_fileManager,only:INPUT_PATH                   ! defines data directory
+ 
  USE multiforce,only:forcefile                          ! name of forcing file
  USE multiforce,only:vname_aprecip                      ! variable name: precipitation
  USE multiforce,only:vname_airtemp                      ! variable name: temperature
@@ -323,7 +324,7 @@ contains
 
  USE multiforce,only:nspat1,nspat2,startSpat2           ! dimension lengths
  USE multiforce,only:ncid_var                           ! NetCDF ID for forcing variables
- USE multiforce,only:amult_ppt,amult_pet                ! multipliers o convert to mm/day
+ USE multiforce,only:amult_ppt,amult_pet                ! multipliers to convert input flux units to FUSE internal units
  USE multiforce,only:gForce                             ! gridded forcing data
  USE multiforce,only:ancilF                             ! ancillary forcing data
  USE multiforce,only:nForce                             ! number of forcing variables
@@ -375,7 +376,7 @@ contains
    ierr = nf90_get_var(ncid_forc, ncid_var(ivar), gTemp, start=(/1,startSpat2,iTim/), count=(/nSpat1,nSpat2,1/)); CALL HANDLE_ERR(IERR)
    if(ierr/=0)then; message=trim(message)//trim(nf90_strerror(ierr)); return; endif
 
-  ! save the data in the structure -- and convert fluxes to mm/day
+  ! save the data in the structure -- and apply input unit multipliers
   if(trim(cVec(iVar)%vname) == trim(vname_aprecip) )then; gForce(:,:)%ppt = gTemp(:,:,1)*amult_ppt; lCheck(ilook_aprecip) = .true.; endif
   if(trim(cVec(iVar)%vname) == trim(vname_potevap) )then; gForce(:,:)%pet = gTemp(:,:,1)*amult_pet; lCheck(ilook_potevap) = .true.; endif
   if(trim(cVec(iVar)%vname) == trim(vname_airtemp) )then; gForce(:,:)%temp = gTemp(:,:,1);       lCheck(ilook_airtemp) = .true.; endif
@@ -411,6 +412,7 @@ contains
  ! MODULE multiforce -- populate structure GFORCE_3d(*,*)%(*)
  ! ---------------------------------------------------------------------------------------
  USE fuse_fileManager,only:INPUT_PATH                   ! defines data directory
+
  USE multiforce,only:forcefile                          ! name of forcing file
  USE multiforce,only:vname_aprecip                      ! variable name: precipitation
  USE multiforce,only:vname_airtemp                      ! variable name: temperature
@@ -430,7 +432,7 @@ contains
 
  USE multiforce,only:nspat1,nspat2,startSpat2           ! dimension lengths
  USE multiforce,only:ncid_var                           ! NetCDF ID for forcing variables
- USE multiforce,only:amult_ppt,amult_pet                ! multipliers o convert to mm/day
+ USE multiforce,only:amult_ppt,amult_pet, amult_q       ! multipliers to convert input flux units to FUSE internal units
  USE multiforce,only:gForce_3d                          ! gridded forcing data
  USE multiforce,only:ancilF_3d                          ! ancillary forcing data
  USE multiforce,only:nForce, nInput                     ! number of forcing variables
@@ -483,7 +485,7 @@ contains
   ierr = nf90_get_var(ncid_forc, ncid_var(ivar), gTemp, start=(/1,startSpat2,itim_start/), count=(/nSpat1,nSpat2,numtim/)); CALL HANDLE_ERR(IERR)
   if(ierr/=0)then; message=trim(message)//trim(nf90_strerror(ierr)); return; endif
 
-  ! save the data in the structure -- and convert fluxes to mm/day
+  ! save the data in the structure -- and apply input unit multipliers
   if(trim(cVec(iVar)%vname) == trim(vname_aprecip) )then
 
     gForce_3d(:,:,1:numtim)%ppt = gTemp(:,:,:)*amult_ppt; lCheck(ilook_aprecip) = .true.
@@ -499,7 +501,7 @@ contains
   endif
 
   if(trim(cVec(iVar)%vname) == trim(vname_q) )then
-    aValid(:,:,1:numtim)%obsq = gTemp(:,:,:);       lCheck(ilook_q) = .true.
+    aValid(:,:,1:numtim)%obsq = gTemp(:,:,:) * amult_q;       lCheck(ilook_q) = .true. ! Modified by Cyril Thebault
   endif
 
   ! save the other variables required to compute PET
