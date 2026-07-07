@@ -6,6 +6,7 @@ FUNCTION FUNCV(X_TRY)
 ! Creator:
 ! --------
 ! Martyn Clark, 2007
+! Modified by Cyril Thebault to include interception, 7/2026
 ! ---------------------------------------------------------------------------------------
 ! Purpose:
 ! --------
@@ -45,6 +46,7 @@ CALL MOD_DERIVS()              ! evaluate dxdt for state vector X_TRY
 ! ---------------------------------------------------------------------------------------
 DO ISTT=1,NSTATE
  SELECT CASE(CSTATE(ISTT)%iSNAME)
+  CASE (iopt_SINT_0); FUNCV(ISTT) = MSTATE%SINT_0  + DY_DT%SINT_0 *HSTATE%STEP - X_TRY(ISTT)
   CASE (iopt_TENS1A); FUNCV(ISTT) = MSTATE%TENS_1A + DY_DT%TENS_1A*HSTATE%STEP - X_TRY(ISTT)
   CASE (iopt_TENS1B); FUNCV(ISTT) = MSTATE%TENS_1B + DY_DT%TENS_1B*HSTATE%STEP - X_TRY(ISTT)
   CASE (iopt_TENS_1); FUNCV(ISTT) = MSTATE%TENS_1  + DY_DT%TENS_1 *HSTATE%STEP - X_TRY(ISTT)
@@ -56,7 +58,7 @@ DO ISTT=1,NSTATE
   CASE (iopt_WATR_2); FUNCV(ISTT) = MSTATE%WATR_2  + DY_DT%WATR_2 *HSTATE%STEP - X_TRY(ISTT)
   CASE DEFAULT; STOP 'fatal error: cannot identify the state variable'
  END SELECT
- print *, desc_int2str(CSTATE(ISTT)%iSNAME), FUNCV(ISTT), HSTATE%STEP
+ !print *, desc_int2str(CSTATE(ISTT)%iSNAME), FUNCV(ISTT), HSTATE%STEP
 END DO
 ! ---------------------------------------------------------------------------------------
 END FUNCTION FUNCV
