@@ -7,6 +7,7 @@ SUBROUTINE GETPAR_STR(PARNAME,METADAT)
 ! --------
 ! Martyn Clark, 2009
 ! Modified by Brian Henn to include snow model, 6/2013
+! Modified by Cyril Thebault to include interception, 7/2026
 ! ---------------------------------------------------------------------------------------
 ! Purpose:
 ! --------
@@ -29,6 +30,7 @@ CASE('RH1P_MEAN');  METADAT = PARMETA%RH1P_MEAN
 CASE('RH1P_SDEV');  METADAT = PARMETA%RH1P_SDEV
 CASE('RH2P_MEAN');  METADAT = PARMETA%RH2P_MEAN
 CASE('RH2P_SDEV');  METADAT = PARMETA%RH2P_SDEV
+CASE('MAXSINT_0');  METADAT = PARMETA%MAXSINT_0
 CASE('MAXWATR_1');  METADAT = PARMETA%MAXWATR_1
 CASE('MAXWATR_2');  METADAT = PARMETA%MAXWATR_2
 CASE('FRACTEN');    METADAT = PARMETA%FRACTEN  
@@ -58,6 +60,7 @@ CASE('MFMIN');      METADAT = PARMETA%MFMIN
 CASE('PXTEMP');     METADAT = PARMETA%PXTEMP
 CASE('OPG');        METADAT = PARMETA%OPG
 CASE('LAPSE');      METADAT = PARMETA%LAPSE
+
 CASE DEFAULT
  print *, 'parameter name (', TRIM(PARNAME), ') does not exist '
  IF (TRIM(PARNAME).EQ.'NO_CHILD1' .OR. TRIM(PARNAME).EQ.'NO_CHILD2') &

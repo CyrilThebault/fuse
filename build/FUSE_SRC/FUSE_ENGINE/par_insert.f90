@@ -3,6 +3,7 @@
 ! --------
 ! Martyn Clark
 ! Modified by Brian Henn to include snow model, 6/2013
+! Modified by Cyril Thebault to include interception, 7/2026
 ! ---------------------------------------------------------------------------------------
 MODULE PAR_INSERT_MODULE
 IMPLICIT NONE
@@ -63,6 +64,7 @@ CASE('RH1P_MEAN');  MPARAM%RH1P_MEAN  = XVAR
 CASE('RH1P_SDEV');  MPARAM%RH1P_SDEV  = XVAR
 CASE('RH2P_MEAN');  MPARAM%RH2P_MEAN  = XVAR
 CASE('RH2P_SDEV');  MPARAM%RH2P_SDEV  = XVAR
+CASE('MAXSINT_0');  MPARAM%MAXSINT_0  = XVAR
 CASE('MAXWATR_1');  MPARAM%MAXWATR_1  = XVAR
 CASE('MAXWATR_2');  MPARAM%MAXWATR_2  = XVAR
 CASE('FRACTEN');    MPARAM%FRACTEN    = XVAR

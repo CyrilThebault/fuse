@@ -193,6 +193,21 @@ SELECT CASE(SMODL%iSNOWM)
   STOP
 END SELECT
 ! ---------------------------------------------------------------------------------------
+! (10) INTERCEPTION
+! ---------------------------------------------------------------------------------------
+SELECT CASE(SMODL%iINTRC)
+ CASE(iopt_no_intrcep)
+  ! (no additional parameters)
+
+ CASE(iopt_gr5h_intrc)
+  MPAR=MPAR+1; LPARAM(MPAR)%PARNAME = 'MAXSINT_0'  ! maximum interception storage (mm)
+
+ CASE DEFAULT
+  print *, "SMODL%iINTRC must be either iopt_no_intrcep or iopt_gr5h_intrc"
+  STOP
+END SELECT
+
+! ---------------------------------------------------------------------------------------
 NUMPAR = MPAR  ! save the number of model parameters used in a given model SMODL
 ! ---------------------------------------------------------------------------------------
 !DO MPAR=1,NUMPAR; WRITE(*,'(A11,1X)') LPARAM(MPAR)%PARNAME; END DO

@@ -31,8 +31,8 @@ DO ISTT=1,NSTATE  ! NSTATE is in module model_defn
  ! interception store
  ! ---------------------------------------------------------------------------------------
  CASE (iopt_SINT_0)
-  IF (MSTATE%SINT_0 .LT. 0._SP)          MSTATE%SINT_0 = 0._SP
-  IF (MSTATE%SINT_0 .GT. DPARAM%MAXSINT) MSTATE%SINT_0 = DPARAM%MAXSINT
+  IF (MSTATE%SINT_0 .LT. 0._SP)            MSTATE%SINT_0 = 0._SP
+  IF (MSTATE%SINT_0 .GT. MPARAM%MAXSINT_0) MSTATE%SINT_0 = MPARAM%MAXSINT_0
  
  ! ---------------------------------------------------------------------------------------
  ! states in the upper layer

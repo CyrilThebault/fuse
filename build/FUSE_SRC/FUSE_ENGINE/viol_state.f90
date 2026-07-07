@@ -6,6 +6,7 @@ FUNCTION VIOL_STATE(X_TRY)
 ! Creator:
 ! --------
 ! Martyn Clark, 2009
+! Modified by Cyril Thebault to include interception, 7/2026
 ! ---------------------------------------------------------------------------------------
 ! Purpose:
 ! --------
@@ -34,8 +35,8 @@ DO ISTT=1,NSTATE
  SELECT CASE(CSTATE(ISTT)%iSNAME)
    ! interception store
   CASE (iopt_SINT_0)
-   IF(X_TRY(ISTT).LT.0._SP)          VIOL_STATE=.TRUE.
-   IF(X_TRY(ISTT).GT.DPARAM%MAXSINT) VIOL_STATE=.TRUE.
+   IF(X_TRY(ISTT).LT.           0._SP) VIOL_STATE=.TRUE.
+   IF(X_TRY(ISTT).GT.MPARAM%MAXSINT_0) VIOL_STATE=.TRUE.
   ! upper tanks
   CASE (iopt_TENS1A)
    IF(X_TRY(ISTT).LT.XMIN*DPARAM%MAXTENS_1A) VIOL_STATE=.TRUE.

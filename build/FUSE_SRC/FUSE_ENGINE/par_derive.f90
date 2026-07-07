@@ -3,7 +3,6 @@ SUBROUTINE PAR_DERIVE(err,message)
 ! Creator:
 ! --------
 ! Martyn Clark, 2007
-! Modified by Cyril Thebault to include interception, 7/2026
 ! ---------------------------------------------------------------------------------------
 ! Purpose:
 ! --------
@@ -31,7 +30,6 @@ if(err/=0)then
   err=10; message="f-PAR_DERIVE/&"//trim(message); return
 endif
 
-DPARAM%MAXSINT = 1.0_SP
 ! ---------------------------------------------------------------------------------------
 IF (SMODL%iESOIL.EQ.iopt_rootweight) DPARAM%RTFRAC2 = 1._SP - MPARAM%RTFRAC1
 ! ---------------------------------------------------------------------------------------

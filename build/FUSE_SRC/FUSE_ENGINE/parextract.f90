@@ -9,6 +9,7 @@ SUBROUTINE GET_PARSET(PARSET)
 ! --------
 ! Martyn Clark, 2008
 ! Modified by Brian Henn to include snow model, 6/2013
+! Modified by Cyril Thebault to include interception, 7/2026
 ! ---------------------------------------------------------------------------------------
 ! Purpose:
 ! --------
@@ -63,6 +64,7 @@ SELECT CASE (TRIM(PARNAME))
  CASE ('RH1P_SDEV')  ; XVAR = MPARAM%RH1P_SDEV
  CASE ('RH2P_MEAN')  ; XVAR = MPARAM%RH2P_MEAN
  CASE ('RH2P_SDEV')  ; XVAR = MPARAM%RH2P_SDEV
+ CASE ('MAXSINT_0')  ; XVAR = MPARAM%MAXSINT_0
  CASE ('MAXWATR_1')  ; XVAR = MPARAM%MAXWATR_1
  CASE ('MAXWATR_2')  ; XVAR = MPARAM%MAXWATR_2
  CASE ('FRACTEN')    ; XVAR = MPARAM%FRACTEN
