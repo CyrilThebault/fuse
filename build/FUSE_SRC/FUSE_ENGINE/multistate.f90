@@ -6,6 +6,8 @@ MODULE multistate
  TYPE STATEV
   ! snow layer
   REAL(SP)                             :: SWE_TOT    ! total storage as snow (mm)
+  ! interception
+  REAL(SP)                             :: SINT_0     ! interception storage (mm)
   ! upper layer
   REAL(SP)                             :: WATR_1     ! total storage in layer1 (mm)
   REAL(SP)                             :: TENS_1     ! tension storage in layer1 (mm)

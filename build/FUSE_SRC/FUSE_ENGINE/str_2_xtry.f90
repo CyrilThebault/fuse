@@ -25,6 +25,7 @@ INTEGER(I4B)                           :: ISTT        ! loop through model state
 ! ---------------------------------------------------------------------------------------
 DO ISTT=1,NSTATE
  SELECT CASE(CSTATE(ISTT)%iSNAME)
+  CASE (iopt_SINT_0); X_TRY(ISTT) = TMPSTR%SINT_0
   CASE (iopt_TENS1A); X_TRY(ISTT) = TMPSTR%TENS_1A
   CASE (iopt_TENS1B); X_TRY(ISTT) = TMPSTR%TENS_1B
   CASE (iopt_TENS_1); X_TRY(ISTT) = TMPSTR%TENS_1
