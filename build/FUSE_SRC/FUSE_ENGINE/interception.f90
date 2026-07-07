@@ -15,17 +15,32 @@ USE multiparam
 USE multistate
 USE multiforce
 USE multi_flux
+
 IMPLICIT NONE
+REAL(SP) :: DT
+REAL(SP) :: P_STEP
+REAL(SP) :: PET_STEP
+REAL(SP) :: EINT_STEP
+REAL(SP) :: PTHRU_STEP
 ! ---------------------------------------------------------------------------------------
+M_FLUX%PINC = M_FLUX%EFF_PPT
 SELECT CASE(SMODL%iINTRC)
  CASE(iopt_no_intrcep)
-  M_FLUX%PTHRU = M_FLUX%EFF_PPT
-  M_FLUX%EINT  = 0._SP
-
+  M_FLUX%EVAP_0  = 0._SP
+  M_FLUX%PTHRU = M_FLUX%PINC
  CASE(iopt_gr5h_intrc)
-  ! temporary passive implementation
-  M_FLUX%PTHRU = M_FLUX%EFF_PPT
-  M_FLUX%EINT  = 0._SP
+  DT = DELTIM
+
+  P_STEP   = M_FLUX%PINC * DT
+  PET_STEP = MFORCE%PET  * DT
+
+  EINT_STEP = MIN(PET_STEP, P_STEP + FSTATE%SINT_0)
+
+  PTHRU_STEP = MAX(0._SP, &
+                   P_STEP - (MPARAM%MAXSINT_0 - FSTATE%SINT_0) - EINT_STEP)                
+
+  M_FLUX%EVAP_0 = EINT_STEP / DT
+  M_FLUX%PTHRU = PTHRU_STEP / DT
 
  CASE DEFAULT
   print *, "SMODL%iINTRC must be iopt_no_intrcep or iopt_gr5h_intrc"

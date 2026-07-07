@@ -104,9 +104,10 @@ SELECT CASE (TRIM(VARNAME))
  CASE ('swe_z49')    ; XVAR = MBANDS(49)%SWE
  CASE ('swe_z50')    ; XVAR = MBANDS(50)%SWE
  ! extract model fluxes
- CASE ('eff_ppt')    ; XVAR = W_FLUX%EFF_PPT
+ CASE ('pinc')       ; XVAR = W_FLUX%PINC
  CASE ('pthru')      ; XVAR = W_FLUX%PTHRU
- CASE ('eint')       ; XVAR = W_FLUX%EINT
+ CASE ('evap_0')     ; XVAR = W_FLUX%EVAP_0
+ CASE ('eff_ppt')    ; XVAR = W_FLUX%EFF_PPT
  CASE ('satarea')    ; XVAR = W_FLUX%SATAREA
  CASE ('qsurf')      ; XVAR = W_FLUX%QSURF
  CASE ('evap_1a')    ; XVAR = W_FLUX%EVAP_1A
@@ -363,9 +364,10 @@ SELECT CASE (TRIM(VARNAME))
  CASE ('swe_z49')    ; XVAR_3d = MBANDS_VAR_4d(:,:,49,1:numtim)%SWE
  CASE ('swe_z50')    ; XVAR_3d = MBANDS_VAR_4d(:,:,50,1:numtim)%SWE
  ! extract model fluxes
- CASE ('eff_ppt')    ; XVAR_3d = W_FLUX_3d%EFF_PPT
+ CASE ('pinc')       ; XVAR_3d = W_FLUX_3d%PINC
  CASE ('pthru')      ; XVAR_3d = W_FLUX_3d%PTHRU
- CASE ('eint')       ; XVAR_3d = W_FLUX_3d%EINT 
+ CASE ('evap_0')     ; XVAR_3d = W_FLUX_3d%EVAP_0
+ CASE ('eff_ppt')    ; XVAR_3d = W_FLUX_3d%EFF_PPT
  CASE ('satarea')    ; XVAR_3d = W_FLUX_3d%SATAREA
  CASE ('qsurf')      ; XVAR_3d = W_FLUX_3d%QSURF
  CASE ('evap_1a')    ; XVAR_3d = W_FLUX_3d%EVAP_1A

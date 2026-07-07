@@ -1,9 +1,10 @@
 MODULE multi_flux
  USE nrtype
  TYPE FLUXES
+  REAL(SP)                             :: PINC        ! precipitation incident on interception store (mm day-1)
   REAL(SP)                             :: PTHRU       ! throughfall after interception (mm day-1)
-  REAL(SP)                             :: EINT        ! evaporation from interception storage (mm day-1)
-  REAL(SP)                             :: EFF_PPT     ! effective precipitation (mm day-1)
+  REAL(SP)                             :: EVAP_0      ! evaporation from interception storage (mm day-1)
+  REAL(SP)                             :: EFF_PPT     ! effective precipitation to soil (mm day-1)
   REAL(SP)                             :: SATAREA     ! saturated area (-)
   REAL(SP)                             :: QSURF       ! surface runoff (mm day-1)
   REAL(SP)                             :: EVAP_1A     ! evaporation from soil excess zone (mm day-1)

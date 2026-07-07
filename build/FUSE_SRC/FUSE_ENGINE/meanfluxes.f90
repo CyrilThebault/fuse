@@ -18,9 +18,10 @@ USE multi_flux                                        ! model fluxes
 USE multistate                                        ! model states (use time step)
 IMPLICIT NONE
 ! ---------------------------------------------------------------------------------------
-M_FLUX%EFF_PPT     = 0.5_sp * (FLUX_0%EFF_PPT     + FLUX_1%EFF_PPT    )
+M_FLUX%PINC        = 0.5_sp * (FLUX_0%PINC        + FLUX_1%PINC       )
 M_FLUX%PTHRU       = 0.5_sp * (FLUX_0%PTHRU       + FLUX_1%PTHRU      )
-M_FLUX%EINT        = 0.5_sp * (FLUX_0%EINT        + FLUX_1%EINT       )
+M_FLUX%EVAP_0      = 0.5_sp * (FLUX_0%EVAP_0      + FLUX_1%EVAP_0     )
+M_FLUX%EFF_PPT     = 0.5_sp * (FLUX_0%EFF_PPT     + FLUX_1%EFF_PPT    )
 M_FLUX%SATAREA     = 0.5_sp * (FLUX_0%SATAREA     + FLUX_1%SATAREA    )
 M_FLUX%QSURF       = 0.5_sp * (FLUX_0%QSURF       + FLUX_1%QSURF      )
 M_FLUX%EVAP_1A     = 0.5_sp * (FLUX_0%EVAP_1A     + FLUX_1%EVAP_1A    )

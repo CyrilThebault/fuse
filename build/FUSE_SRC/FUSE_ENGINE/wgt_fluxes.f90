@@ -24,9 +24,10 @@ REAL(SP)                                :: WEIGHT     ! weight (sub-step / full-
 WEIGHT = HSTATE%STEP/DELTIM
 ! ---------------------------------------------------------------------------------------
 ! update data structure
-W_FLUX%EFF_PPT     = W_FLUX%EFF_PPT     + M_FLUX%EFF_PPT     * WEIGHT
+W_FLUX%PINC        = W_FLUX%PINC        + M_FLUX%PINC        * WEIGHT
 W_FLUX%PTHRU       = W_FLUX%PTHRU       + M_FLUX%PTHRU       * WEIGHT
-W_FLUX%EINT        = W_FLUX%EINT        + M_FLUX%EINT        * WEIGHT
+W_FLUX%EVAP_0      = W_FLUX%EVAP_0      + M_FLUX%EVAP_0      * WEIGHT
+W_FLUX%EFF_PPT     = W_FLUX%EFF_PPT     + M_FLUX%EFF_PPT     * WEIGHT
 W_FLUX%SATAREA     = W_FLUX%SATAREA     + M_FLUX%SATAREA     * WEIGHT
 W_FLUX%QSURF       = W_FLUX%QSURF       + M_FLUX%QSURF       * WEIGHT
 W_FLUX%EVAP_1A     = W_FLUX%EVAP_1A     + M_FLUX%EVAP_1A     * WEIGHT

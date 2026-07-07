@@ -36,9 +36,10 @@ IF (N_FLUX.EQ.0) CALL NRERROR('flux_deriv: number of fluxes is zero')
 ! ---------------------------------------------------------------------------------------
 DO IFLUX=1,N_FLUX
  SELECT CASE(TRIM(C_FLUX(IFLUX)%FNAME))
-  CASE('EFF_PPT')    ; FDFLUX(J)%EFF_PPT     = (M_FLUX%EFF_PPT     - FLUX_0%EFF_PPT)     / DS
+  CASE('PINC')       ; FDFLUX(J)%PINC        = (M_FLUX%PINC        - FLUX_0%PINC)        / DS
   CASE('PTHRU')      ; FDFLUX(J)%PTHRU       = (M_FLUX%PTHRU       - FLUX_0%PTHRU)       / DS
-  CASE('EINT')       ; FDFLUX(J)%EINT        = (M_FLUX%EINT        - FLUX_0%EINT)        / DS  
+  CASE('EVAP_0')     ; FDFLUX(J)%EVAP_0      = (M_FLUX%EVAP_0      - FLUX_0%EVAP_0)      / DS
+  CASE('EFF_PPT')    ; FDFLUX(J)%EFF_PPT     = (M_FLUX%EFF_PPT     - FLUX_0%EFF_PPT)     / DS
   CASE('EVAP_1A')    ; FDFLUX(J)%EVAP_1A     = (M_FLUX%EVAP_1A     - FLUX_0%EVAP_1A)     / DS
   CASE('EVAP_1B')    ; FDFLUX(J)%EVAP_1B     = (M_FLUX%EVAP_1B     - FLUX_0%EVAP_1B)     / DS
   CASE('EVAP_1')     ; FDFLUX(J)%EVAP_1      = (M_FLUX%EVAP_1      - FLUX_0%EVAP_1)      / DS

@@ -65,9 +65,10 @@ IF(SMODL%iSNOWM.EQ.iopt_temp_index) THEN !loop through snow model bands
 ENDIF
 
 ! model fluxes
-I=I+1; VNAME(I)='eff_ppt    '; LNAME(I)='effective precipitation rate                       '; VUNIT(I)='mm timestep-1'
-I=I+1; VNAME(I)='pthru      '; LNAME(I)='throughfall after interception                     '; VUNIT(I)='mm timestep-1'
-I=I+1; VNAME(I)='eint       '; LNAME(I)='evaporation from interception storage              '; VUNIT(I)='mm timestep-1'
+I=I+1; VNAME(I)='pinc       '; LNAME(I)='precipitation incident on interception store       '; VUNIT(I)='mm timestep-1'
+I=I+1; VNAME(I)='pthru      '; LNAME(I)='throughfall from interception store                '; VUNIT(I)='mm timestep-1'
+I=I+1; VNAME(I)='evap_0     '; LNAME(I)='evaporation from interception storage              '; VUNIT(I)='mm timestep-1'
+I=I+1; VNAME(I)='eff_ppt    '; LNAME(I)='effective precipitation available to soil          '; VUNIT(I)='mm timestep-1'
 I=I+1; VNAME(I)='satarea    '; LNAME(I)='saturated area                                     '; VUNIT(I)='-            '
 I=I+1; VNAME(I)='qsurf      '; LNAME(I)='surface runoff                                     '; VUNIT(I)='mm timestep-1'
 I=I+1; VNAME(I)='evap_1a    '; LNAME(I)='evaporation from soil excess zone                  '; VUNIT(I)='mm timestep-1'

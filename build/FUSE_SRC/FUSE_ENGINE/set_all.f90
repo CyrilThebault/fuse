@@ -70,9 +70,10 @@ contains
     REAL(SP), INTENT(IN)                  :: VAL          ! value
     INTEGER(I4B)                          :: ISNW         ! index for looping though SWE
     ! ---------------------------------------------------------------------------------------
-    M_FLUX%EFF_PPT     = VAL; W_FLUX%EFF_PPT     = VAL
+    M_FLUX%PINC        = VAL; W_FLUX%PINC        = VAL
     M_FLUX%PTHRU       = VAL; W_FLUX%PTHRU       = VAL
-    M_FLUX%EINT        = VAL; W_FLUX%EINT        = VAL
+    M_FLUX%EVAP_0      = VAL; W_FLUX%EVAP_0      = VAL
+    M_FLUX%EFF_PPT     = VAL; W_FLUX%EFF_PPT     = VAL
     M_FLUX%SATAREA     = VAL; W_FLUX%SATAREA     = VAL
     M_FLUX%QSURF       = VAL; W_FLUX%QSURF       = VAL
     M_FLUX%EVAP_1A     = VAL; W_FLUX%EVAP_1A     = VAL

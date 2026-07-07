@@ -23,11 +23,9 @@ REAL(SP), PARAMETER                    :: missingValue=-9999._sp
 ! ---------------------------------------------------------------------------------------
 SELECT CASE(SMODL%iINTRC)  ! (interception)
  CASE(iopt_no_intrcep)
-  FSTATE%SINT_0 = missingValue
-
+  FSTATE%SINT_0 = 0._SP
  CASE(iopt_gr5h_intrc)
   FSTATE%SINT_0 = MAX(0._SP, MIN(MPARAM%MAXSINT_0, FSTATE%SINT_0 + DY_DT%SINT_0*DT))
-
  CASE DEFAULT
   print *, "SMODL%iINTRC must be iopt_no_intrcep or iopt_gr5h_intrc"
   STOP

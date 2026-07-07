@@ -24,13 +24,27 @@ L_TEST=.FALSE.
 N_FLUX=0
 C_FLUX(:)%FNAME = '           '
 ! ---------------------------------------------------------------------------------------
+! (0) DEFINE INTERCEPTION FLUXES
+! ---------------------------------------------------------------------------------------
+SELECT CASE(SMODL%iINTRC)
+ CASE(iopt_no_intrcep)
+  N_FLUX=N_FLUX+1; C_FLUX(N_FLUX)%FNAME = 'PINC       '
+  N_FLUX=N_FLUX+1; C_FLUX(N_FLUX)%FNAME = 'PTHRU      '
+  N_FLUX=N_FLUX+1; C_FLUX(N_FLUX)%FNAME = 'EFF_PPT    '
+ CASE(iopt_gr5h_intrc)
+  N_FLUX=N_FLUX+1; C_FLUX(N_FLUX)%FNAME = 'PINC       '
+  N_FLUX=N_FLUX+1; C_FLUX(N_FLUX)%FNAME = 'PTHRU      '
+  N_FLUX=N_FLUX+1; C_FLUX(N_FLUX)%FNAME = 'EVAP_0     '
+  N_FLUX=N_FLUX+1; C_FLUX(N_FLUX)%FNAME = 'EFF_PPT    '
+ CASE DEFAULT
+  print *, "SMODL%iINTRC must be iopt_no_intrcep or iopt_gr5h_intrc"
+  STOP
+END SELECT
+! ---------------------------------------------------------------------------------------
 ! (1) DEFINE STATE VARIABLES IN THE UPPER LAYER
 ! ---------------------------------------------------------------------------------------
 SELECT CASE(SMODL%iARCH1)
  CASE(iopt_tension2_1)
-  N_FLUX=N_FLUX+1; C_FLUX(N_FLUX)%FNAME = 'EFF_PPT    '
-  N_FLUX=N_FLUX+1; C_FLUX(N_FLUX)%FNAME = 'PTHRU      '
-  N_FLUX=N_FLUX+1; C_FLUX(N_FLUX)%FNAME = 'EINT       '
   N_FLUX=N_FLUX+1; C_FLUX(N_FLUX)%FNAME = 'EVAP_1A    '
   N_FLUX=N_FLUX+1; C_FLUX(N_FLUX)%FNAME = 'EVAP_1B    '
   N_FLUX=N_FLUX+1; C_FLUX(N_FLUX)%FNAME = 'RCHR2EXCS  '
@@ -40,9 +54,6 @@ SELECT CASE(SMODL%iARCH1)
   N_FLUX=N_FLUX+1; C_FLUX(N_FLUX)%FNAME = 'OFLOW_1    '
   N_FLUX=N_FLUX+1; C_FLUX(N_FLUX)%FNAME = 'QSURF      '
  CASE(iopt_tension1_1)
-  N_FLUX=N_FLUX+1; C_FLUX(N_FLUX)%FNAME = 'EFF_PPT    '
-  N_FLUX=N_FLUX+1; C_FLUX(N_FLUX)%FNAME = 'PTHRU      '
-  N_FLUX=N_FLUX+1; C_FLUX(N_FLUX)%FNAME = 'EINT       '
   N_FLUX=N_FLUX+1; C_FLUX(N_FLUX)%FNAME = 'EVAP_1     '
   N_FLUX=N_FLUX+1; C_FLUX(N_FLUX)%FNAME = 'TENS2FREE_1'
   N_FLUX=N_FLUX+1; C_FLUX(N_FLUX)%FNAME = 'QPERC_12   '
@@ -50,9 +61,6 @@ SELECT CASE(SMODL%iARCH1)
   N_FLUX=N_FLUX+1; C_FLUX(N_FLUX)%FNAME = 'OFLOW_1    '
   N_FLUX=N_FLUX+1; C_FLUX(N_FLUX)%FNAME = 'QSURF      '
  CASE(iopt_onestate_1)
-  N_FLUX=N_FLUX+1; C_FLUX(N_FLUX)%FNAME = 'EFF_PPT    '
-  N_FLUX=N_FLUX+1; C_FLUX(N_FLUX)%FNAME = 'PTHRU      '
-  N_FLUX=N_FLUX+1; C_FLUX(N_FLUX)%FNAME = 'EINT       '
   N_FLUX=N_FLUX+1; C_FLUX(N_FLUX)%FNAME = 'EVAP_1     '
   N_FLUX=N_FLUX+1; C_FLUX(N_FLUX)%FNAME = 'QPERC_12   '
   N_FLUX=N_FLUX+1; C_FLUX(N_FLUX)%FNAME = 'QINTF_1    '

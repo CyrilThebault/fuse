@@ -21,13 +21,13 @@ USE multiforce                                        ! model forcing data
 USE multistate                                        ! model states
 USE multi_flux                                        ! model fluxes
 ! ---------------------------------------------------------------------------------------
-! (0) COMPUTE DERIVATIVE FOR INTERCEPTION STORE
+! (0) COMPUTE DERIVATIVE FOR STATES IN INTERCEPTION STORE
 ! ---------------------------------------------------------------------------------------
 SELECT CASE(SMODL%iINTRC)
  CASE(iopt_no_intrcep)
   DY_DT%SINT_0 = 0._SP
  CASE(iopt_gr5h_intrc)
-  DY_DT%SINT_0 = 0._SP
+  DY_DT%SINT_0 = M_FLUX%PINC - M_FLUX%EVAP_0 - M_FLUX%PTHRU
  CASE DEFAULT
   print *, "SMODL%iINTRC must be iopt_no_intrcep or iopt_gr5h_intrc"
   STOP

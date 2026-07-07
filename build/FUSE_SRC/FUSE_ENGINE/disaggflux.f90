@@ -46,9 +46,10 @@ DO IFLUX=1,N_FLUX
  ! (1) DISAGGREGATE FLUXES
  ! --------------------------------------------------------------------------------------
  SELECT CASE(TRIM(C_FLUX(IFLUX)%FNAME))
-  CASE('EFF_PPT')    ; M_FLUX%EFF_PPT     = FLUX_0%EFF_PPT     + DOT_PRODUCT(FDFLUX(:)%EFF_PPT,    DELS(:))
+  CASE('PINC')       ; M_FLUX%PINC        = FLUX_0%PINC        + DOT_PRODUCT(FDFLUX(:)%PINC,       DELS(:))
   CASE('PTHRU')      ; M_FLUX%PTHRU       = FLUX_0%PTHRU       + DOT_PRODUCT(FDFLUX(:)%PTHRU,      DELS(:))
-  CASE('EINT')       ; M_FLUX%EINT        = FLUX_0%EINT        + DOT_PRODUCT(FDFLUX(:)%EINT,       DELS(:))
+  CASE('EVAP_0')     ; M_FLUX%EVAP_0      = FLUX_0%EVAP_0      + DOT_PRODUCT(FDFLUX(:)%EVAP_0,     DELS(:))
+  CASE('EFF_PPT')    ; M_FLUX%EFF_PPT     = FLUX_0%EFF_PPT     + DOT_PRODUCT(FDFLUX(:)%EFF_PPT,    DELS(:))
   CASE('EVAP_1A')    ; M_FLUX%EVAP_1A     = FLUX_0%EVAP_1A     + DOT_PRODUCT(FDFLUX(:)%EVAP_1A,    DELS(:))
   CASE('EVAP_1B')    ; M_FLUX%EVAP_1B     = FLUX_0%EVAP_1B     + DOT_PRODUCT(FDFLUX(:)%EVAP_1B,    DELS(:))
   CASE('EVAP_1')     ; M_FLUX%EVAP_1      = FLUX_0%EVAP_1      + DOT_PRODUCT(FDFLUX(:)%EVAP_1,     DELS(:))
@@ -72,9 +73,10 @@ DO IFLUX=1,N_FLUX
  ! (2) ENSURE THAT THE FLUXES ARE REALISTIC
  ! --------------------------------------------------------------------------------------
  SELECT CASE(TRIM(C_FLUX(IFLUX)%FNAME))
-  CASE('EFF_PPT')    ; IF(M_FLUX%EFF_PPT     .LT.ZERO) THEN; M_FLUX%EFF_PPT     = ZERO; EFLAG=.TRUE.; ENDIF
+  CASE('PINC')       ; IF(M_FLUX%PINC        .LT.ZERO) THEN; M_FLUX%PINC        = ZERO; EFLAG=.TRUE.; ENDIF
   CASE('PTHRU')      ; IF(M_FLUX%PTHRU       .LT.ZERO) THEN; M_FLUX%PTHRU       = ZERO; EFLAG=.TRUE.; ENDIF
-  CASE('EINT')       ; IF(M_FLUX%EINT        .LT.ZERO) THEN; M_FLUX%EINT        = ZERO; EFLAG=.TRUE.; ENDIF
+  CASE('EVAP_0')     ; IF(M_FLUX%EVAP_0      .LT.ZERO) THEN; M_FLUX%EVAP_0      = ZERO; EFLAG=.TRUE.; ENDIF
+  CASE('EFF_PPT')    ; IF(M_FLUX%EFF_PPT     .LT.ZERO) THEN; M_FLUX%EFF_PPT     = ZERO; EFLAG=.TRUE.; ENDIF
   CASE('EVAP_1A')    ; IF(M_FLUX%EVAP_1A     .LT.ZERO) THEN; M_FLUX%EVAP_1A     = ZERO; EFLAG=.TRUE.; ENDIF
   CASE('EVAP_1B')    ; IF(M_FLUX%EVAP_1B     .LT.ZERO) THEN; M_FLUX%EVAP_1B     = ZERO; EFLAG=.TRUE.; ENDIF
   CASE('EVAP_1')     ; IF(M_FLUX%EVAP_1      .LT.ZERO) THEN; M_FLUX%EVAP_1      = ZERO; EFLAG=.TRUE.; ENDIF
@@ -95,14 +97,18 @@ DO IFLUX=1,N_FLUX
   CASE DEFAULT       ; CALL NRERROR('disaggflux: cannot find desired flux')
  END SELECT
 END DO ! (loop through fluxes)
+! deal with interception
+IF(M_FLUX%PTHRU.GT.M_FLUX%PINC) THEN; M_FLUX%PTHRU = M_FLUX%PINC; EFLAG=.TRUE.; ENDIF
+IF(M_FLUX%EFF_PPT.GT.M_FLUX%PTHRU) THEN; M_FLUX%EFF_PPT = M_FLUX%PTHRU; EFLAG=.TRUE.; ENDIF
 ! deal with surface runoff
 IF(M_FLUX%QSURF.GT.M_FLUX%EFF_PPT) THEN; M_FLUX%QSURF = M_FLUX%EFF_PPT; EFLAG=.TRUE.; ENDIF
 ! deal with evaporation
-TOTEVAP = M_FLUX%EVAP_1+M_FLUX%EVAP_2
+TOTEVAP = M_FLUX%EVAP_0+M_FLUX%EVAP_1+M_FLUX%EVAP_2
 IF (TOTEVAP.GT.MFORCE%PET) THEN
+ M_FLUX%EVAP_0 = (M_FLUX%EVAP_0/TOTEVAP) * MFORCE%PET
  M_FLUX%EVAP_1 = (M_FLUX%EVAP_1/TOTEVAP) * MFORCE%PET
  M_FLUX%EVAP_2 = (M_FLUX%EVAP_2/TOTEVAP) * MFORCE%PET
- EFLAG=.TRUE.
+ EFLAG = .TRUE.
 ENDIF
 ! ---------------------------------------------------------------------------------------
 ! (2) ENSURE THAT THE bucket overflow fluxes are less than the bucket INFLUX
