@@ -6,6 +6,7 @@ SUBROUTINE DISAGGFLUX(DELS,EFLAG)
 ! Creator:
 ! --------
 ! Martyn Clark, 2009
+! Modified by Cyril Thebault to include interception, 7/2026
 ! ---------------------------------------------------------------------------------------
 ! Purpose:
 ! --------
@@ -46,6 +47,8 @@ DO IFLUX=1,N_FLUX
  ! --------------------------------------------------------------------------------------
  SELECT CASE(TRIM(C_FLUX(IFLUX)%FNAME))
   CASE('EFF_PPT')    ; M_FLUX%EFF_PPT     = FLUX_0%EFF_PPT     + DOT_PRODUCT(FDFLUX(:)%EFF_PPT,    DELS(:))
+  CASE('PTHRU')      ; M_FLUX%PTHRU       = FLUX_0%PTHRU       + DOT_PRODUCT(FDFLUX(:)%PTHRU,      DELS(:))
+  CASE('EINT')       ; M_FLUX%EINT        = FLUX_0%EINT        + DOT_PRODUCT(FDFLUX(:)%EINT,       DELS(:))
   CASE('EVAP_1A')    ; M_FLUX%EVAP_1A     = FLUX_0%EVAP_1A     + DOT_PRODUCT(FDFLUX(:)%EVAP_1A,    DELS(:))
   CASE('EVAP_1B')    ; M_FLUX%EVAP_1B     = FLUX_0%EVAP_1B     + DOT_PRODUCT(FDFLUX(:)%EVAP_1B,    DELS(:))
   CASE('EVAP_1')     ; M_FLUX%EVAP_1      = FLUX_0%EVAP_1      + DOT_PRODUCT(FDFLUX(:)%EVAP_1,     DELS(:))
@@ -70,6 +73,8 @@ DO IFLUX=1,N_FLUX
  ! --------------------------------------------------------------------------------------
  SELECT CASE(TRIM(C_FLUX(IFLUX)%FNAME))
   CASE('EFF_PPT')    ; IF(M_FLUX%EFF_PPT     .LT.ZERO) THEN; M_FLUX%EFF_PPT     = ZERO; EFLAG=.TRUE.; ENDIF
+  CASE('PTHRU')      ; IF(M_FLUX%PTHRU       .LT.ZERO) THEN; M_FLUX%PTHRU       = ZERO; EFLAG=.TRUE.; ENDIF
+  CASE('EINT')       ; IF(M_FLUX%EINT        .LT.ZERO) THEN; M_FLUX%EINT        = ZERO; EFLAG=.TRUE.; ENDIF
   CASE('EVAP_1A')    ; IF(M_FLUX%EVAP_1A     .LT.ZERO) THEN; M_FLUX%EVAP_1A     = ZERO; EFLAG=.TRUE.; ENDIF
   CASE('EVAP_1B')    ; IF(M_FLUX%EVAP_1B     .LT.ZERO) THEN; M_FLUX%EVAP_1B     = ZERO; EFLAG=.TRUE.; ENDIF
   CASE('EVAP_1')     ; IF(M_FLUX%EVAP_1      .LT.ZERO) THEN; M_FLUX%EVAP_1      = ZERO; EFLAG=.TRUE.; ENDIF

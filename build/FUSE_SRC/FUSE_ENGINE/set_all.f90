@@ -11,6 +11,7 @@ contains
     ! Creator:
     ! --------
     ! Nans Addor based on Martyn Clark's INIT_STATE
+    ! Modified by Cyril Thebault to include interception, 7/2026
     ! ---------------------------------------------------------------------------------------
     ! Purpose:
     ! --------
@@ -24,6 +25,14 @@ contains
     REAL(SP), INTENT(IN)                  :: VAL          ! value
     INTEGER(I4B)                          :: ISNW         ! snow band index
     ! ---------------------------------------------------------------------------------------
+    
+    ! snow model
+    DO ISNW=1,N_BANDS
+     MBANDS(ISNW)%SWE = VAL
+    END DO
+    FSTATE%SWE_TOT = VAL
+    ! interception
+    FSTATE%SINT_0 = VAL    
     ! upper layer
     FSTATE%TENS_1A = VAL
     FSTATE%TENS_1B = VAL
@@ -36,13 +45,6 @@ contains
     FSTATE%FREE_2A = VAL
     FSTATE%FREE_2B = VAL
     FSTATE%WATR_2  = VAL
-    ! snow model
-
-    DO ISNW=1,N_BANDS
-     MBANDS(ISNW)%SWE = VAL
-    END DO
-
-    FSTATE%SWE_TOT = VAL
 
     ! ---------------------------------------------------------------------------------------
   END SUBROUTINE SET_STATE
@@ -53,6 +55,7 @@ contains
     ! Creator:
     ! --------
     ! Nans Addor based on Martyn Clark's INITFLUXES
+    ! Modified by Cyril Thebault to include interception, 7/2026
     ! ---------------------------------------------------------------------------------------
     ! Purpose:
     ! --------
@@ -68,6 +71,8 @@ contains
     INTEGER(I4B)                          :: ISNW         ! index for looping though SWE
     ! ---------------------------------------------------------------------------------------
     M_FLUX%EFF_PPT     = VAL; W_FLUX%EFF_PPT     = VAL
+    M_FLUX%PTHRU       = VAL; W_FLUX%PTHRU       = VAL
+    M_FLUX%EINT        = VAL; W_FLUX%EINT        = VAL
     M_FLUX%SATAREA     = VAL; W_FLUX%SATAREA     = VAL
     M_FLUX%QSURF       = VAL; W_FLUX%QSURF       = VAL
     M_FLUX%EVAP_1A     = VAL; W_FLUX%EVAP_1A     = VAL
@@ -92,6 +97,7 @@ contains
       MBANDS(ISNW)%SNOWMELT     = VAL
      END DO
     ENDIF
+    
     M_FLUX%ERR_WATR_1  = VAL; W_FLUX%ERR_WATR_1  = VAL
     M_FLUX%ERR_TENS_1  = VAL; W_FLUX%ERR_TENS_1  = VAL
     M_FLUX%ERR_FREE_1  = VAL; W_FLUX%ERR_FREE_1  = VAL

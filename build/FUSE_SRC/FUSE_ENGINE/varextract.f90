@@ -9,6 +9,7 @@ PURE FUNCTION VAREXTRACT(VARNAME)
 ! Martyn Clark, 2007
 ! Modified by Brian Henn to include snow model, 6/2013
 ! Modified by Nans Addor to enable distributed modeling, 9/2016
+! Modified by Cyril Thebault to include interception, 7/2026
 ! ---------------------------------------------------------------------------------------
 ! Purpose:
 ! --------
@@ -41,6 +42,7 @@ SELECT CASE (TRIM(VARNAME))
  ! extract response data
  CASE ('obsq')       ; XVAR = valDat%OBSQ
  ! extract model states
+ CASE ('sint_0')     ; XVAR = FSTATE%SINT_0
  CASE ('tens_1')     ; XVAR = FSTATE%TENS_1
  CASE ('tens_1a')    ; XVAR = FSTATE%TENS_1A
  CASE ('tens_1b')    ; XVAR = FSTATE%TENS_1B
@@ -103,6 +105,8 @@ SELECT CASE (TRIM(VARNAME))
  CASE ('swe_z50')    ; XVAR = MBANDS(50)%SWE
  ! extract model fluxes
  CASE ('eff_ppt')    ; XVAR = W_FLUX%EFF_PPT
+ CASE ('pthru')      ; XVAR = W_FLUX%PTHRU
+ CASE ('eint')       ; XVAR = W_FLUX%EINT
  CASE ('satarea')    ; XVAR = W_FLUX%SATAREA
  CASE ('qsurf')      ; XVAR = W_FLUX%QSURF
  CASE ('evap_1a')    ; XVAR = W_FLUX%EVAP_1A
@@ -257,6 +261,7 @@ PURE FUNCTION VAREXTRACT_3d(VARNAME,numtim)
 ! Creator:
 ! --------
 ! Nans Addor, based on Martyn Clark's 2007 VAREXTRACT
+! Modified by Cyril Thebault to include interception, 7/2026
 ! ---------------------------------------------------------------------------------------
 ! Purpose:
 ! --------
@@ -295,6 +300,7 @@ SELECT CASE (TRIM(VARNAME))
  ! extract response data
  CASE ('obsq')       ; XVAR_3d = aValid%OBSQ
  ! extract model states
+ CASE ('sint_0')     ; XVAR_3d = gState_3d(:,:,1:numtim)%SINT_0
  CASE ('tens_1')     ; XVAR_3d = gState_3d(:,:,1:numtim)%TENS_1
  CASE ('tens_1a')    ; XVAR_3d = gState_3d(:,:,1:numtim)%TENS_1A
  CASE ('tens_1b')    ; XVAR_3d = gState_3d(:,:,1:numtim)%TENS_1B
@@ -358,6 +364,8 @@ SELECT CASE (TRIM(VARNAME))
  CASE ('swe_z50')    ; XVAR_3d = MBANDS_VAR_4d(:,:,50,1:numtim)%SWE
  ! extract model fluxes
  CASE ('eff_ppt')    ; XVAR_3d = W_FLUX_3d%EFF_PPT
+ CASE ('pthru')      ; XVAR_3d = W_FLUX_3d%PTHRU
+ CASE ('eint')       ; XVAR_3d = W_FLUX_3d%EINT 
  CASE ('satarea')    ; XVAR_3d = W_FLUX_3d%SATAREA
  CASE ('qsurf')      ; XVAR_3d = W_FLUX_3d%QSURF
  CASE ('evap_1a')    ; XVAR_3d = W_FLUX_3d%EVAP_1A

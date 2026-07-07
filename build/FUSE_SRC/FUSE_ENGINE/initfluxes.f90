@@ -4,6 +4,7 @@ SUBROUTINE INITFLUXES()
 ! --------
 ! Martyn Clark, 2007
 ! Modified by Brian Henn to include snow model, 6/2013
+! Modified by Cyril Thebault to include interception, 7/2026
 ! ---------------------------------------------------------------------------------------
 ! Purpose:
 ! --------
@@ -22,6 +23,8 @@ IMPLICIT NONE
 INTEGER(I4B)                          :: ISNW         ! index for looping though SWE 
 ! ---------------------------------------------------------------------------------------
 M_FLUX%EFF_PPT     = 0._sp; W_FLUX%EFF_PPT     = 0._sp
+M_FLUX%PTHRU       = 0._sp; W_FLUX%PTHRU       = 0._sp
+M_FLUX%EINT        = 0._sp; W_FLUX%EINT        = 0._sp
 M_FLUX%SATAREA     = 0._sp; W_FLUX%SATAREA     = 0._sp
 M_FLUX%QSURF       = 0._sp; W_FLUX%QSURF       = 0._sp
 M_FLUX%EVAP_1A     = 0._sp; W_FLUX%EVAP_1A     = 0._sp

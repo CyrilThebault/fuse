@@ -10,6 +10,7 @@ MODULE FUSE_METRIC_MODULE
     ! Modified by Brian Henn to include snow model, 6/2013
     ! Modified by Nans Addor to enable grid-based modeling, 9/2016
     ! Modified by Cyril Thébault to allow different metrics as objective function, 2024
+    ! Modified by Cyril Thebault to include interception, 7/2026
     ! ---------------------------------------------------------------------------------------
     ! Purpose:
     ! --------
@@ -245,6 +246,9 @@ MODULE FUSE_METRIC_MODULE
                   message="f-fuse_metric/SMODL%iSNOWM must be either iopt_temp_index or iopt_no_snowmod"
                   RETURN
                END SELECT
+               
+               ! apply canopy interception (updates M_FLUX%EFF_PPT and interception storage)
+               CALL INTERCEPTION()
 
                ! temporally integrate the ordinary differential equations
                CALL ODE_INT(FUSE_SOLVE,STATE0,STATE1,DT_SUB,DT_FULL,IERR,MESSAGE)

@@ -4,6 +4,7 @@ MODULE metaoutput
 ! --------
 ! Martyn Clark, 2007
 ! Modified by Brian Henn to include snow model, 6/2013
+! Modified by Cyril Thebault to include interception, 7/2026
 ! ---------------------------------------------------------------------------------------
 ! Purpose:
 ! --------
@@ -32,6 +33,7 @@ I=I+1; VNAME(I)='pet        '; LNAME(I)='potential evapotranspiration rate      
 I=I+1; VNAME(I)='temp       '; LNAME(I)='mean air temperature                               '; VUNIT(I)='deg.C        '
 I=I+1; VNAME(I)='obsq       '; LNAME(I)='observed runoff                                    '; VUNIT(I)='mm timestep-1'
 ! model states
+I=I+1; VNAME(I)='sint_0     '; LNAME(I)='interception storage                               '; VUNIT(I)='mm           '
 I=I+1; VNAME(I)='tens_1     '; LNAME(I)='tension storage in the upper layer                 '; VUNIT(I)='mm           '
 I=I+1; VNAME(I)='tens_1a    '; LNAME(I)='tension storage in the soil excess zone            '; VUNIT(I)='mm           '
 I=I+1; VNAME(I)='tens_1b    '; LNAME(I)='tension storage in the soil recharge zone          '; VUNIT(I)='mm           '
@@ -64,6 +66,8 @@ ENDIF
 
 ! model fluxes
 I=I+1; VNAME(I)='eff_ppt    '; LNAME(I)='effective precipitation rate                       '; VUNIT(I)='mm timestep-1'
+I=I+1; VNAME(I)='pthru      '; LNAME(I)='throughfall after interception                     '; VUNIT(I)='mm timestep-1'
+I=I+1; VNAME(I)='eint       '; LNAME(I)='evaporation from interception storage              '; VUNIT(I)='mm timestep-1'
 I=I+1; VNAME(I)='satarea    '; LNAME(I)='saturated area                                     '; VUNIT(I)='-            '
 I=I+1; VNAME(I)='qsurf      '; LNAME(I)='surface runoff                                     '; VUNIT(I)='mm timestep-1'
 I=I+1; VNAME(I)='evap_1a    '; LNAME(I)='evaporation from soil excess zone                  '; VUNIT(I)='mm timestep-1'

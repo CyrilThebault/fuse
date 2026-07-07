@@ -4,6 +4,7 @@ SUBROUTINE INIT_STATE(FRAC)
 ! --------
 ! Martyn Clark, 2007
 ! Modified by Brian Henn to include snow model, 6/2013
+! Modified by Cyril Thebault to include interception, 7/2026
 ! ---------------------------------------------------------------------------------------
 ! Purpose:
 ! --------
@@ -21,6 +22,8 @@ IMPLICIT NONE
 REAL(SP), INTENT(IN)                  :: FRAC         ! fraction of capacity
 INTEGER(I4B)                          :: ISNW         ! snow band index
 ! ---------------------------------------------------------------------------------------
+! interception store, assume dry canopy at start
+FSTATE%SINT_0 = 0._sp
 ! (upper layer)
 FSTATE%TENS_1A = DPARAM%MAXTENS_1A * FRAC
 FSTATE%TENS_1B = DPARAM%MAXTENS_1B * FRAC

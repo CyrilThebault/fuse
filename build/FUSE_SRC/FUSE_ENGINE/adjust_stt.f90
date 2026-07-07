@@ -5,6 +5,7 @@ SUBROUTINE ADJUST_STT()
 ! Martyn Clark, 2008
 ! --------
 ! Modified by Dmitri Kavetski, 5 June 2013 AD (EAWAG) to replace IF with SELECTCASE
+! Modified by Cyril Thebault to include interception, 7/2026
 ! ---------------------------------------------------------------------------------------
 ! Purpose:
 ! --------
@@ -26,6 +27,13 @@ INTEGER(I4B)                           :: ISTT        ! loop through model state
 ! ----------------------------------------------------------------------------------------
 DO ISTT=1,NSTATE  ! NSTATE is in module model_defn
  SELECTCASE(CSTATE(ISTT)%iSNAME)
+ ! ---------------------------------------------------------------------------------------
+ ! interception store
+ ! ---------------------------------------------------------------------------------------
+ CASE (iopt_SINT_0)
+  IF (MSTATE%SINT_0 .LT. 0._SP)          MSTATE%SINT_0 = 0._SP
+  IF (MSTATE%SINT_0 .GT. DPARAM%MAXSINT) MSTATE%SINT_0 = DPARAM%MAXSINT
+ 
  ! ---------------------------------------------------------------------------------------
  ! states in the upper layer
  ! ---------------------------------------------------------------------------------------

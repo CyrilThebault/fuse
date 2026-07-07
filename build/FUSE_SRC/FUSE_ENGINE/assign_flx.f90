@@ -3,6 +3,7 @@ SUBROUTINE ASSIGN_FLX()
 ! Creator:
 ! --------
 ! Martyn Clark, 2009
+! Modified by Cyril Thebault to include interception, 7/2026
 ! ---------------------------------------------------------------------------------------
 ! Purpose:
 ! --------
@@ -28,6 +29,8 @@ C_FLUX(:)%FNAME = '           '
 SELECT CASE(SMODL%iARCH1)
  CASE(iopt_tension2_1)
   N_FLUX=N_FLUX+1; C_FLUX(N_FLUX)%FNAME = 'EFF_PPT    '
+  N_FLUX=N_FLUX+1; C_FLUX(N_FLUX)%FNAME = 'PTHRU      '
+  N_FLUX=N_FLUX+1; C_FLUX(N_FLUX)%FNAME = 'EINT       '
   N_FLUX=N_FLUX+1; C_FLUX(N_FLUX)%FNAME = 'EVAP_1A    '
   N_FLUX=N_FLUX+1; C_FLUX(N_FLUX)%FNAME = 'EVAP_1B    '
   N_FLUX=N_FLUX+1; C_FLUX(N_FLUX)%FNAME = 'RCHR2EXCS  '
@@ -38,6 +41,8 @@ SELECT CASE(SMODL%iARCH1)
   N_FLUX=N_FLUX+1; C_FLUX(N_FLUX)%FNAME = 'QSURF      '
  CASE(iopt_tension1_1)
   N_FLUX=N_FLUX+1; C_FLUX(N_FLUX)%FNAME = 'EFF_PPT    '
+  N_FLUX=N_FLUX+1; C_FLUX(N_FLUX)%FNAME = 'PTHRU      '
+  N_FLUX=N_FLUX+1; C_FLUX(N_FLUX)%FNAME = 'EINT       '
   N_FLUX=N_FLUX+1; C_FLUX(N_FLUX)%FNAME = 'EVAP_1     '
   N_FLUX=N_FLUX+1; C_FLUX(N_FLUX)%FNAME = 'TENS2FREE_1'
   N_FLUX=N_FLUX+1; C_FLUX(N_FLUX)%FNAME = 'QPERC_12   '
@@ -46,6 +51,8 @@ SELECT CASE(SMODL%iARCH1)
   N_FLUX=N_FLUX+1; C_FLUX(N_FLUX)%FNAME = 'QSURF      '
  CASE(iopt_onestate_1)
   N_FLUX=N_FLUX+1; C_FLUX(N_FLUX)%FNAME = 'EFF_PPT    '
+  N_FLUX=N_FLUX+1; C_FLUX(N_FLUX)%FNAME = 'PTHRU      '
+  N_FLUX=N_FLUX+1; C_FLUX(N_FLUX)%FNAME = 'EINT       '
   N_FLUX=N_FLUX+1; C_FLUX(N_FLUX)%FNAME = 'EVAP_1     '
   N_FLUX=N_FLUX+1; C_FLUX(N_FLUX)%FNAME = 'QPERC_12   '
   N_FLUX=N_FLUX+1; C_FLUX(N_FLUX)%FNAME = 'QINTF_1    '

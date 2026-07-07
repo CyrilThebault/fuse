@@ -1,6 +1,8 @@
 MODULE multi_flux
  USE nrtype
  TYPE FLUXES
+  REAL(SP)                             :: PTHRU       ! throughfall after interception (mm day-1)
+  REAL(SP)                             :: EINT        ! evaporation from interception storage (mm day-1)
   REAL(SP)                             :: EFF_PPT     ! effective precipitation (mm day-1)
   REAL(SP)                             :: SATAREA     ! saturated area (-)
   REAL(SP)                             :: QSURF       ! surface runoff (mm day-1)

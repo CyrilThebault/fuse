@@ -175,6 +175,7 @@ NR_SUB = $(patsubst %, $(NUMREC_DIR)/%, $(FUSE_NR_SUB))
 FUSE_MODGUT=\
   mod_derivs.f90 \
   update_swe.f90 \
+  interception.f90 \
   qrainerror.f90 \
   qsatexcess.f90 \
   evap_upper.f90 \
