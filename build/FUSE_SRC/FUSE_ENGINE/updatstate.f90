@@ -3,6 +3,7 @@ SUBROUTINE UPDATSTATE(DT)
 ! Creator:
 ! --------
 ! Martyn Clark, 2007
+! Modified by Cyril Thebault to include interception, 7/2026
 ! ---------------------------------------------------------------------------------------
 ! Purpose:
 ! --------
@@ -19,6 +20,18 @@ REAL(SP), INTENT(IN)                   :: DT          ! length of the time step
 ! internal
 REAL(SP), PARAMETER                    :: XMIN=1.E-06 ! very small number
 REAL(SP), PARAMETER                    :: missingValue=-9999._sp
+! ---------------------------------------------------------------------------------------
+SELECT CASE(SMODL%iINTRC)  ! (interception)
+ CASE(iopt_no_intrcep)
+  FSTATE%SINT_0 = missingValue
+
+ CASE(iopt_gr5h_intrc)
+  FSTATE%SINT_0 = MAX(0._SP, MIN(DPARAM%MAXSINT, FSTATE%SINT_0 + DY_DT%SINT_0*DT))
+
+ CASE DEFAULT
+  print *, "SMODL%iINTRC must be iopt_no_intrcep or iopt_gr5h_intrc"
+  STOP
+END SELECT
 ! ---------------------------------------------------------------------------------------
 SELECT CASE(SMODL%iARCH1)  ! (upper layer architecture)
  CASE(iopt_onestate_1) ! upper layer defined by a single state variable

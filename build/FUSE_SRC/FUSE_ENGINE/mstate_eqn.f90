@@ -3,6 +3,7 @@ SUBROUTINE MSTATE_EQN()
 ! Creator:
 ! --------
 ! Martyn Clark, 2007
+! Modified by Cyril Thebault to include interception, 7/2026
 ! ---------------------------------------------------------------------------------------
 ! Purpose:
 ! --------
@@ -19,6 +20,18 @@ USE multiparam                                        ! model parameters
 USE multiforce                                        ! model forcing data
 USE multistate                                        ! model states
 USE multi_flux                                        ! model fluxes
+! ---------------------------------------------------------------------------------------
+! (0) COMPUTE DERIVATIVE FOR INTERCEPTION STORE
+! ---------------------------------------------------------------------------------------
+SELECT CASE(SMODL%iINTRC)
+ CASE(iopt_no_intrcep)
+  DY_DT%SINT_0 = 0._SP
+ CASE(iopt_gr5h_intrc)
+  DY_DT%SINT_0 = 0._SP
+ CASE DEFAULT
+  print *, "SMODL%iINTRC must be iopt_no_intrcep or iopt_gr5h_intrc"
+  STOP
+END SELECT
 ! ---------------------------------------------------------------------------------------
 ! (1) COMPUTE DERIVATIVES FOR STATES IN THE UPPER LAYER
 ! ---------------------------------------------------------------------------------------
