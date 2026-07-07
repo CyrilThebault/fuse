@@ -3,6 +3,7 @@
 ! --------
 ! Martyn Clark
 ! Modified by Brian Henn to include snow model, 6/2013
+! Modified by Cyril Thebault to include interception, 7/2026
 ! ---------------------------------------------------------------------------------------
 MODULE multiparam
  USE nrtype
@@ -152,6 +153,8 @@ MODULE multiparam
   ! routing
   REAL(SP), DIMENSION(NTDH_MAX)        :: FRAC_FUTURE ! fraction of runoff in future time steps
   INTEGER(I4B)                         :: NTDH_NEED   ! number of time-steps with non-zero routing contribution
+  ! interception
+  REAL(SP)                             :: MAXSINT     ! maximum interception storage (mm)
  END TYPE PARDVD
  ! --------------------------------------------------------------------------------------
  ! (4) LIST OF PARAMETERS FOR A GIVEN MODEL
