@@ -454,9 +454,6 @@ CASE DEFAULT
   err=100; return
 ENDSELECT
 
-! apply canopy interception (updates M_FLUX%EFF_PPT and interception storage)
-CALL INTERCEPTION()
-
 ! temporally integrate the ordinary differential equations
 CALL ODE_INT(FUSE_SOLVE,STATE0,STATE1,DT_SUB,DT_FULL,ERR,MESSAGE)
 IF (ERR/=0) THEN

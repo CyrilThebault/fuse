@@ -247,8 +247,9 @@ MODULE FUSE_METRIC_MODULE
                   RETURN
                END SELECT
                
-               ! apply canopy interception (updates M_FLUX%EFF_PPT and interception storage)
-               CALL INTERCEPTION()
+               ! temporary bridge: qrainerror/update_swe currently write EFF_PPT
+               ! store precipitation incident on interception reservoir before ODE evaluations
+               M_FLUX%PINC = M_FLUX%EFF_PPT   
 
                ! temporally integrate the ordinary differential equations
                CALL ODE_INT(FUSE_SOLVE,STATE0,STATE1,DT_SUB,DT_FULL,IERR,MESSAGE)

@@ -17,6 +17,7 @@ USE model_numerix, ONLY: NUM_FUNCS  ! (number of function evaluations)
 ! ---------------------------------------------------------------------------------------
 ! (1) COMPUTE FLUXES
 ! ---------------------------------------------------------------------------------------
+CALL INTERCEPTION()! compute the throughfall
 CALL QSATEXCESS()  ! compute the saturated area and surface runoff
 CALL EVAP_UPPER()  ! compute evaporation from the upper layer
 CALL EVAP_LOWER()  ! compute evaporation from the lower layer

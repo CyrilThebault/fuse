@@ -23,7 +23,6 @@ REAL(SP) :: PET_STEP
 REAL(SP) :: EINT_STEP
 REAL(SP) :: PTHRU_STEP
 ! ---------------------------------------------------------------------------------------
-M_FLUX%PINC = M_FLUX%EFF_PPT
 SELECT CASE(SMODL%iINTRC)
  CASE(iopt_no_intrcep)
   M_FLUX%EVAP_0  = 0._SP

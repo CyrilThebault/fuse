@@ -3,6 +3,7 @@ SUBROUTINE FIX_STATES(DT,ERROR_FLAG)
 ! Creator:
 ! --------
 ! Martyn Clark, 2009
+! Modified by Cyril Thebault to include interception, 7/2026
 ! ---------------------------------------------------------------------------------------
 ! Purpose:
 ! --------
@@ -38,6 +39,18 @@ DO ISTT=1,NSTATE
  if (M_FLUX%QSURF.LT.0._sp) print *, 'start ', desc_int2str(cstate(istt)%isname), M_FLUX%QSURF
  ERROR_LOSS = 0._SP ! initialize state error
  SELECT CASE(CSTATE(ISTT)%iSNAME)
+  ! -------------------------------------------------------------------------------------
+  ! (0) FIX STATE IN INTERCEPTION STORE
+  ! -------------------------------------------------------------------------------------
+  CASE (iopt_SINT_0)
+   IF (ESTATE%SINT_0.LT.0._SP) THEN
+    ESTATE%SINT_0 = 0._SP
+    ERROR_FLAG = .TRUE.
+   ENDIF
+   IF (ESTATE%SINT_0.GT.MPARAM%MAXSINT_0) THEN
+    ESTATE%SINT_0 = MPARAM%MAXSINT_0
+    ERROR_FLAG = .TRUE.
+   ENDIF 
   ! ---------------------------------------------------------------------------------------
   ! (1) FIX STATES IN THE UPPER LAYER
   ! -------------------------------------------------------------------------------------
