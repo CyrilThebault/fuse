@@ -6,6 +6,7 @@ SUBROUTINE LIMIT_XTRY(X_TRY)
 ! Creator:
 ! --------
 ! Martyn Clark, 2007
+! Modified by Cyril Thebault to include interception, 7/2026
 ! ---------------------------------------------------------------------------------------
 ! Purpose:
 ! --------
@@ -29,6 +30,10 @@ XMIN=FRACSTATE_MIN ! used to avoid zero derivatives
 ! loop through model states
 DO ISTT=1,NSTATE
  SELECT CASE(CSTATE(ISTT)%iSNAME)
+   ! interception store
+  CASE (iopt_SINT_0)
+    IF(X_TRY(ISTT).LT.0._SP)             X_TRY(ISTT) = 0._SP
+    IF(X_TRY(ISTT).GT.MPARAM%MAXSINT_0)  X_TRY(ISTT) = MPARAM%MAXSINT_0
   ! upper tanks
   CASE (iopt_TENS1A)
     IF(X_TRY(ISTT).LT.XMIN*DPARAM%MAXTENS_1A) X_TRY(ISTT) = XMIN*DPARAM%MAXTENS_1A
