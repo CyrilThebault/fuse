@@ -3,6 +3,7 @@ SUBROUTINE EVAP_LOWER()
 ! Creator:
 ! --------
 ! Martyn Clark, 2007
+! Modified by Cyril Thebault to include interception, 7/2026
 ! ---------------------------------------------------------------------------------------
 ! Purpose:
 ! --------
@@ -20,7 +21,10 @@ USE multiforce                                        ! model forcing
 USE multistate                                        ! model states
 USE multi_flux                                        ! model fluxes
 IMPLICIT NONE
+REAL(SP) :: PET_SOIL
 ! ---------------------------------------------------------------------------------------
+! Potential evaporation available after canopy interception
+PET_SOIL = MAX(0._SP, MFORCE%PET - M_FLUX%EVAP_0)
 SELECT CASE(SMODL%iARCH2)  ! lower layer architecture
  CASE(iopt_tens2pll_2,iopt_fixedsiz_2)
   ! -------------------------------------------------------------------------------------
@@ -32,9 +36,9 @@ SELECT CASE(SMODL%iARCH2)  ! lower layer architecture
    ! -----------------------------------------------------
    SELECT CASE(SMODL%iESOIL)
     CASE(iopt_sequential)
-     M_FLUX%EVAP_2 = (MFORCE%PET-M_FLUX%EVAP_1) * (TSTATE%TENS_2/DPARAM%MAXTENS_2)
+     M_FLUX%EVAP_2 = (PET_SOIL-M_FLUX%EVAP_1) * (TSTATE%TENS_2/DPARAM%MAXTENS_2)
     CASE(iopt_rootweight)
-     M_FLUX%EVAP_2 = MFORCE%PET * DPARAM%RTFRAC2 * (TSTATE%TENS_2/DPARAM%MAXTENS_2)
+     M_FLUX%EVAP_2 = PET_SOIL * DPARAM%RTFRAC2 * (TSTATE%TENS_2/DPARAM%MAXTENS_2)
     CASE DEFAULT
      print *, "SMODL%iESOIL must be either iopt_sequential or iopt_rootweight"
    END SELECT  ! (evaporation schemes)

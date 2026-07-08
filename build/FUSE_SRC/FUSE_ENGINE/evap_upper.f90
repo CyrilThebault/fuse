@@ -3,6 +3,7 @@ SUBROUTINE EVAP_UPPER()
 ! Creator:
 ! --------
 ! Martyn Clark, 2007
+! Modified by Cyril Thebault to include interception, 7/2026
 ! ---------------------------------------------------------------------------------------
 ! Purpose:
 ! --------
@@ -20,7 +21,10 @@ USE multiforce                                        ! model forcing
 USE multistate                                        ! model states
 USE multi_flux                                        ! model fluxes
 IMPLICIT NONE
+REAL(SP) :: PET_SOIL
 ! ---------------------------------------------------------------------------------------
+! Potential evaporation available after canopy interception
+PET_SOIL = MAX(0._SP, MFORCE%PET - M_FLUX%EVAP_0)
 SELECT CASE(SMODL%iARCH1)  ! upper layer architecture
  ! --------------------------------------------------------------------------------------
  CASE(iopt_tension2_1) ! tension storage sub-divided into recharge and excess
@@ -29,12 +33,12 @@ SELECT CASE(SMODL%iARCH1)  ! upper layer architecture
   ! -----------------------------------------------------
   SELECT CASE(SMODL%iESOIL)
    CASE(iopt_sequential)
-    M_FLUX%EVAP_1A = MFORCE%PET * TSTATE%TENS_1A/DPARAM%MAXTENS_1A
-    M_FLUX%EVAP_1B = (MFORCE%PET - M_FLUX%EVAP_1A) * TSTATE%TENS_1B/DPARAM%MAXTENS_1B
+    M_FLUX%EVAP_1A = PET_SOIL * TSTATE%TENS_1A/DPARAM%MAXTENS_1A
+    M_FLUX%EVAP_1B = (PET_SOIL - M_FLUX%EVAP_1A) * TSTATE%TENS_1B/DPARAM%MAXTENS_1B
     M_FLUX%EVAP_1  = M_FLUX%EVAP_1A + M_FLUX%EVAP_1B
    CASE(iopt_rootweight)
-    M_FLUX%EVAP_1A = MFORCE%PET * MPARAM%RTFRAC1 * TSTATE%TENS_1A/DPARAM%MAXTENS_1A
-    M_FLUX%EVAP_1B = MFORCE%PET * DPARAM%RTFRAC2 * TSTATE%TENS_1B/DPARAM%MAXTENS_1B
+    M_FLUX%EVAP_1A = PET_SOIL * MPARAM%RTFRAC1 * TSTATE%TENS_1A/DPARAM%MAXTENS_1A
+    M_FLUX%EVAP_1B = PET_SOIL * DPARAM%RTFRAC2 * TSTATE%TENS_1B/DPARAM%MAXTENS_1B
     M_FLUX%EVAP_1  = M_FLUX%EVAP_1A + M_FLUX%EVAP_1B
    CASE DEFAULT
     print *, "SMODL%iESOIL must be either iopt_sequential or iopt_rootweight"
@@ -49,11 +53,11 @@ SELECT CASE(SMODL%iARCH1)  ! upper layer architecture
    CASE(iopt_sequential)
     M_FLUX%EVAP_1A = 0._sp
     M_FLUX%EVAP_1B = 0._sp
-    M_FLUX%EVAP_1  = MFORCE%PET * TSTATE%TENS_1/DPARAM%MAXTENS_1
+    M_FLUX%EVAP_1  = PET_SOIL * TSTATE%TENS_1/DPARAM%MAXTENS_1
    CASE(iopt_rootweight)
     M_FLUX%EVAP_1A = 0._sp
     M_FLUX%EVAP_1B = 0._sp
-    M_FLUX%EVAP_1  = MFORCE%PET * MPARAM%RTFRAC1 * TSTATE%TENS_1/DPARAM%MAXTENS_1
+    M_FLUX%EVAP_1  = PET_SOIL * MPARAM%RTFRAC1 * TSTATE%TENS_1/DPARAM%MAXTENS_1
    CASE DEFAULT
     print *, "SMODL%iESOIL must be either iopt_sequential or iopt_rootweight"
   END SELECT  ! (evaporation schemes)
