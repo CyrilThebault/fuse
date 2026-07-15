@@ -89,6 +89,8 @@ $(info LIBS are $(LIBS))
 FUSE_DRIVER = \
   sobol.f90 \
   fuse_metric.f90 \
+  parameter_transfo.f90 \
+  calibration_data.f90 \
   functn.f90 \
   fuse_driver.f90
 DRIVER = $(patsubst %, $(DRIVER_DIR)/%, $(FUSE_DRIVER))
@@ -257,6 +259,7 @@ FUSE_NETCDF = \
   put_output.f90 \
   put_sstats.f90
 NETCDF = $(patsubst %, $(NETCDF_DIR)/%, $(FUSE_NETCDF))
+
 
 SCE = \
   sce_16plus.o

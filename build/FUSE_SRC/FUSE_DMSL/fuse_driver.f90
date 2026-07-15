@@ -6,6 +6,7 @@ PROGRAM DISTRIBUTED_DRIVER
 ! Modified by Nans Addor to include distributed modeling, 9/2016
 ! Modified by Nans Addor to re-enable catchment-scale modeling, 4/2017
 ! Modified by Cyril Thébault to allow different metrics as objective function, 2024
+! Modified by Cyril Thébault to allow different transformations on parameters, 2026
 ! ---------------------------------------------------------------------------------------
 ! Purpose:
 ! Driver program to run FUSE with a snow module as either at the catchment-scale or
@@ -72,6 +73,16 @@ USE model_numerix                                         ! defines decisions on
 
 ! access to model simulation modules
 USE fuse_metric_module                                    ! run model and compute the metric chosen as objective function
+
+! parameter transformation utilities
+USE parameter_transform_module, ONLY: &                   ! convert parameters to the SCE search space
+  to_search_space, validate_transform
+  
+! calibration state
+USE calibration_data_module, ONLY: &                      ! transformation codes for current calibration
+  CALIB_TRANSFORM_CODES,                                  &
+  INIT_CALIBRATION_TRANSFORMS,                            &
+  CLEAR_CALIBRATION_TRANSFORMS
 
 #ifdef __MPI__
 use mpi
@@ -408,14 +419,49 @@ CALL DEF_OUTPUT(nSpat1,nSpat2,NUMPSET,numtim_sim)    ! define model output time 
 ! ---------------------------------------------------------------------------------------
 
 ! get parameter bounds and random numbers
-ALLOCATE(APAR(NUMPAR),BL(NUMPAR),BU(NUMPAR),URAND(NUMPAR))
+ALLOCATE(APAR(NUMPAR), BL(NUMPAR), BU(NUMPAR), URAND(NUMPAR))
+
+! initialize parameter transformations for the current calibration
+IF (fuse_mode == 'calib_sce') THEN
+  CALL INIT_CALIBRATION_TRANSFORMS(NUMPAR)
+END IF
 
 DO IPAR=1,NUMPAR
- CALL GETPAR_STR(LPARAM(IPAR)%PARNAME,PARAM_META)
- BL(IPAR)   = PARAM_META%PARLOW  ! lower boundary
- BU(IPAR)   = PARAM_META%PARUPP  ! upper boundary
- APAR(IPAR) = PARAM_META%PARDEF  ! using default parameter values
- !if(PARAM_META%PARFIT) print*, LPARAM(IPAR)%PARNAME, PARAM_META%PARDEF
+
+  ! get parameter metadata
+  CALL GETPAR_STR(LPARAM(IPAR)%PARNAME, PARAM_META)
+
+  ! store parameter values in the physical FUSE space
+  BL(IPAR)   = PARAM_META%PARLOW  ! lower boundary
+  BU(IPAR)   = PARAM_META%PARUPP  ! upper boundary
+  APAR(IPAR) = PARAM_META%PARDEF  ! using default parameter values
+
+  ! store the transformation requested in zConstraints
+  IF (fuse_mode == 'calib_sce') THEN
+    CALIB_TRANSFORM_CODES(IPAR) = PARAM_META%PARVTN
+  END IF
+
+  ! validate transformations only when SCE calibration is requested
+  IF (fuse_mode == 'calib_sce') THEN
+
+    CALL validate_transform(                     &
+         TRIM(LPARAM(IPAR)%PARNAME),             &
+         REAL(BL(IPAR), MSP),                    &
+         REAL(APAR(IPAR), MSP),                  &
+         REAL(BU(IPAR), MSP),                    &
+         CALIB_TRANSFORM_CODES(IPAR),                  &
+         ERR,                                    &
+         MESSAGE)
+
+    IF (ERR.NE.0) THEN
+      WRITE(*,'(A)') TRIM(MESSAGE)
+      STOP ' invalid parameter transformation in zConstraints '
+    END IF
+
+  END IF
+
+  !if(PARAM_META%PARFIT) print*, LPARAM(IPAR)%PARNAME, PARAM_META%PARDEF
+
 END DO
 
 IF(fuse_mode == 'run_def')THEN ! run FUSE with default parameter values
@@ -454,14 +500,35 @@ ELSE IF(fuse_mode == 'calib_sce')THEN ! calibrate FUSE using SCE
 
   FNAME_ASCII = TRIM(OUTPUT_PATH)//TRIM(dom_id)//'_'//TRIM(FMODEL_ID)//'_sce_output.txt'
 
-  ! convert from SP used in FUSE to MSP used in SCE
-  ALLOCATE(APAR_MSP(NUMPAR),BL_MSP(NUMPAR),BU_MSP(NUMPAR),URAND_MSP(NUMPAR))
+  ! allocate SCE parameter arrays
+  ALLOCATE(APAR_MSP(NUMPAR), BL_MSP(NUMPAR), &
+           BU_MSP(NUMPAR), URAND_MSP(NUMPAR))
 
-  APAR_MSP=APAR
-  PRINT *, 'BL=',BL
-  BL_MSP=BL
-  BU_MSP=BU
-  URAND_MSP=URAND
+  ! convert parameter values from the physical FUSE space
+  ! to the transformed search space used by SCE
+  DO IPAR=1,NUMPAR
+
+    APAR_MSP(IPAR) = to_search_space( &
+                       REAL(APAR(IPAR), MSP), &
+                       CALIB_TRANSFORM_CODES(IPAR))
+
+    BL_MSP(IPAR) = to_search_space( &
+                     REAL(BL(IPAR), MSP), &
+                     CALIB_TRANSFORM_CODES(IPAR))
+
+    BU_MSP(IPAR) = to_search_space( &
+                     REAL(BU(IPAR), MSP), &
+                     CALIB_TRANSFORM_CODES(IPAR))
+                     
+
+  END DO
+
+  ! random numbers are not parameter values and are not transformed
+  URAND_MSP = REAL(URAND, MSP)
+
+  ! print physical and transformed lower parameter bounds
+  PRINT *, 'Physical lower bounds =', BL
+  PRINT *, 'SCE lower bounds      =', BL_MSP
 
   ! open up ASCII output file
   print *, 'Creating SCE output file:', trim(FNAME_ASCII)
@@ -500,8 +567,11 @@ stop
 
 ENDIF
 
-! deallocate space
-DEALLOCATE(APAR,BL,BU,URAND)
+! deallocate physical parameter arrays and transformation codes
+DEALLOCATE(APAR, BL, BU, URAND)
+
+! clear calibration transformations
+CALL CLEAR_CALIBRATION_TRANSFORMS()
 
 IF(SPATIAL_OPTION == 'CATCH')THEN
   DEALLOCATE(aForce,aRoute,aValid)
