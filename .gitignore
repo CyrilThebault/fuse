@@ -6,6 +6,9 @@ bin
 site
 *.exe
 
+# Generated during the build
+build/generated/fuseversion.inc
+
 # temporary files
 *~
 *.swp
