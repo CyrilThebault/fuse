@@ -6,12 +6,6 @@ module time_io
 
   public::get_modtim
 
-  ! Physical duration of one input timestep in days. Add by Cyril Thebault.
-  ! daily  = 1.0
-  ! hourly = 1.0 / 24.0
-  ! Used to convert historical day-based process rates to mm/timestep.
-  REAL(SP), SAVE :: INPUT_DT_DAYS = 1.0_SP
-
   contains
   
   

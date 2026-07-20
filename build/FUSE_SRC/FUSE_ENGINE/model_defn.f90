@@ -57,8 +57,8 @@ MODULE model_defn
  TYPE FNAMES
   CHARACTER(LEN=16)                    :: FNAME           ! state name
  END TYPE FNAMES
-! max steps in routing function
-  INTEGER(I4B),PARAMETER::NTDH_MAX=500
+! max number of days in routing function
+ REAL(SP),PARAMETER                    ::TDH_MAX=500      ! maximum routing horizon (days)
 ! model definitions
  CHARACTER(LEN=256)                    :: FNAME_NETCDF_RUNS    ! NETCDF output filename for model runs
  CHARACTER(LEN=256)                    :: FNAME_NETCDF_PARA    ! NETCDF output filename for model parameters

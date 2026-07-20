@@ -20,7 +20,8 @@ MODULE GET_TIME_INDICES_MODULE
     USE multiforce, only: eval_beg,eval_end                   ! timestep indices
     USE multiforce, only: SUB_PERIODS_FLAG                    ! .true. if subperiods are used to run FUSE
     
-    USE time_io,    only: time_units_to_days, INPUT_DT_DAYS   ! Add by Cyril Thebault
+    USE time_io,    only: time_units_to_days                  ! Add by Cyril Thebault
+    USE multiforce, ONLY: DELTIM
 
     USE fuse_fileManager,only:date_start_sim,date_end_sim,&
               date_start_eval,date_end_eval,&
@@ -52,13 +53,19 @@ MODULE GET_TIME_INDICES_MODULE
     
     ! Store the physical duration of one forcing timestep in days. Add by Cyril Thebault
     ! This assumes a regular input timestep.
-    IF (SIZE(time_steps) > 1) THEN
-      INPUT_DT_DAYS = (time_steps(2) - time_steps(1)) * time_factor_days
+    IF (SIZE(time_steps) >= 2) THEN
+      DELTIM = (time_steps(2) - time_steps(1)) * time_factor_days
     ELSE
-      INPUT_DT_DAYS = time_factor_days
+      DELTIM = time_factor_days
+    ENDIF
+
+    IF (DELTIM <= 0._SP) THEN
+      err = 100
+      message = 'f-GET_TIME_INDICES/non-positive forcing time step'
+      RETURN
     ENDIF
     
-    PRINT *, 'INPUT_DT_DAYS = ', INPUT_DT_DAYS
+    PRINT *, 'DELTIM        = ', DELTIM
 
     call caldatss(julian_day_input(1),iy,im,id,ih,imin,isec)
     print *, 'Start date input file=',iy,im,id

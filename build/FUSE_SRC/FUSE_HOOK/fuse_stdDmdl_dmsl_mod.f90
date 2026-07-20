@@ -394,7 +394,6 @@ endsubroutine FUSE_controlModel
 !-----------------------------------------------------------------------------------------
 ! ***** RUN MODEL ************************************************************************
 !-----------------------------------------------------------------------------------------
-! Modified by Cyril Thebault to include interception, 7/2026
 subroutine FUSE_runModel(modelID,runitCmd,iT,dataProps,input,state,feas,err,message)
 ! Purpose: Performs single step of FUSE model.
 USE model_defn,only:nstate,SMODL

@@ -23,7 +23,6 @@ USE multi_flux                                        ! model fluxes
 USE multibands                                        ! model snow bands
 USE multiroute                                        ! routed runoff
 USE model_numerix                                     ! model numerix parameters
-USE time_io, ONLY: INPUT_DT_DAYS                      ! physical duration of one input timestep in days. Add by Cyril Thebault
 IMPLICIT NONE
 ! input
 CHARACTER(*), INTENT(IN)               :: VARNAME     ! variable name
@@ -240,8 +239,8 @@ SELECT CASE (TRIM(VARNAME))
  ! time check
  CASE ('chk_time')   ; XVAR = W_FLUX%CHK_TIME
  ! extract model runoff
- CASE ('q_instnt')   ; XVAR = MROUTE%Q_INSTNT * INPUT_DT_DAYS ! Modified by Cyril Thebault
- CASE ('q_routed')   ; XVAR = MROUTE%Q_ROUTED * INPUT_DT_DAYS ! Modified by Cyril Thebault
+ CASE ('q_instnt')   ; XVAR = MROUTE%Q_INSTNT * DELTIM ! Modified by Cyril Thebault
+ CASE ('q_routed')   ; XVAR = MROUTE%Q_ROUTED * DELTIM ! Modified by Cyril Thebault
  ! extract information on numerical solution (shared in MODULE model_numerix)
  CASE ('num_funcs')  ; XVAR = NUM_FUNCS
  CASE ('numjacobian'); XVAR = NUM_JACOBIAN
@@ -276,7 +275,6 @@ USE multi_flux                                        ! model fluxes
 USE multibands                                        ! model snow bands
 USE multiroute                                        ! routed runoff
 USE model_numerix                                     ! model numerix parameters
-USE time_io, ONLY: INPUT_DT_DAYS                      ! physical duration of one input timestep in days. Add by Cyril Thebault
 IMPLICIT NONE
 ! input
 CHARACTER(*), INTENT(IN)                :: VARNAME     ! variable name
@@ -500,8 +498,8 @@ SELECT CASE (TRIM(VARNAME))
  ! time check
  CASE ('chk_time')   ; XVAR_3d = W_FLUX_3d%CHK_TIME
  ! extract model runoff
- CASE ('q_instnt')   ; XVAR_3d = AROUTE_3d%Q_INSTNT * INPUT_DT_DAYS ! Modified by Cyril Thebault
- CASE ('q_routed')   ; XVAR_3d = AROUTE_3d%Q_ROUTED * INPUT_DT_DAYS ! Modified by Cyril Thebault
+ CASE ('q_instnt')   ; XVAR_3d = AROUTE_3d%Q_INSTNT * DELTIM ! Modified by Cyril Thebault
+ CASE ('q_routed')   ; XVAR_3d = AROUTE_3d%Q_ROUTED * DELTIM ! Modified by Cyril Thebault
  ! extract information on numerical solution (shared in MODULE model_numerix)
  CASE ('num_funcs')  ; XVAR_3d = NUM_FUNCS
  CASE ('numjacobian'); XVAR_3d = NUM_JACOBIAN
