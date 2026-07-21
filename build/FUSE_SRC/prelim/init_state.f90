@@ -13,6 +13,7 @@ SUBROUTINE INIT_STATE(FRAC)
 ! -----------------
 ! Model states in MODULE multistate
 ! ---------------------------------------------------------------------------------------
+USE nrtype
 USE multiparam                                        ! model parameters
 USE multistate                                        ! model states
 USE multibands                                        ! model snow bands
@@ -35,7 +36,7 @@ FSTATE%FREE_2B = DPARAM%MAXFREE_2B * FRAC
 FSTATE%WATR_2  = MPARAM%MAXWATR_2  * FRAC
 ! snow model, assume no snow at start
 DO ISNW=1,N_BANDS
- MBANDS(ISNW)%SWE = 0.0_sp
+ MBANDS(ISNW)%VAR%SWE = 0.0_sp
 END DO
 ! (routed runoff)
 FUTURE         = 0._sp

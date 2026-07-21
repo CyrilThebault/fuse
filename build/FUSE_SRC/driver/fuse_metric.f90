@@ -10,6 +10,7 @@ MODULE FUSE_METRIC_MODULE
     ! Modified by Brian Henn to include snow model, 6/2013
     ! Modified by Nans Addor to enable grid-based modeling, 9/2016
     ! Modified by Cyril Thébault to allow different metrics as objective function, 2024
+    ! Modified by Martyn Clark to call differentiable modeling routines, 12/2025
     ! ---------------------------------------------------------------------------------------
     ! Purpose:
     ! --------
@@ -21,10 +22,13 @@ MODULE FUSE_METRIC_MODULE
     USE nrtype                                               ! variable types, etc.
 
     ! data modules
+    USE globaldata, ONLY:NPAR_SNOW                           ! number of snow parameters
     USE model_defn, ONLY:NSTATE,SMODL                        ! number of state variables
     USE model_defnames                                       ! integer model definitions
     USE globaldata, ONLY: isPrint                            ! flag for printing progress to screen
     USE globaldata, only: nFUSE_eval                         ! number of fuse evaluations
+    USE globaldata, ONLY: fracstate0                         ! fraction of initial state (used for initialization)
+    USE globaldata, ONLY: NA_VALUE, NA_VALUE_SP              ! NA_VALUE for the forcing
     USE multiparam, ONLY: LPARAM,NUMPAR,MPARAM               ! list of model parameters
     USE multiforce, ONLY: MFORCE,AFORCE,DELTIM,ISTART        ! model forcing data
     USE multiforce, ONLY: numtim_in, itim_in                 ! length of input time series and associated index
@@ -33,27 +37,35 @@ MODULE FUSE_METRIC_MODULE
     USE multiforce, ONLY: numtim_sub_cur                     ! length of current subperiod
     USE multiforce, ONLY: sim_beg,sim_end                    ! timestep indices
     USE multiforce, ONLY: eval_beg,eval_end                  ! timestep indices
+    USE multiforce, ONLY: timdat                             ! time structure
 
     USE multiforce, ONLY:nspat1,nspat2                       ! spatial dimensions
     USE multiforce, ONLY:ncid_var                            ! NetCDF ID for forcing variables
     USE multiforce, ONLY:gForce,gForce_3d                    ! gridded forcing data
-    USE multistate, ONLY:fracstate0,TSTATE,MSTATE,FSTATE,&   ! model states
-         HSTATE                              ! model states (continued)
-    USE multiforce, ONLY:NA_VALUE, NA_VALUE_SP              ! NA_VALUE for the forcing
+    USE multistate, ONLY:TSTATE,MSTATE,FSTATE,HSTATE         ! model state variables
     USE multistate, ONLY:gState,gState_3d                    ! gridded state variables
     USE multiroute, ONLY:MROUTE,AROUTE,AROUTE_3d             ! routed runoff
     USE multistats, ONLY:MSTATS,PCOUNT,MOD_IX                ! access model statistics; counter for param set
     USE multi_flux                                           ! model fluxes
-    USE multibands                                           ! elevation bands for snow modeling
+    USE multibands     ! NOTE: include N_BANDS               ! elevation bands for snow modeling
     USE set_all_module
 
     ! code modules
     USE time_io, ONLY:get_modtim                             ! get model time for a given time step
-    USE get_gforce_module, ONLY:get_gforce_3d                ! get gridded forcing data for a range of time steps
-    USE getPETgrid_module, ONLY:getPETgrid                   ! get gridded PET
+    USE get_gforce_module, ONLY: get_gforce_3d               ! get gridded forcing data for a range of time steps
+    USE getPETgrid_module, ONLY: getPETgrid                  ! get gridded PET
+    USE put_params_module, ONLY: put_params                  ! write parameters
+    USE put_output_module, ONLY: put_goutput_3d              ! write gridded output
+    !USE PAR_DERIVE_module, ONLY: PAR_DERIVE
     USE par_insert_module                                    ! insert parameters into data structures
     USE str_2_xtry_module                                    ! provide access to the routine str_2_xtry
     USE xtry_2_str_module                                    ! provide access to the routine xtry_2_str
+
+    ! differentiable model
+    use work_types, only: fuse_work                          ! bundles "everything" required to run fuse for a single cell 
+    use get_bundle_module, only: get_bundle                  ! populate the fuse_work data structure
+    use implicit_solve_module, only:implicit_solve           ! simple implicit solve for differnetiable ODE
+    use update_swe_diff_module, only:update_swe_diff         ! differentiable snow model
 
     ! interface blocks
     USE interfaceb, ONLY:ode_int,fuse_solve                  ! provide access to FUSE_SOLVE through ODE_INT
@@ -73,7 +85,7 @@ MODULE FUSE_METRIC_MODULE
     LOGICAL(LGT), INTENT(IN), OPTIONAL     :: MPARAM_FLAG    ! .FALSE. (used to turn off writing statistics)
 
     ! output
-    REAL(SP),INTENT(OUT)                   :: METRIC_VAL     ! value of the metric chosen as objective function
+    REAL(SP),INTENT(OUT)                   :: METRIC_VAL     ! metric 
 
     ! internal
     LOGICAL(lgt),PARAMETER                 :: computePET=.FALSE. ! flag to compute PET
@@ -96,10 +108,28 @@ MODULE FUSE_METRIC_MODULE
     CHARACTER(LEN=CLEN)                    :: CMESSAGE       ! error message of downwind routine
     INTEGER(I4B),PARAMETER::UNT=6  !1701 ! 6
 
+    ! differentiable model
+    type(fuse_work)                        :: fuseStruct     ! fuse work structure
+
     ! ---------------------------------------------------------------------------------------
     ! allocate state vectors
     ALLOCATE(STATE0(NSTATE),STATE1(NSTATE),STAT=IERR)
-    IF (IERR.NE.0) STOP ' problem allocating space for state vectors in fuse_metric '
+    IF (IERR.NE.0) STOP ' problem allocating space for state vectors in fuse_metric'
+
+    ! allocate flux derivative vectors
+    allocate(fuseStruct%df_dS(nState), fuseStruct%df_dPar(NUMPAR), fuseStruct%dL_dPar(NUMPAR), stat=ierr)
+    if(ierr/=0) STOP ' problem allocating space for the flux derivative vectors'
+
+    ! allocate elevation bands (for the snow model)
+    allocate(fuseStruct%sbands(n_bands), stat=ierr)
+    if(ierr/=0) STOP ' problem allocating space for the elevation bands'
+
+    ! allocate parameter derivative for each elevation band
+    do iBands=1,n_bands
+     allocate(fuseStruct%sbands(iBands)%var%dSWE_dParam(NPAR_SNOW), stat=ierr)
+     if(ierr/=0) STOP ' problem allocating space for the parameter derivatives'
+     fuseStruct%sbands(iBands)%var%dSWE_dparam(:) = 0._sp
+    end do
 
     ! increment parameter counter for model output
     IF (.NOT.PRESENT(MPARAM_FLAG)) THEN
@@ -110,38 +140,57 @@ MODULE FUSE_METRIC_MODULE
 
     ! add parameter set to the data structure
     CALL PUT_PARSET(XPAR)
-    PRINT *, 'Parameter set added to data structure:'
-    PRINT *, XPAR
+    if(isPrint) PRINT *, 'Parameter set added to data structure:'
+    if(isPrint) PRINT *, XPAR
 
     ! compute derived model parameters (bucket sizes, etc.)
     CALL PAR_DERIVE(ERR,MESSAGE)
     IF (ERR.NE.0) WRITE(*,*) TRIM(MESSAGE); IF (ERR.GT.0) STOP
 
+    ! get elevation bands (if catchment)
+    if(SMODL%iSNOWM == iopt_temp_index .and. .not.GRID_FLAG)then
+     Z_FORCING       = Z_FORCING_grid(1,1)          ! elevation of forcing data (m)
+     MBANDS(:)%info  = MBANDS_INFO_3d(1,1,:)        ! info structure, %AF, %Z_MID
+    endif
+
+    if(isPrint) PRINT *, 'Writing parameter values...'
+    CALL PUT_PARAMS(PCOUNT)
+
     ! initialize model states over the 2D gridded domain (1x1 domain in catchment mode)
     DO iSpat2=1,nSpat2
       DO iSpat1=1,nSpat1
           CALL INIT_STATE(fracState0)             ! define FSTATE using fracState0
+          CALL STR_2_XTRY(FSTATE,STATE0)          ! set state at the start of the time step (STATE0) using FSTATE
+          CALL XTRY_2_STR(STATE0,FSTATE)          ! update structure, including derived state variables
           gState_3d(iSpat1,iSpat2,1) = FSTATE     ! put the state into first time step of 3D structure
        END DO
     END DO
-    PRINT *, 'Model states initialized over the 2D gridded domain'
+    if(isPrint) PRINT *, 'Model states initialized over the 2D gridded domain'
 
     ! initialize elevations bands if snow module is on
-    PRINT *, 'N_BANDS =', N_BANDS
-
+    if(isPrint) PRINT *, 'N_BANDS =', N_BANDS
     IF (SMODL%iSNOWM.EQ.iopt_temp_index) THEN
+
+      ! initialize the per-band template once
+      ! (dSWE_dParam allocated & initialized earlier)
+      fuseStruct%sbands(:)%var%SWE         = 0._sp ! band snowpack water equivalent (mm)
+      fuseStruct%sbands(:)%var%SNOWACCMLTN = 0._sp ! new snow accumulation in band (mm day-1)
+      fuseStruct%sbands(:)%var%SNOWMELT    = 0._sp ! snowmelt in band (mm day-1)
+      fuseStruct%sbands(:)%var%DSWE_DT     = 0._sp ! rate of change of band SWE (mm day-1)
+
+      ! copy to every grid cell
+      ! NOTE: %bands_var only copies the var components (OK because MBANDS_VAR_4d is legacy structure)
       DO iSpat2=1,nSpat2
         DO iSpat1=1,nSpat1
-         DO IBANDS=1,N_BANDS
-            MBANDS_VAR_4d(iSpat1,iSpat2,IBANDS,1)%SWE=0.0_sp         ! band snowpack water equivalent (mm)
-            MBANDS_VAR_4d(iSpat1,iSpat2,IBANDS,1)%SNOWACCMLTN=0.0_sp ! new snow accumulation in band (mm day-1)
-            MBANDS_VAR_4d(iSpat1,iSpat2,IBANDS,1)%SNOWMELT=0.0_sp    ! snowmelt in band (mm day-1)
-            MBANDS_VAR_4d(iSpat1,iSpat2,IBANDS,1)%DSWE_DT=0.0_sp     ! rate of change of band SWE (mm day-1)
-          END DO
-        END DO
-      END DO
-      PRINT *, 'Snow states initiatlized over the 2D gridded domain '
-    ENDIF
+          do iBands=1,n_bands
+            MBANDS_VAR_4d(iSpat1,iSpat2,iBands,1) = fuseStruct%sbands(iBands)%var%bands_var
+          end do  ! elevation bands
+        end do  ! 1st spatial dimension
+      end do  ! 2nd spatial dimension
+
+      if(isPrint) PRINT *, 'Snow states initiatlized over the 2D gridded domain '
+
+    ENDIF  ! if snow model is on
 
     ! allocate 3d data structure for fluxes
     ALLOCATE(W_FLUX_3d(nspat1,nspat2,numtim_sub))
@@ -155,7 +204,8 @@ MODULE FUSE_METRIC_MODULE
     CALL CPU_TIME(T1)
 
     ! This version of FUSE enables the user to load slices of the forcing
-    ! - FUSE1 used to access the input file at each time step, slowing operations
+    !
+    ! FUSE1 used to access the input file at each time step, slowing operations
     ! down over large domains on systems with slow I/O. The number of timesteps
     ! of the slices is defined by the user in the filemanager. The default is
     ! that the whole time period needed for the simulation is loaded, but
@@ -180,16 +230,17 @@ MODULE FUSE_METRIC_MODULE
         numtim_sub_cur=MIN(numtim_sub,numtim_sim-itim_sim+1)
 
         ! load forcing for desired period into gForce_3d
-        PRINT *, 'New subperiod: loading forcing for ',numtim_sub_cur,' time steps'
+        if(isPrint) PRINT *, 'New subperiod: loading forcing for ',numtim_sub_cur,' time steps'
         CALL get_gforce_3d(itim_in,numtim_sub_cur,ncid_forc,err,message)
         IF(err/=0)THEN; WRITE(*,*) 'Error while extracting 3d forcing'; STOP; ENDIF
-        PRINT *, 'Forcing loaded. Running FUSE...'
+        if(isPrint) PRINT *, 'Forcing loaded. Running FUSE...'
 
       ENDIF
 
       ! get the model time
       CALL get_modtim(itim_in,ncid_forc,ierr,message)
       IF(ierr/=0)THEN; PRINT*, TRIM(cmessage); STOP; ENDIF
+      !print*, timdat
 
       ! compute potential ET
       IF(computePET) CALL getPETgrid(ierr,cmessage)
@@ -225,35 +276,68 @@ MODULE FUSE_METRIC_MODULE
                ! initialize model fluxes
                CALL INITFLUXES()                   ! set weighted sum of fluxes to zero
 
+               ! populate fuse work structure
+               if(diff_mode==differentiable) call get_bundle(fuseStruct)
+
                ! if snow model is on, call UPDATE_SWE to calculate snow fluxes and update snow bands
                ! using explicit Euler approach; if not, call QRAINERROR
                SELECT CASE(SMODL%iSNOWM)
                CASE(iopt_temp_index)
 
                   ! load data from multidimensional arrays
-                  Z_FORCING          = Z_FORCING_grid(iSpat1,iSpat2)                       ! elevation of forcing data (m)
-                  MBANDS%Z_MID       = MBANDS_INFO_3d(iSpat1,iSpat2,:)%Z_MID               ! band mid-point elevation (m)
-                  MBANDS%AF          = MBANDS_INFO_3d(iSpat1,iSpat2,:)%AF                  ! fraction of basin area in band (-)
-                  MBANDS%SWE         = MBANDS_VAR_4d(iSpat1,iSpat2,:,itim_sub)%SWE         ! band snowpack water equivalent (mm)
-                  MBANDS%SNOWACCMLTN = MBANDS_VAR_4d(iSpat1,iSpat2,:,itim_sub)%SNOWACCMLTN ! new snow accumulation in band (mm day-1)
-                  MBANDS%SNOWMELT    = MBANDS_VAR_4d(iSpat1,iSpat2,:,itim_sub)%SNOWMELT    ! snowmelt in band (mm day-1)
-                  MBANDS%DSWE_DT     = MBANDS_VAR_4d(iSpat1,iSpat2,:,itim_sub)%DSWE_DT     ! rate of change of band SWE (mm day-1)
+                  Z_FORCING      = Z_FORCING_grid(iSpat1,iSpat2)             ! elevation of forcing data (m)
+                  mbands(:)%info = MBANDS_INFO_3d(iSpat1,iSpat2,:)           ! info structure
+                  mbands(:)%var  = MBANDS_VAR_4d(iSpat1,iSpat2,:,itim_sub)   ! var structure
 
-                  CALL UPDATE_SWE(DELTIM)
+                  ! put data into the FUSE structure
+                  ! NOTE: only copy the "var" variables
+                  if(diff_mode == differentiable)then
+                   fuseStruct%z_forcing                = Z_FORCING
+                   fuseStruct%sbands(:)%info           = MBANDS(:)%info
+                   fuseStruct%sbands(:)%var%bands_var  = MBANDS(:)%var
+                  endif  ! if diff_mode == differentiable
+
+                  ! run the snow model
+                  select case(diff_mode)
+                   case(original);       CALL UPDATE_SWE(DELTIM)
+                   case(differentiable); CALL UPDATE_SWE_DIFF(fuseStruct,DELTIM)
+                   CASE DEFAULT; stop "fuse_metric: cannot identify diff_mode"
+                  end select
 
                CASE(iopt_no_snowmod)
                   CALL QRAINERROR()
                CASE DEFAULT
-                  message="f-fuse_metric/SMODL%iSNOWM must be either iopt_temp_index or iopt_no_snowmod"
-                  RETURN
+                  message="fuse_metric/SMODL%iSNOWM must be either iopt_temp_index or iopt_no_snowmod"
+                  print*, trim(message); stop 1
                END SELECT
 
-               ! temporally integrate the ordinary differential equations
-               CALL ODE_INT(FUSE_SOLVE,STATE0,STATE1,DT_SUB,DT_FULL,IERR,MESSAGE)
-               IF (IERR.NE.0) THEN 
-                 PRINT *, TRIM(MESSAGE)
-                 !PAUSE
-               ENDIF
+              ! ----- start of soil physics code ------------------------------------------------------------
+
+              ! temporally integrate the ordinary differential equations
+              select case(diff_mode)
+
+                ! original code
+                case(original)
+                 CALL ODE_INT(FUSE_SOLVE,STATE0,STATE1,DT_SUB,DT_FULL,IERR,MESSAGE)
+                 IF (IERR.NE.0) THEN; PRINT *, TRIM(MESSAGE); STOP 1; ENDIF
+
+                ! differentiable code
+                case(differentiable)
+
+                 ! solve differentiable ODEs
+                 call implicit_solve(fuseStruct, state0, state1, nState, ierr, cmessage)
+
+                 ! save fluxes
+                 W_FLUX = fuseStruct%flux
+
+                ! check options
+                case default; print*, "fuse_metric: Cannot identify diff_mode"; stop 1
+              end select
+
+              !print*, ITIM_IN, w_flux%eff_ppt
+              !if(ITIM_IN > 100) stop "check"
+
+              ! ----- end of soil physics code --------------------------------------------------------------
 
               ! perform overland flow routing
               CALL Q_OVERLAND()
@@ -275,14 +359,18 @@ MODULE FUSE_METRIC_MODULE
 
               IF (SMODL%iSNOWM.EQ.iopt_temp_index) THEN
 
+                ! extract data from the FUSE structure
+                if(diff_mode == differentiable)then
+                 Z_FORCING  = fuseStruct%z_forcing
+                 MBANDS%info = fuseStruct%sbands%info         
+                 MBANDS%var  = fuseStruct%sbands%var%bands_var
+                endif  ! if diff_mode == differentiable
+
                 ! SWE TOT: weighted average of SWE over all the elevation bands
-                gState_3d(iSpat1,iSpat2,itim_sub+1)%SWE_TOT = SUM(MBANDS%SWE*MBANDS_INFO_3d(iSpat1,iSpat2,:)%AF)
+                gState_3d(iSpat1,iSpat2,itim_sub+1)%SWE_TOT = SUM(MBANDS(:)%var%SWE * MBANDS(:)%info%AF)
 
                 ! update MBANDS_VAR_4D
-                MBANDS_VAR_4d(iSpat1,iSpat2,:,itim_sub+1)%SWE         = MBANDS%SWE
-                MBANDS_VAR_4d(iSpat1,iSpat2,:,itim_sub+1)%SNOWACCMLTN = MBANDS%SNOWACCMLTN
-                MBANDS_VAR_4d(iSpat1,iSpat2,:,itim_sub+1)%SNOWMELT    = MBANDS%SNOWMELT
-                MBANDS_VAR_4d(iSpat1,iSpat2,:,itim_sub+1)%DSWE_DT     = MBANDS%DSWE_DT
+                MBANDS_VAR_4d(iSpat1,iSpat2,:,itim_sub+1) = MBANDS(:)%var
 
               END IF
 
@@ -313,25 +401,22 @@ MODULE FUSE_METRIC_MODULE
       ! if end of subperiod: write to output file and save states
       IF(itim_sub.EQ.numtim_sub_cur)THEN
 
-        PRINT *, 'End of subperiod reached:'
+        if(isPrint) PRINT *, 'End of subperiod reached:'
 
         ! write model output
         IF (OUTPUT_FLAG) THEN
-          PRINT *, 'Write output for ',numtim_sub_cur,' time steps starting at indice', itim_sim-numtim_sub_cur+1
-          CALL PUT_GOUTPUT_3D(itim_sim-numtim_sub_cur+1,itim_in-numtim_sub_cur+1,numtim_sub_cur,IPSET)
-          PRINT *, 'Done writing output'
+          if(isPrint) PRINT *, 'Write output for ',numtim_sub_cur,' time steps starting at indices', itim_sim-numtim_sub_cur+1
+          CALL PUT_GOUTPUT_3D(itim_sim-numtim_sub_cur+1, itim_in-numtim_sub_cur+1, numtim_sub_cur)
+          if(isPrint) PRINT *, 'Done writing output'
         ELSE
-          PRINT *, 'OUTPUT_FLAG is set on FALSE, no output written'
+          if(isPrint) PRINT *, 'OUTPUT_FLAG is set on FALSE, no output written'
         END IF
 
         ! TODO: set gState_3d and MBANDS_VAR_4d to NA
 
         ! reinitialize states for next subperiod using last time step
-        gState_3d(:,:,1) = gState_3d(:,:,itim_sub+1)
-        MBANDS_VAR_4d(:,:,:,1)%SWE         = MBANDS_VAR_4d(:,:,:,itim_sub+1)%SWE
-        MBANDS_VAR_4d(:,:,:,1)%SNOWACCMLTN = MBANDS_VAR_4d(:,:,:,itim_sub+1)%SNOWACCMLTN
-        MBANDS_VAR_4d(:,:,:,1)%SNOWMELT    = MBANDS_VAR_4d(:,:,:,itim_sub+1)%SNOWMELT
-        MBANDS_VAR_4d(:,:,:,1)%DSWE_DT     = MBANDS_VAR_4d(:,:,:,itim_sub+1)%DSWE_DT
+        gState_3d(:,:,1)       = gState_3d(:,:,itim_sub+1)
+        MBANDS_VAR_4d(:,:,:,1) = MBANDS_VAR_4d(:,:,:,itim_sub+1)
 
         ! reset itim_sub
         itim_sub=1
@@ -350,27 +435,34 @@ MODULE FUSE_METRIC_MODULE
 
     ! get timing information
     CALL CPU_TIME(T2)
-    WRITE(*,*) "TIME ELAPSED = ", t2-t1
+    if(isPrint) WRITE(*,*) "TIME ELAPSED = ", t2-t1
 
     ! calculate mean summary statistics
     IF(.NOT.GRID_FLAG)THEN
 
-      PRINT *, 'Calculating performance metrics...'
+      if(isPrint) PRINT *, 'Calculating performance metrics...'
       CALL MEAN_STATS()
       METRIC_VAL = MSTATS%METRIC_VAL
 
-      write(*,'(i6,1x,a12,1x,f12.6)') nFUSE_eval, "METRIC_VAL =", METRIC_VAL
+      write(*,'(i6,1x,a6,1x,f12.6,1x,a20,1x,f12.6)') nFUSE_eval, "NSE = ", MSTATS%NASH_SUTT, "; TIME ELAPSED = ", t2-t1
+      !if(nFUSE_eval > 10) stop "checking results"
 
     ENDIF
 
-    PRINT *, 'Writing parameter values...'
-    CALL PUT_PARAMS(PCOUNT)
-    PRINT *, 'Writing model statistics...'
+    if(isPrint) PRINT *, 'Writing model statistics...'
     CALL PUT_SSTATS(PCOUNT)
+
+    ! deallocate parameter derivative vectors
+    do iBands=1,n_bands
+     deallocate(fuseStruct%sbands(iBands)%var%dSWE_dParam, stat=ierr)
+     if(ierr/=0) STOP ' problem deallocating space for the parameter derivatives'
+    end do
 
     ! deallocate vectors
     DEALLOCATE(W_FLUX_3d); IF (IERR.NE.0) STOP ' problem deallocating W_FLUX_3d in fuse_metric '
     DEALLOCATE(STATE0,STATE1,STAT=IERR); IF (IERR.NE.0) STOP ' problem deallocating state vectors in fuse_metric'
+    deallocate(fuseStruct%df_dS, fuseStruct%df_dPar, fuseStruct%dL_dPar, stat=ierr); if(ierr/=0) STOP ' problem deallocating space for the flux derivative vectors'
+    deallocate(fuseStruct%sbands, stat=ierr); if(ierr/=0) STOP ' problem deallocating space for the elevation bands'
 
   END SUBROUTINE FUSE_METRIC
 END MODULE FUSE_METRIC_MODULE

@@ -5,6 +5,7 @@ SUBROUTINE UPDATE_SWE(DT)
 ! Brian Henn, as part of FUSE snow model implementation, 6/2013
 ! Based on subroutines QSATEXCESS and UPDATSTATE, by Martyn Clark
 ! Modified by Nans Addor to enable distributed modeling, 9/2016
+! Modified by Martyn Clark to enable the split info/var structure, 01/2026
 ! ---------------------------------------------------------------------------------------
 ! Purpose:
 ! --------
@@ -59,60 +60,72 @@ ENDIF
 ! loop through model bands
 DO ISNW=1,N_BANDS
 
- ! calculate forcing data for each band
- DZ = MBANDS(ISNW)%Z_MID - Z_FORCING
+ ! ---------------------------------------------------------------------------------------
+ associate( &    ! link to the info and var sub-structures in MBANDS (less invasive / more readable in code below)
+    z_mid       => mbands(isnw)%info%z_mid,      &
+    af          => mbands(isnw)%info%af,         &
+    swe         => mbands(isnw)%var%swe,         &
+    snowaccmltn => mbands(isnw)%var%snowaccmltn, &
+    snowmelt    => mbands(isnw)%var%snowmelt,    &
+    dswe_dt     => mbands(isnw)%var%dswe_dt )
+ 
+  ! calculate forcing data for each band
+ DZ = Z_MID - Z_FORCING
  TEMP_Z = MFORCE%TEMP + DZ*MPARAM%LAPSE/1000._sp ! adjust for elevation using lapse rate
  IF (DZ.GT.0._sp) THEN ! adjust for elevation using OPG
   PRECIP_Z = MFORCE%PPT * (1._sp + DZ*MPARAM%OPG/1000._sp)
  ELSE
   PRECIP_Z = MFORCE%PPT / (1._sp - DZ*MPARAM%OPG/1000._sp)
  ENDIF
- IF ((MBANDS(ISNW)%SWE.GT.0._sp).AND.(TEMP_Z.GT.MPARAM%MBASE)) THEN
+ IF ((SWE.GT.0._sp).AND.(TEMP_Z.GT.MPARAM%MBASE)) THEN
   ! calculate the initial snowmelt rate from the melt factor and the temperature
-  MBANDS(ISNW)%SNOWMELT = MF*(TEMP_Z - MPARAM%MBASE) ! MBANDS%SNOWMELT has units of mm day-1
+  SNOWMELT = MF*(TEMP_Z - MPARAM%MBASE) ! MBANDS%SNOWMELT has units of mm day-1
  ELSE
-  MBANDS(ISNW)%SNOWMELT = 0.0_sp
+  SNOWMELT = 0.0_sp
  ENDIF
 
  ! calculate the accumulation rate from the forcing data
  IF (TEMP_Z.LT.MPARAM%PXTEMP) THEN
   SELECT CASE(SMODL%iRFERR)
    CASE(iopt_additive_e) ! additive rainfall error
-    MBANDS(ISNW)%SNOWACCMLTN = MAX(0.0_sp, PRECIP_Z + MPARAM%RFERR_ADD)
+    SNOWACCMLTN = MAX(0.0_sp, PRECIP_Z + MPARAM%RFERR_ADD)
    CASE(iopt_multiplc_e) ! multiplicative rainfall error
-    MBANDS(ISNW)%SNOWACCMLTN = PRECIP_Z * MPARAM%RFERR_MLT
+    SNOWACCMLTN = PRECIP_Z * MPARAM%RFERR_MLT
    CASE DEFAULT       ! check for errors
     print *, "SMODL%iRFERR must be either iopt_additive_e or iopt_multiplc_e"
     STOP
   END SELECT
  ELSE
-  MBANDS(ISNW)%SNOWACCMLTN = 0.0_sp
+  SNOWACCMLTN = 0.0_sp
  ENDIF
 
  ! update SWE, and check to ensure non-negative values
- MBANDS(ISNW)%DSWE_DT = MBANDS(ISNW)%SNOWACCMLTN - MBANDS(ISNW)%SNOWMELT
- IF ((MBANDS(ISNW)%SWE + MBANDS(ISNW)%DSWE_DT*DT).GE.0._sp) THEN
-  MBANDS(ISNW)%SWE = MBANDS(ISNW)%SWE + MBANDS(ISNW)%DSWE_DT*DT
+ DSWE_DT = SNOWACCMLTN - SNOWMELT
+ IF ((SWE + DSWE_DT*DT).GE.0._sp) THEN
+  SWE = SWE + DSWE_DT*DT
  ELSE ! reduce melt rate in case of negative SWE
-  MBANDS(ISNW)%SNOWMELT = MBANDS(ISNW)%SWE/DT + MBANDS(ISNW)%SNOWACCMLTN
-  MBANDS(ISNW)%SWE = 0.0_sp
+  SNOWMELT = SWE/DT + SNOWACCMLTN
+  SWE = 0.0_sp
  ENDIF
 
  ! calculate rainfall plus snowmelt
  IF (TEMP_Z.GT.MPARAM%PXTEMP) THEN
   SELECT CASE(SMODL%iRFERR)
    CASE(iopt_additive_e) ! additive rainfall error
-   M_FLUX%EFF_PPT = M_FLUX%EFF_PPT + MBANDS(ISNW)%AF * &
-   (MAX(0.0_sp, PRECIP_Z + MPARAM%RFERR_ADD) + MBANDS(ISNW)%SNOWMELT)
+   M_FLUX%EFF_PPT = M_FLUX%EFF_PPT + AF * &
+   (MAX(0.0_sp, PRECIP_Z + MPARAM%RFERR_ADD) + SNOWMELT)
    CASE(iopt_multiplc_e) ! multiplicative rainfall error
-   M_FLUX%EFF_PPT = M_FLUX%EFF_PPT + MBANDS(ISNW)%AF * &
-   (PRECIP_Z * MPARAM%RFERR_MLT +  MBANDS(ISNW)%SNOWMELT)
+   M_FLUX%EFF_PPT = M_FLUX%EFF_PPT + AF * &
+   (PRECIP_Z * MPARAM%RFERR_MLT +  SNOWMELT)
    CASE DEFAULT       ! check for errors
     print *, "SMODL%iRFERR must be either iopt_additive_e or iopt_multiplc_e"
     STOP
   END SELECT
  ELSE
-  M_FLUX%EFF_PPT = M_FLUX%EFF_PPT + MBANDS(ISNW)%AF * MBANDS(ISNW)%SNOWMELT
+  M_FLUX%EFF_PPT = M_FLUX%EFF_PPT + AF * SNOWMELT
  ENDIF
-END DO
+
+ end associate
+
+END DO  ! looping through bands
 END SUBROUTINE UPDATE_SWE
