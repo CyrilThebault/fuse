@@ -263,7 +263,7 @@ MODULE FUSE_METRIC_MODULE
 
               ! runoff sanity check
               IF (MROUTE%Q_ROUTED.LT.0._sp) STOP 'Q_ROUTED is less than zero'
-              IF (MROUTE%Q_ROUTED.GT.1000._sp) STOP 'Q_ROUTED is enormous'
+              IF (MROUTE%Q_ROUTED * DELTIM .GT. 1000._sp) STOP 'Q_ROUTED is enormous'
 
               ! transfer simulations to corresponding 3D structures
               ! note that the first time step of gState_3d and MBANDS_VAR_4d is defined by initialisation
