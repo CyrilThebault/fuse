@@ -1,0 +1,933 @@
+
+\documentclass[11pt]{scrartcl}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{setspace}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{enumitem}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{positioning, arrows.meta, shapes.multipart, fit}
+
+\usepackage[colorlinks=true,
+            linkcolor=black,
+            urlcolor=blue,
+            citecolor=black]{hyperref}
+
+\usepackage{amsmath,amssymb}
+
+\setstretch{1.0}
+\setlength{\parskip}{0.3em}
+\setlength{\parindent}{0pt}
+
+% --- KOMA-native (do NOT use titlesec with scrartcl) ---
+\RedeclareSectionCommand[beforeskip=1.0ex plus .2ex minus .2ex, afterskip=0.4ex plus .1ex]{section}
+\RedeclareSectionCommand[beforeskip=0.8ex plus .2ex minus .2ex, afterskip=0.3ex plus .1ex]{subsection}
+\RedeclareSectionCommand[beforeskip=0.6ex plus .2ex minus .2ex, afterskip=0.2ex plus .1ex]{subsubsection}
+
+% ---------- listings ----------
+\definecolor{codegray}{gray}{0.96}
+\definecolor{coderule}{gray}{0.65}
+\lstset{
+  backgroundcolor=\color{codegray},
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  frame=single,
+  rulecolor=\color{coderule},
+  columns=fullflexible,
+  showstringspaces=false
+}
+
+\title{Architectural Refactor Technical Report \\ FUSE Modeling Framework}
+\author{Martyn Clark (refactor summary draft)}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+\tableofcontents
+
+% =====================================================
+\section*{Abstract}
+
+\begin{abstract}
+
+This report documents a major capability expansion of the FUSE hydrologic modeling
+framework. The new release introduces a fully differentiable physics pathway with
+analytical Jacobians throughout the snow, soil, and routing components; a purpose-built
+fixed-step implicit solver designed for deterministic, derivative-consistent execution;
+and a generalized spatial-domain abstraction supporting lumped, distributed,
+rectilinear, and curvilinear configurations. The framework now also supports structured
+spatial decomposition, enabling scalable parallel execution.
+
+Implementing these capabilities required a substantial architectural re-platforming.
+The refactor spans 95 source files and replaces implicit global state with explicit,
+typed run containers (\texttt{info}, \texttt{work}, \texttt{domain}), modular
+driver/evaluation logic, explicit time-axis construction, improved NetCDF I/O and
+domain handling, and modernized calibration plumbing. A temporary compatibility
+layer preserves selected legacy interfaces during migration but is not part of the
+target architecture.
+
+Beyond describing \emph{what} changed, this report explains \emph{why} the legacy
+structure became a limiting factor under differentiable and scalable execution
+requirements, and \emph{how} the redesigned architecture improves correctness,
+traceability, maintainability, and extensibility for future scientific development.
+
+\end{abstract}
+% =====================================================
+\section{Background and Motivation}
+
+\subsection{From Refactor to Capability Expansion}
+
+This development effort was not initiated solely to ``clean up'' legacy code.
+It was driven by the need to support a set of substantial new capabilities:
+
+\begin{itemize}
+\item A fully differentiable physics pathway with analytical Jacobians.
+\item A purpose-built fixed-step implicit solver suitable for gradient-based workflows.
+\item Flexible spatial-domain support (lumped, distributed, rectilinear and curvilinear grids).
+\item Structured spatial decomposition enabling parallel execution.
+\end{itemize}
+
+These capabilities fundamentally expand what FUSE can do: from a forward
+simulation framework with flexible numerical options to a platform capable of
+derivative-aware modeling, scalable spatial execution, and integration with
+modern calibration and machine-learning workflows.
+
+\subsection{Architectural Shift: From Implicit Globals to Explicit State}
+
+Implementing these capabilities required more than incremental feature additions.
+They imposed stricter requirements on determinism, state management, numerical
+stability, and data flow transparency. Differentiable execution and spatial
+decomposition, in particular, require predictable control flow and well-defined
+state ownership across the entire call graph.
+
+In particular, correctness often depended on initialization order and
+side effects rather than explicit interfaces. This created challenges for:
+
+\begin{itemize}
+\item Isolating and testing components,
+\item Safely modifying numerical routines,
+\item Supporting deterministic execution pathways,
+\item Enabling derivative-consistent integration.
+\end{itemize}
+
+The central architectural change is therefore a shift in programming model:
+from code that operates through implicit shared state to code that
+propagates explicitly defined, typed state containers through well-defined
+interfaces.
+
+This change is not aesthetic. It provides the structural foundation required
+for differentiable physics, fixed-step implicit integration, and scalable
+spatial execution.
+
+\subsection{Guiding principles}
+
+The redesign follows several principles commonly used in large scientific codes:
+
+\begin{enumerate}[leftmargin=*]
+\item \textbf{Make state explicit:} The state required to run the model should be visible
+      in the subroutine interfaces (or in a clearly defined container passed in).
+\item \textbf{Separate definition from storage:} Define data structures in one place
+      (\texttt{types/}), and store/instantiate them in clearly owned containers
+      (\texttt{info}, \texttt{work}, \texttt{domain}).
+\item \textbf{Keep orchestration separate from execution:} The driver should orchestrate
+      setup and mode selection; evaluation should execute the model and compute metrics.
+\item \textbf{Enable incremental migration:} Preserve legacy call sites temporarily so
+      the refactor can be staged; remove the compatibility layer once migration is complete.
+\end{enumerate}
+
+\section{Development of New Capabilities}
+
+\subsection{Differentiable Physics Architecture}
+
+The differentiable branch is not a minor extension of the legacy physics;
+it is a systematic reworking of the process layer to support derivative-aware
+simulation and gradient-based workflows.
+
+The refactor introduces a parallel set of \texttt{*\_diff} routines that
+propagate analytical derivatives throughout the snow, soil, and routing
+physics. Rather than relying on external automatic differentiation or
+finite-difference approximations, derivatives are computed explicitly
+within the governing equations.
+
+\subsubsection{Fully Differentiable Snow Model}
+
+The differentiable snow implementation (\texttt{update\_swe\_diff}) is a derivative-aware
+rewrite of the elevation-band SWE update.
+The routine computes snowfall, rainfall, melt, and SWE evolution for each elevation band,
+while propagating analytical derivatives with respect to the snow-related parameters.
+
+For each band, forcing is adjusted using (i) a temperature lapse rate and (ii) an orographic
+precipitation gradient (OPG) multiplier based on the band--forcing elevation difference.
+Precipitation is then partitioned into snow and rain using a smooth sigmoid transition
+around the temperature threshold \texttt{PXTEMP}, yielding a differentiable snow fraction
+\(f_{\text{snow}}\in[0,1]\). Melt is computed using a seasonally varying melt factor
+\(MF\) derived from \texttt{MFMIN} and \texttt{MFMAX} via an annual sinusoid (with explicit
+leap-year handling), multiplied by a \emph{smoothed} positive-temperature term
+\(\max(T - \texttt{MBASE},0)\) implemented with \texttt{smax} to ensure stable derivatives.
+
+Two deliberate non-smooth elements are retained for physical realism and numerical hygiene:
+(i) melt is hard-capped by available SWE (\(\texttt{snowmelt}=\min(\texttt{potMelt},\texttt{SWE}/\Delta t)\))
+to avoid negative SWE, and (ii) SWE is hard-clamped at zero to remove small numerical noise
+and prevent ``ghost snow''. Sensitivities are correspondingly gated to zero during snow-free
+periods, avoiding accumulation of meaningless derivatives when SWE is effectively absent.
+
+A key capability addition is the consistent propagation of parameter sensitivities through
+the entire banded update. The routine carries forward stored sensitivities
+(\texttt{dSWE\_dparam}) from the previous timestep, updates them using the analytical
+derivatives of accumulation and melt, and aggregates the resulting derivatives into the
+band-area-weighted effective precipitation flux (\(\texttt{EFF\_PPT} = \texttt{rain} + \texttt{snowmelt}\)).
+This provides a differentiable forcing-to-effective-precipitation mapping suitable for
+gradient-based calibration and coupled differentiable modeling workflows.
+
+
+\subsubsection{Analytical Jacobians in Soil Physics}
+
+The soil moisture and flux equations were restructured to expose and
+compute analytical partial derivatives with respect to state variables
+and parameters. This includes:
+
+\begin{itemize}
+\item Explicit Jacobian terms for infiltration, percolation, interflow,
+      baseflow, and saturation-excess runoff.
+\item Derivative-aware implementations of constitutive relationships
+      (e.g., soil moisture–conductivity functions).
+\item Consistent propagation of sensitivities through state updates.
+\end{itemize}
+
+These Jacobians are integrated directly into the time-stepping logic,
+enabling stable sensitivity propagation and forming the basis for
+adjoint or gradient-based calibration frameworks.
+
+
+\subsubsection{Architectural Significance}
+
+This differentiable pathway transforms the physics layer from a purely
+forward simulator into a gradient-aware dynamical system. It enables:
+
+\begin{itemize}
+\item Gradient-based parameter estimation.
+\item Efficient high-dimensional calibration.
+\item Integration with adjoint or automatic differentiation frameworks.
+\item Future coupling to machine-learning components.
+\end{itemize}
+
+The scale of this change is substantial: rather than wrapping legacy code
+with differentiation tools, the physics equations themselves were rewritten
+to expose analytical structure. This represents a foundational capability
+expansion, not merely a refactor.
+
+\subsection{Fixed-Step Implicit Solver for Differentiable Execution}
+
+FUSE has long included a broad suite of numerical options (explicit and implicit schemes,
+adaptive sub-stepping, and multiple solution strategies; Clark and Kavetski, WRR, 2010).
+The differentiable branch, however, places different requirements on the integration
+layer: deterministic fixed time stepping (to avoid step-size branching), stable nonlinear
+solves, and derivative-consistent state trajectories.
+
+To meet these requirements, the refactor adds a dedicated fixed-step implicit solver
+(\texttt{implicit\_solve\_module}). 
+
+\subsubsection{Newton-Raphson solver with constraint handling}
+
+The solver advances the state using an implicit Euler
+update written as a nonlinear root-finding problem:
+\[
+F(x) \equiv x - \left(x_0 + \Delta t\, g(x)\right) = 0,
+\]
+where \(g(x) = \mathrm{d}x/\mathrm{d}t\) is provided by the differentiable physics layer.
+
+The solver computes an analytical flux Jacobian \(J_g(x)\) directly from the differentiable
+physics routine (\texttt{mod\_derivs\_diff}), and forms the residual Jacobian
+\[
+J(x) = \frac{\partial F}{\partial x} = I - \Delta t\, J_g(x).
+\]
+Each Newton iteration then solves \(J\,\delta x = -F\) using an LU factorization
+(\texttt{ludcmp}/\texttt{lubksb}). This design avoids finite-difference Jacobians during the
+core solve (a finite-difference option exists as a diagnostic fallback but is not the
+default pathway).
+
+A central feature of the implementation is robust handling of bounded state variables.
+The solver explicitly computes state bounds (\texttt{get\_bounds}), applies soft
+overshoot correction (\texttt{fix\_ovshoot}) when needed, and enforces feasibility during
+step acceptance. In particular:
+
+\begin{itemize}
+\item Candidate updates that violate bounds are rejected during line search, and the step
+      length is shrunk until the trial state lies in the feasible region.
+\item An active-set style modification prevents Newton steps from pushing already-active
+      bound constraints further outward.
+\end{itemize}
+
+This ``feasibility-first'' approach is critical for hydrologic states with physical bounds
+(e.g., storages) and is especially important for differentiable execution, where repeated
+bound violations can produce unstable trajectories and unusable gradients.
+
+\subsubsection{Backtracking line search and multi-level fallback strategies.}
+Rather than relying on an unconstrained Newton step, the solver uses a short backtracking
+line search to reduce the implicit residual norm
+\(\phi(x) = \tfrac{1}{2}\,F(x)^{\mathsf{T}}F(x)\), while maintaining feasibility. The solver
+also implements several explicit fallback mechanisms to improve robustness:
+
+\begin{itemize}
+\item Step-size limiting (\(\|\delta x\|\) capped by a maximum step size).
+\item If the Newton direction is not a descent direction for \(\phi\), a fallback direction
+      based on the residual-gradient (\(-\nabla \phi\)) is used.
+\item If line search fails to find an acceptable step, a damped trial step is taken and
+      overshoot is repaired via soft clamping.
+\item The solver tracks the best (lowest-\(\phi\)) feasible state encountered. In the rare
+      case of non-convergence, it falls back to the best feasible evaluation, and (if
+      necessary) uses an explicit Euler update with mass-conserving clamp/disaggregation
+      (\texttt{conserve\_clamp}) to ensure physically consistent states.
+\end{itemize}
+
+\subsubsection{Significance.}
+This solver is intentionally specialized: it targets fixed-step, derivative-consistent,
+constraint-aware integration suitable for differentiable physics and gradient-based
+workflows. It complements (rather than replaces) the flexible ``kitchen sink'' numerical
+framework developed for forward simulation in FUSE, while providing a robust and
+deterministic integration pathway for differentiable execution.
+
+\subsection{Unified Spatial Domain Abstraction}
+
+The refactor introduces a generalized spatial-domain abstraction that supports:
+
+\begin{itemize}
+\item Lumped catchments (single spatial point)
+\item Distributed catchments (arbitrary point lists / HRU collections)
+\item Gridded domains (rectilinear and curvilinear grids)
+\end{itemize}
+
+Previously, spatial assumptions were embedded implicitly throughout the codebase.
+Many routines assumed specific dimensional layouts, and extending from lumped to
+distributed configurations required invasive changes.
+
+The new \texttt{domain} container centralizes spatial metadata (dimensions,
+indexing, and decomposition logic), allowing evaluation and physics routines
+to operate generically over spatial elements. This eliminates hard-coded
+assumptions about domain shape and makes spatial flexibility a structural feature
+rather than a patchwork of conditional logic.
+
+\subsection{Parallelization via Spatial Decomposition}
+
+The refactor also establishes a clear pathway for parallel execution by
+decomposing the second spatial dimension (e.g., via \texttt{ystart}-style
+index partitioning).
+
+Rather than assuming a monolithic spatial loop, the domain can now be
+partitioned into subdomains, enabling:
+
+\begin{itemize}
+\item Parallel execution across spatial slices
+\item Improved memory locality
+\item Scalable execution for large grids
+\end{itemize}
+
+Crucially, this decomposition is coordinated through the centralized
+\texttt{domain} abstraction, rather than being embedded implicitly
+in physics or I/O routines. This makes parallelism an architectural
+extension of the model rather than an intrusive modification.
+
+Together, these changes transform spatial handling from a fixed structural
+constraint into a flexible, scalable capability.
+
+\subsection{Structural improvements}
+
+The refactoring includes:
+
+\begin{enumerate}
+
+  \item Explicit Run-State Architecture (\texttt{info/work/domain})
+
+The transition from implicit module-level globals to explicitly passed run containers
+(\texttt{info}, \texttt{work}, \texttt{domain}) is the most consequential improvement.
+In the legacy architecture, routines depended on shared modules, and true dependencies
+were not visible in argument lists. Correctness relied on initialization order and
+side effects.
+
+The refactor makes state ownership explicit and routes execution through a clean
+evaluation interface:
+
+\begin{lstlisting}[language=Fortran]
+call fuse_evaluate(XPAR, info, work, domain, OUTPUT_FLAG, METRIC_VAL)
+\end{lstlisting}
+
+This improves traceability, testability, and reuse across deterministic and calibration modes.
+
+\item Configuration Modernization: \texttt{fuseFileManager} $\rightarrow$ TOML
+
+The legacy configuration pathway accumulated parsing, defaults, filesystem logic,
+and runtime behavior inside a large monolithic routine. Configuration was effectively
+encoded in control flow.
+
+Transitioning to TOML introduces a structured, human-readable configuration layer
+with earlier validation and clearer separation between configuration and execution.
+This substantially improves reproducibility and maintainability.
+
+\item NetCDF and Dimensional Cleanup
+
+The refactor also addresses structural problems in forcing and output routines,
+including monolithic I/O logic and hard-coded repetition (e.g., elevation-band writes).
+Moving toward dimension-aware abstractions and smaller helper routines reduces
+duplication and restores logical structure to I/O subsystems.
+
+Two related cleanups substantially reduce legacy complexity. First, the refactor deletes
+\texttt{get\_modtim} and converts the old ``time I/O'' module into a pure calendar utility
+module: \texttt{time\_io.f90} becomes \texttt{util/time\_utils.f90}, drops the \texttt{netcdf}
+dependency, and exports only \texttt{date\_extractor}, \texttt{juldayss}, and \texttt{caldatss}.
+This removes slow, repetitive per-timestep NetCDF access and aligns time handling with the
+new pattern: read the full time axis once, build \texttt{info\%time\%jdate(:)} once, and
+convert any timestep via \texttt{caldatss(info\%time\%jdate(itim),\ldots)}.
+
+Second, the refactor removes the legacy forcing-descriptor pathway (e.g., deleting
+\texttt{force\_info.f90} and the versioned \texttt{forcinginfo} text formats), which had grown
+into a large body of fragile code whose primary job was to parse \emph{descriptors of
+self-describing NetCDF files}. With TOML-based configuration, any true overrides/aliases can
+live in TOML, while the NetCDF metadata remains the authoritative source for forcing
+definitions. Together, these changes eliminate substantial ``meta-I/O'' code, reduce hidden
+coupling, and make initialization faster and easier to reason about.
+
+\end{enumerate}
+
+These changes reduce ``incidental complexity'' in the codebase while enabling new
+capabilities (clean configuration, cleaner runtime diagnostics, and differentiable execution).
+
+This shift from ad hoc procedural growth toward structured, dimension-aware
+design reduces duplication, clarifies intent, and restores logical coherence
+to core subsystems such as forcing ingestion and output generation.
+
+
+% =====================================================
+\section{Review of the Legacy Architecture}
+
+\subsection{FUSE Architecture: What it was and why it became suboptimal}
+
+The legacy FUSE organization relied heavily on shared modules (e.g., \texttt{dshare/*})
+as global repositories for forcing data, parameters, states, routing, and statistics.
+Many routines relied on \texttt{USE multiforce}, \texttt{USE multistate}, etc., and
+implicitly expected those globals to be initialized before use.
+
+This style has advantages for small/medium codes:
+\begin{itemize}[leftmargin=*]
+\item It reduces argument lists and avoids passing many arrays around.
+\item It allows quick prototyping when many routines need access to shared state.
+\end{itemize}
+
+However, as the codebase grows and more run modes appear, the disadvantages dominate.
+
+\subsection{Why global-module state is suboptimal at scale}
+
+\subsubsection{Hidden dependencies and side effects}
+
+In a global-state design, a subroutine’s argument list does not fully describe the
+state it reads or modifies. For example:
+
+\begin{lstlisting}[language=Fortran]
+call get_modtim(ncid, itim, ierr, message)
+\end{lstlisting}
+
+Although this call appears to simply compute a timestamp, it may also modify
+module-level variables (e.g., \texttt{timDat\%dtime}, \texttt{timDat\%iy},
+or \texttt{jdayRef}). These variables are then implicitly used by other
+routines --- for example, within a snow model or energy-balance calculation ---
+without any indication in their argument lists that the values were updated.
+
+As a result, downstream routines depend on side effects that are not visible
+at the call site. If \texttt{get\_modtim} is removed, reordered, or replaced
+during refactoring, model behavior can change even though the replacement code
+appears functionally equivalent. This hidden coupling creates a common failure
+mode: \emph{A small, local change produces a large behavioral difference, and
+the rootcause is not obviously connected to the modified lines}.
+
+\subsubsection{Testing and reproducibility are harder}
+
+Global-state code makes unit tests difficult because isolating a routine requires
+constructing a large, often implicit environment (multiple global modules initialized
+in the correct order). Regression tests also become harder to interpret: if a change
+affects results, it can be unclear whether the difference is due to the intended change
+or an unintended shift in global state usage.
+
+\subsubsection{Extensibility costs grow nonlinearly}
+
+Adding new features is harder when:
+\begin{itemize}[leftmargin=*]
+\item A new forcing format requires changes across many routines that read globals.
+\item Domain decomposition changes how arrays are shaped; global arrays become ambiguous
+      (global vs local indexing).
+\item New evaluation logic or calibration schemes require threading new metadata through
+      a chain of routines that do not accept explicit arguments.
+\end{itemize}
+
+At some point the main cost is no longer implementing the new feature, but ensuring it
+does not break unrelated functionality.
+
+\subsection{Structural Growth and Maintainability Issues in the Legacy Architecture}
+
+Beyond global state coupling, the legacy codebase exhibited a pattern of
+organic growth without consistent structural boundaries. Over time, large
+routines accumulated functionality well beyond their original intent,
+often combining multiple responsibilities without clear logical separation.
+
+\subsubsection{Monolithic Routines and Task Accretion}
+
+Several legacy routines expanded to perform a wide range of loosely related
+tasks. For example, the previous \texttt{get\_gforce} routine handled:
+
+\begin{itemize}
+\item NetCDF variable lookup
+\item Dimension queries
+\item Domain subsetting
+\item Elevation band handling
+\item Unit interpretation
+\item Forcing extraction and reshaping
+\end{itemize}
+
+These operations were implemented in a largely sequential, ad hoc manner,
+with minimal modular decomposition. As a result:
+
+\begin{itemize}
+\item Logical structure was difficult to discern.
+\item Debugging required tracing through hundreds of lines of mixed concerns.
+\item Small changes (e.g., adding a new forcing variable) required edits
+      in multiple scattered locations.
+\item Code readability degraded as the routine expanded.
+\end{itemize}
+
+The routine effectively became a ``catch-all'' forcing processor rather than
+a composable set of focused operations.
+
+\subsubsection{Hard-Coded Repetition Instead of Dimensional Abstraction}
+
+A more troubling structural issue appeared in output routines such as
+\texttt{def\_output} and \texttt{put\_output}. Instead of leveraging
+NetCDF dimensions for elevation bands, the legacy implementation contained
+dozens of nearly identical write statements, one per band. For example,
+rather than defining:
+
+\begin{itemize}
+\item a dimension \texttt{elevband}
+\item and writing arrays indexed by that dimension,
+\end{itemize}
+
+the code manually wrote each elevation band variable individually,
+resulting in patterns such as:
+
+\begin{itemize}
+\item repeated \texttt{nf90\_put\_var} calls for band 1
+\item repeated \texttt{nf90\_put\_var} calls for band 2
+\item \ldots
+\item repeated \texttt{nf90\_put\_var} calls for band 50
+\end{itemize}
+
+This design introduces several serious drawbacks:
+
+\begin{enumerate}
+\item \textbf{Scalability limitations:} Increasing the number of elevation bands
+      requires adding new code blocks rather than simply changing a dimension.
+\item \textbf{High maintenance cost:} Any modification to output logic must be
+      replicated consistently across many nearly identical sections.
+\item \textbf{Increased error risk:} Copy–paste repetition increases the
+      probability of subtle inconsistencies.
+\item \textbf{Lost abstraction opportunity:} NetCDF is dimension-oriented by design;
+      bypassing this structure undermines clarity and efficiency.
+\end{enumerate}
+
+\subsection{Consequences of Organic Growth}
+
+As the codebase grew, these patterns accumulated:
+
+\begin{itemize}
+\item Routines performing too many responsibilities.
+\item Hard-coded repetition where loops and dimensions should be used.
+\item Logic arranged historically rather than conceptually.
+\item Difficulty reasoning about control flow and data ownership.
+\end{itemize}
+
+The cumulative effect was not merely aesthetic; it increased the risk that
+future extensions would further entrench complexity.
+
+
+% =====================================================
+\section{Target Architecture: What it is and why it is better}
+
+The refactor introduces an explicit run-state model based on three main containers:
+
+\begin{itemize}[leftmargin=*]
+\item \textbf{\texttt{info}}: configuration and metadata (time axis, windows, units, CLI options,
+      file IDs, model definition metadata).
+\item \textbf{\texttt{work}}: runtime scratch and transient state (per-step buffers, intermediate
+      arrays, solver workspace).
+\item \textbf{\texttt{domain}}: spatial decomposition container (domain dimensions, mapping, local/global indices).
+\end{itemize}
+
+Instead of relying on global modules, routines now operate on these containers (or
+on well-scoped subsets of them). This has immediate benefits:
+
+\begin{enumerate}[leftmargin=*]
+\item \textbf{Traceability:} data required by a routine is visible in its inputs.
+\item \textbf{Correctness:} fewer implicit order dependencies; stale state is harder to accidentally use.
+\item \textbf{Testability:} containers can be constructed for unit tests without initializing unrelated globals.
+\item \textbf{Extensibility:} new fields can be added to types without rewriting every call site.
+\end{enumerate}
+
+\subsection{Separation of type definitions from storage}
+
+The \texttt{types/} directory defines canonical structures:
+\begin{itemize}[leftmargin=*]
+\item \texttt{info\_types.f90}: defines \texttt{type(fuse\_info)} including \texttt{time\_info},
+      \texttt{space\_info}, and run configuration.
+\item \texttt{work\_types.f90}: defines runtime work arrays and scratch buffers.
+\item \texttt{data\_types.f90}: defines domain-level storage (e.g., \texttt{domain\_data}).
+\end{itemize}
+
+This separation means that the meaning of fields is centralized, and multiple components
+(driver, evaluation, I/O) can rely on the same type definitions.
+
+Modules under \texttt{share/*\_data.f90} exist only to preserve legacy code paths
+during incremental migration. They mimic previous module-level globals (e.g., \texttt{multiforce})
+so that older routines continue to compile. They are intentionally not part of the end-state design.
+
+The legacy architecture centered on implicit global state: many routines depended on
+\texttt{dshare} globals and therefore on a correct initialization order. The target
+architecture centralizes state in explicit containers passed through evaluation.
+
+The compatibility layer remains temporarily to support incremental migration but is not
+part of the end-state design.
+
+% =====================================================
+\subsection{Driver and Evaluation Refactor}
+
+\subsubsection{Why the legacy driver structure was suboptimal}
+
+Historically the driver mixed many concerns:
+\begin{itemize}[leftmargin=*]
+\item argument parsing / run mode selection
+\item domain setup and model-definition setup
+\item forcing ingestion and time indexing
+\item model execution and statistics/metrics
+\item calibration algorithm integration
+\end{itemize}
+
+When all of these are interleaved, changing one part can unexpectedly affect others.
+For example, modifying evaluation logic might require touching the driver, which
+also handles calibration and I/O side effects. This increases the risk that a change
+introduces subtle differences (e.g., order of initialization, timing of exports to globals).
+
+\subsubsection{Why the new split is better}
+
+The refactor isolates responsibilities:
+\begin{itemize}[leftmargin=*]
+\item The \textbf{driver} orchestrates: it builds \texttt{info/domain/work}, selects a run mode,
+      and calls evaluation or calibration.
+\item The \textbf{evaluation} module executes: it runs the time loop, calls physics, and returns a metric.
+\end{itemize}
+
+This split has practical benefits:
+\begin{enumerate}[leftmargin=*]
+\item Evaluation becomes callable from multiple contexts (deterministic runs, SCE callback, future optimizers).
+\item The driver becomes easier to read and reason about, because it does not contain the entire numerical workflow.
+\item Testing becomes easier: evaluation can be tested independently of command-line parsing.
+\end{enumerate}
+
+\subsubsection{Illustrative interface}
+
+The new evaluation entry point is conceptually:
+\begin{lstlisting}[language=Fortran]
+subroutine fuse_evaluate(XPAR, info, work, domain, OUTPUT_FLAG, METRIC_VAL)
+\end{lstlisting}
+
+This makes the dependencies explicit. In a container-based design, this signature also
+provides a stable surface for new optimization tools and new run modes.
+
+% =====================================================
+\subsection{Time Axis and Windowing: From implicit state to explicit products}
+
+\subsubsection{Why the legacy approach caused problems}
+
+In legacy code, time handling was spread across multiple routines and modules. Some parts
+derived time indices from configuration strings; other parts read NetCDF time variables;
+still others computed calendar dates by mutating globals. The consequence is that the
+\emph{time axis} (the sequence of times the model is actually run on) was not clearly
+defined in one place.
+
+This creates multiple failure modes:
+\begin{itemize}[leftmargin=*]
+\item Forcing time units (seconds/hours/days) may be interpreted inconsistently.
+\item ``Window start/end'' logic can vary depending on how indices are mapped.
+\item Removing a seemingly redundant time-reading call can change results because it also updated global structures.
+\end{itemize}
+
+\subsubsection{What the new code does}
+
+The refactor treats time initialization as a deliberate pipeline:
+
+\begin{enumerate}[leftmargin=*]
+\item \textbf{Read} the NetCDF time coordinate and units attribute.
+\item \textbf{Interpret} the units and compute a scale factor (seconds/minutes/hours $\rightarrow$ days).
+\item \textbf{Build} the Julian-day axis in a single canonical representation.
+\item \textbf{Map} simulation/evaluation date strings to indices in that axis.
+\item \textbf{Validate} that evaluation is a subset of simulation and that windows fit within forcing coverage.
+\item \textbf{Store} all outputs in \texttt{info\%time} as the single source of truth.
+\end{enumerate}
+
+\subsubsection{Illustrative code snippets}
+
+\begin{lstlisting}[language=Fortran]
+call read_time_axis(info%files%ncid_forc, info%time%time_steps, units_local, nt, ierr, cmessage)
+call build_julian_axis(info%time%time_steps, trim(units_local), &
+                       info%time%jdate_ref, info%time%jdate, info%time%deltim_days, ierr, cmessage)
+\end{lstlisting}
+
+\begin{lstlisting}[language=Fortran]
+call map_dates_to_indices(info%time%jdate, date_start_sim, date_end_sim, &
+                          info%time%sim_beg, info%time%sim_end, ierr, cmessage)
+call map_dates_to_indices(info%time%jdate, date_start_eval, date_end_eval, &
+                          info%time%eval_beg, info%time%eval_end, ierr, cmessage)
+\end{lstlisting}
+
+\subsubsection{Why this is better}
+
+\begin{itemize}[leftmargin=*]
+\item \textbf{Single source of truth:} there is one canonical time axis (\texttt{info\%time\%jdate}) and one
+      canonical timestep (\texttt{info\%time\%deltim\_days}).
+\item \textbf{Explicit unit handling:} scale factors are computed once, centrally, and documented.
+\item \textbf{Window logic becomes auditable:} indices are computed in one place with validation checks.
+\item \textbf{Fewer side effects:} time conversion routines are pure utilities rather than state-mutating I/O.
+\end{itemize}
+
+\subsection{Configuration Modernization: \texttt{fuseFileManager} $\rightarrow$ TOML}
+
+\subsubsection{Why the legacy \texttt{fuseFileManager} approach was suboptimal}
+
+The original configuration pathway centered on a large, monolithic file-management and
+configuration routine. Over time, configuration logic accumulated in a way that made it
+difficult to understand what was user-configurable versus what was derived at runtime.
+This produced several recurring problems:
+
+\begin{itemize}
+\item \textbf{Poor separation of concerns:} configuration parsing, validation, defaulting,
+      and filesystem logic were interleaved, increasing the cost of maintenance.
+\item \textbf{Limited validation:} many configuration failures surfaced late (during I/O
+      or execution) rather than early during parsing.
+\item \textbf{Low readability:} the effective configuration schema was spread across code paths
+      rather than being clearly represented as a structured document.
+\end{itemize}
+
+\subsubsection{Why TOML is an improvement}
+
+Moving to TOML replaces the ``configuration-by-control-flow'' style with an explicit,
+human-readable configuration document:
+
+\begin{itemize}
+\item \textbf{Explicit schema and intent:} settings live in a structured file rather than
+      being encoded implicitly in procedural logic.
+\item \textbf{Earlier failure modes:} parsing and validation can fail fast before expensive
+      initialization occurs.
+\item \textbf{Maintainability:} adding a new option becomes a small, localized change rather
+      than a modification scattered across a large file-management routine.
+\end{itemize}
+
+This transition improves usability for end users and reduces coupling between configuration,
+file-system conventions, and runtime model execution.
+
+
+
+% =====================================================
+\subsection{NetCDF I/O and Domain Decomposition}
+
+\subsubsection{Why forcing I/O was a refactor hotspot}
+
+Forcing ingestion sits at the intersection of multiple concerns:
+\begin{itemize}[leftmargin=*]
+\item NetCDF metadata (dims, variable IDs, units)
+\item spatial mapping (HRUs, bands, cells)
+\item time indexing and subsetting
+\item memory layout and performance
+\end{itemize}
+
+In the legacy design, forcing logic often depended on global modules for dimensions and indices,
+which makes it easy for mismatches to slip in when changing domain layout or adding decomposition.
+
+\subsubsection{What the refactor improves}
+
+The refactor introduces explicit helpers and domain-dimension utilities so that array shape and
+dimension logic are concentrated and reusable. New files (e.g., \texttt{get\_domain\_dims.f90},
+\texttt{domain\_decomp.f90}) are intended to formalize what ``the domain'' means in terms of indices,
+sizes, and decomposition.
+
+\subsubsection{Why this is better}
+
+\begin{enumerate}[leftmargin=*]
+\item \textbf{Reduced ambiguity:} ``global vs local'' dimensionality is explicit and queryable.
+\item \textbf{Safer extensions:} new forcing variables can be added using shared lookup/query routines.
+\item \textbf{Performance opportunities:} centralized dimension logic makes it easier to optimize reads and memory layout.
+\end{enumerate}
+
+% =====================================================
+\subsection{Calibration and Optimization Plumbing}
+
+\subsubsection{Why legacy optimization coupling was suboptimal}
+
+Calibration code is typically ``outer loop'' logic that should not depend on the internal
+details of forcing ingestion, time stepping, or global module state. In practice, the legacy
+implementation relied on global modules, which makes it fragile:
+\begin{itemize}[leftmargin=*]
+\item The optimizer callback can accidentally depend on stale global state between evaluations.
+\item Memory allocations in hot loops can be expensive and hard to notice.
+\item It is difficult to reuse evaluation logic across different optimizers without duplicating code.
+\end{itemize}
+
+\subsubsection{Why a callback context is better}
+
+The refactor introduces a callback context (\texttt{sce\_callback\_context}) that holds the pointers
+to \texttt{info}, \texttt{work}, and \texttt{domain}. The SCE objective function can then call
+\texttt{fuse\_evaluate} using that context. This improves:
+
+\begin{itemize}[leftmargin=*]
+\item \textbf{Clarity:} the callback clearly depends on the evaluation API, not on global state.
+\item \textbf{Reusability:} other optimizers can use the same evaluation entry point.
+\item \textbf{Performance:} parameter arrays and workspaces can be allocated once where appropriate.
+\end{itemize}
+
+\subsubsection{Illustrative snippet}
+
+\begin{lstlisting}[language=Fortran]
+! Pseudocode illustrating the intent of the callback context
+ctx%info   => info
+ctx%work   => work
+ctx%domain => domain
+call fuse_evaluate(par, ctx%info, ctx%work, ctx%domain, output_flag, metric_val)
+\end{lstlisting}
+
+% =====================================================
+\subsection{Physics Layer Expansion and Differentiable Pathways}
+
+\subsubsection{Why this was introduced}
+
+Support for differentiable modeling and improved robustness often requires:
+\begin{itemize}[leftmargin=*]
+\item smoother or continuous approximations (to avoid discontinuities in derivatives)
+\item stable implicit/iterative solves (for stiff or constrained systems)
+\item explicit separation between ``original'' physics and ``differentiable'' variants
+\end{itemize}
+
+The refactor adds a substantial set of \texttt{*\_diff} routines and numerical utilities
+(smoothers, clamps, overshoot fixes, implicit solve scaffolding).
+
+\subsubsection{Why this may change results}
+
+These changes are designed to improve stability and derivative behavior, but they can also
+alter trajectories:
+\begin{itemize}[leftmargin=*]
+\item Clamps and overshoot protection modify fluxes/states when constraints are violated.
+\item Smoothers modify transitions that were previously sharp/discontinuous.
+\item Implicit solve tolerances and convergence behavior can differ from explicit stepping.
+\end{itemize}
+
+Therefore, when strict bitwise regression is required, it is useful to ensure these features
+can be toggled or to run equivalent pathways for comparison.
+
+\subsection{Output Hygiene: Reducing Ad Hoc Print Statements}
+
+\subsubsection{Why pervasive print/debug statements were a problem}
+
+The legacy code contained many ad hoc \texttt{print} (and related) statements inserted over
+years of development. While individually helpful during debugging, collectively they became a
+maintenance and operational burden:
+
+\begin{itemize}
+\item \textbf{Signal-to-noise degradation:} important warnings and true error messages were
+      buried in routine diagnostic output.
+\item \textbf{Non-deterministic verbosity:} output depended on the exact execution pathway
+      and developer preferences, complicating regression comparisons.
+\item \textbf{Difficult automation:} noisy logs make it harder to detect failure patterns
+      in batch runs or CI-style workflows.
+\end{itemize}
+
+\subsubsection{Why the refactor is better}
+
+Removing large volumes of ad hoc output is not merely cosmetic: it improves debuggability by
+making the remaining output more meaningful. The refactor moves toward an implicit contract:
+
+\begin{itemize}
+\item \textbf{Routine execution is quiet by default.}
+\item \textbf{Errors and validation failures are explicit and actionable.}
+\item \textbf{Diagnostics are intentional (ideally controlled by flags or structured logging).}
+\end{itemize}
+
+This makes calibration runs, ensemble runs, and regression testing substantially easier to manage.
+
+% =====================================================
+\section{Migration Roadmap (toward the end-state design)}
+
+\subsection{Status}
+
+The redesign is already in place for the driver/evaluation split and for explicit time handling.
+However, some legacy routines continue to rely on global modules. The compatibility layer in
+\texttt{share/*\_data.f90} exists to keep these routines operational while migration continues.
+
+\subsection{Planned milestones}
+
+\begin{enumerate}[leftmargin=*]
+\item \textbf{Complete container migration:} update remaining routines to accept \texttt{info/work/domain}
+      (or narrow, purpose-built structures) instead of reading from globals.
+\item \textbf{Reduce compatibility surface:} progressively shrink what is exported to \texttt{share/*\_data}
+      modules, and add warnings or comments indicating ``do not use in new code''.
+\item \textbf{Remove compatibility modules:} once call sites are migrated, remove the legacy global storage
+      modules entirely.
+\item \textbf{Formalize testing:} establish a regression test suite that checks time indexing, forcing alignment,
+      basic hydrograph behavior, and metric reproducibility across run modes.
+\item \textbf{Document extension points:} add developer docs describing how to add forcing variables, new metrics,
+      and new physics modules without reintroducing global coupling.
+\end{enumerate}
+
+\subsection{Suggested regression checklist}
+
+\begin{enumerate}[leftmargin=*]
+\item Validate \texttt{info\%time}: units, reference date, first/last timesteps, \texttt{deltim\_days}.
+\item Validate window indices: \texttt{sim\_beg/sim\_end} and \texttt{eval\_beg/eval\_end}.
+\item Validate forcing alignment: sample a few variables at a few timesteps and confirm expected values.
+\item Validate deterministic evaluation: compare outlet discharge and key states to a known baseline.
+\item Validate calibration callback: ensure SCE evaluations are consistent and do not leak state between calls.
+\end{enumerate}
+
+% =====================================================
+\section{Conclusion}
+
+This development represents both a structural re-platforming and a major capability
+expansion of the FUSE modeling framework. While the architectural refactor replaces
+an implicit global-state design with structured run-state containers, modular
+driver/evaluation logic, and centralized time and domain handling, these changes
+were undertaken to enable substantially new functionality.
+
+Most notably, the framework now supports a fully differentiable physics pathway
+with analytical Jacobians propagated through snow and soil processes, and a
+purpose-built fixed-step implicit solver tailored for deterministic,
+derivative-consistent execution. In addition, the introduction of a generalized
+spatial-domain abstraction enables unified treatment of lumped, distributed,
+and gridded configurations, along with structured spatial decomposition suitable
+for scalable parallel execution.
+
+The legacy architecture, while historically productive and scientifically
+influential, relied on implicit shared state and convention-based execution.
+Under modern requirements—gradient-based calibration, reproducible execution,
+and extensible spatial deployment—these patterns became limiting. The redesigned
+architecture addresses hidden dependencies, initialization-order fragility, and
+high extension cost by making state explicit, separating orchestration from
+process execution, and clarifying data flow throughout the call graph.
+
+The compatibility layer (\texttt{share/*\_data}) is intentionally transitional and
+should be removed once migration is complete. The resulting end-state is not
+merely cleaner code; it is a modeling framework capable of differentiable
+execution, robust fixed-step integration, flexible spatial deployment, and
+future integration with adjoint-based and machine-learning methodologies.
+
+In this sense, the refactor should be viewed not as code cleanup, but as an
+evolution of FUSE from a flexible forward-simulation platform into a structured,
+extensible system designed for the next generation of hydrologic modeling
+research.
+
+\end{document}
