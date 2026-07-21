@@ -9,8 +9,26 @@ cd /path/to/fuse/build
 make
 ```
 
-Test by:
-`/path/to/fuse/bin/fuse.exe`
+### Verify the installation
+
+After compilation, verify that the executable was built successfully:
+
+```
+/path/to/fuse/bin/fuse.exe
+```
+
+When run without any command-line arguments, FUSE should display a help message
+describing the required command-line arguments and available options. This
+confirms that the executable was built successfully and is ready to run.
+
+*Current behavior:* The current release terminates with an error because the
+required `fileManager` argument is missing:
+
+```
+STOP 1st command-line argument is missing (fileManager)
+```
+
+This will be replaced by a usage/help message in a future release.
 
 # Dependencies
 

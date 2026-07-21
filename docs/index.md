@@ -1,6 +1,6 @@
 ## FUSE in a nutshell
 
-The Framework for Understanding Structural Errors or [FUSE](https://github.com/naddor/fuse) is modular modelling framework (MMF) which enables the generation of a myriad of conceptual hydrological models by recombining elements from commonly-used models.
+The Framework for Understanding Structural Errors or [FUSE](https://github.com/CH-Earth/fuse) is modular modelling framework (MMF) which enables the generation of a myriad of conceptual hydrological models by recombining elements from commonly-used models.
 
 FUSE was build from scratch to be modular, it offers several options for each important modelling decision and enables the addition of new modules. In contrast, most traditional hydrological models rely on a single model structure (most processes are simulated by a single set of equations). FUSE modularity makes it easier to i) understand differences between models, ii) run a large ensemble of models, iii) capture the spatial variability of hydrological processes and iv) develop and improve hydrological models in a coordinated fashion across the community.
 
