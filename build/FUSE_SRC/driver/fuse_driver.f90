@@ -50,11 +50,11 @@ USE fuse_evaluate_module, only: fuse_evaluate             ! run model and comput
 IMPLICIT NONE
 
 ! error control
-integer(i4b)                          :: err              ! error code
-character(len=1024)                   :: message          ! error message
+integer(i4b)                           :: err              ! error code
+character(len=1024)                    :: message          ! error message
 
 ! command line arguments
-type(cli_options)                     :: cli_opts         ! command line argument options
+type(cli_options)                      :: cli_opts         ! command line argument options
 
 ! parameter set; parameter bounds
 REAL(SP), DIMENSION(:), ALLOCATABLE    :: BL      ! vector of lower parameter bounds

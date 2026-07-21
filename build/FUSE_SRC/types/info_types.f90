@@ -97,30 +97,31 @@ module info_types
  type :: file_info
 
    ! directories
-   character(len=512) :: setngs_path = ""
-   character(len=512) :: input_path  = ""
-   character(len=512) :: output_path = ""
+   character(len=:), allocatable :: setngs_path
+   character(len=:), allocatable :: input_path
+   character(len=:), allocatable :: output_path
   
    ! settings filenames (relative or absolute)
-   character(len=512) :: forcinginfo  = ""
-   character(len=512) :: constraints  = ""
-   character(len=512) :: mod_numerix   = ""
-   character(len=512) :: m_decisions   = ""
+   character(len=:), allocatable :: forcinginfo
+   character(len=:), allocatable :: constraints
+   character(len=:), allocatable :: mod_numerix
+   character(len=:), allocatable :: m_decisions
   
    ! domain-derived input suffixes
-   character(len=512) :: suffix_forcing    = ""
-   character(len=512) :: suffix_elev_bands = ""
+   character(len=:), allocatable :: suffix_forcing
+   character(len=:), allocatable :: suffix_elev_bands
   
    ! actual input filenames for this domain (derived once dom_id known)
-   character(len=512) :: forcing_file   = ""   ! dom_id//suffix_forcing
-   character(len=512) :: elevbands_file = ""   ! dom_id//suffix_elev_bands
+   character(len=:), allocatable :: forcing_file    ! dom_id//suffix_forcing
+   character(len=:), allocatable :: elevbands_file  ! dom_id//suffix_elev_bands
   
    ! output base name + concrete outputs
-   character(len=512) :: fname_tempry     = ""
-   character(len=512) :: fname_netcdf_runs = ""
-   character(len=512) :: fname_netcdf_para = ""
+   character(len=512) :: fname_tempry
+   character(len=512) :: fname_netcdf_forc
+   character(len=512) :: fname_netcdf_runs
+   character(len=512) :: fname_netcdf_para
 
-   ! NetCDF file IDs
+   ! NetCDF forcing file info
    integer(i4b)       :: ncid_forc = -9999  ! NetCDF file ID for forcing data
 
  end type file_info
@@ -136,7 +137,7 @@ module info_types
   type(cli_options)  :: cli_opts
 
   ! model selection
-  character(len=64)  :: fmodel_id = ""
+  character(len=:), allocatable :: fmodel_id
 
   ! model information
   integer(i4b)       :: nState = -9999
@@ -152,11 +153,11 @@ module info_types
   logical(lgt) :: q_only = .false.
 
   ! requested time windows (strings as read from filemanager)
-  character(len=20) :: date_start_sim  = ""
-  character(len=20) :: date_end_sim    = ""
-  character(len=20) :: date_start_eval = ""
-  character(len=20) :: date_end_eval   = ""
-  character(len=20) :: numtim_sub_str  = ""
+  character(len=:), allocatable :: date_start_sim
+  character(len=:), allocatable :: date_end_sim
+  character(len=:), allocatable :: date_start_eval
+  character(len=:), allocatable :: date_end_eval
+  character(len=:), allocatable :: numtim_sub_str
 
   ! parsed / derived values (optional convenience)
   integer(i4b) :: numtim_sub = -9999      ! parsed from numtim_sub_str
@@ -164,12 +165,16 @@ module info_types
   ! output dimension for number of parameter sets
   integer(i4b) :: nSets
 
-  ! SCE settings (store as numeric types)
-  integer(i4b) :: maxn  = -9999
-  integer(i4b) :: kstop = -9999
-  real(sp)     :: pcento = -9999._sp
+  ! calibration metrics and metric transformations
+  character(len=:), allocatable :: metric
+  character(len=:), allocatable :: transfo
 
-  ! store raw strings too if you care about provenance
+  ! SCE settings (store as numeric types)
+  integer(i4b)      :: maxn  = -9999
+  integer(i4b)      :: kstop = -9999
+  real(sp)          :: pcento = -9999._sp
+
+  ! store raw strings too
   character(len=20) :: maxn_str  = ""
   character(len=20) :: kstop_str = ""
   character(len=20) :: pcento_str = ""

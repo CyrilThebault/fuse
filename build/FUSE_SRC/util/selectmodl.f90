@@ -24,7 +24,7 @@ USE model_numerix,only:solution_method,temporal_error_control
 IMPLICIT NONE
 ! Input
 !INTEGER(I4B), INTENT(IN), OPTIONAL     :: FUSE_ID     ! identifier for FUSE model
-CHARACTER(LEN=6), INTENT(IN), OPTIONAL :: FUSE_ID     ! identifier for FUSE model
+CHARACTER(LEN=*), INTENT(IN), OPTIONAL :: FUSE_ID     ! identifier for FUSE model
 ! Output
 INTEGER(I4B), INTENT(OUT)              :: ERR         ! error code
 CHARACTER(LEN=*), INTENT(OUT)          :: MESSAGE     ! error message
@@ -67,7 +67,6 @@ INTEGER(I4B)                           :: NAME_FMT    ! format for the model nam
 ! ---------------------------------------------------------------------------------------
 ! (0) INITIALIZE
 ! ---------------------------------------------------------------------------------------
-
 NAME_FMT=1 ! format for the naming convention
 ICOUNT  =0
 IX_MODEL=0
@@ -82,8 +81,7 @@ MESSAGE ='SELECTMODL/everything is fine'
 
 !CFILE = TRIM(SETNGS_PATH)//M_DECISIONS      ! control file info shared in MODULE ddirectory
 CFILE = TRIM(SETNGS_PATH)//'fuse_zDecisions_'//TRIM(FUSE_ID)//'.txt'      ! control file info shared in MODULE ddirectory
-
-INQUIRE(FILE=CFILE,EXIST=LEXIST)  ! check that control file exists
+INQUIRE(FILE=trim(CFILE),EXIST=LEXIST)  ! check that control file exists
 IF (.not.LEXIST) THEN
   message="f-SELECTMODL/decisions file '"//trim(CFILE)//"' does not exist"
   err=100; return
