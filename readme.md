@@ -18,7 +18,7 @@ FUSE initial implementation (FUSE1) is described in [Clark et al. (WRR, 2008)](h
 
 ## Manual
 
-Instructions to compile the code provided in this repository and to run FUSE are provided in [FUSE manual](https://naddor.github.io/fuse/).
+Instructions to compile the code provided in this repository and to run FUSE are provided in the [FUSE manual](https://ch-earth-fuse.readthedocs.io/en/develop/).
 
 ## License
 FUSE is distributed under the GNU Public License Version 3. For details see the file `LICENSE` in the FUSE root directory or visit the [online version](http://www.gnu.org/licenses/gpl-3.0.html).

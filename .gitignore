@@ -6,13 +6,23 @@ bin
 site
 *.exe
 
+# Generated during the build
+build/generated/fuseversion.inc
+
 # temporary files
 *~
 *.swp
 
+# Intermediate processing files
+work/
+
 # any 'junk' files or directories
 *junk*/
 *junk*
+
+# R workspace and history files
+.RData
+.Rhistory
 
 # legacy SVN files
 .svn/
