@@ -42,11 +42,14 @@ module work_types
    type(fdata)                         :: force          ! model forcing data
    type(statev)                        :: state0         ! state variables (start of step)
    type(statev)                        :: state1         ! state variables (end of step)
+   type(statev)                        :: tState         ! state variables (trial)
    type(statev)                        :: dx_dt          ! time derivative in state variables
    type(fluxes)                        :: flux           ! fluxes
    type(runoff)                        :: route          ! hillslope routing
  end type fuse_step
 
+   real(sp)     , allocatable          :: x0(:)      ! state variables (start of step)
+   real(sp)     , allocatable          :: x1(:)      ! state variables (end of step)
  ! snow structure
  type fuse_snow
    real(sp)                            :: z_forcing      ! elevation of forcing data (m)
@@ -60,6 +63,12 @@ module work_types
    type(paradj)                        :: param_adjust   ! adjustable model parametrs
    type(pardvd)                        :: param_derive   ! derived model parameters
  end type fuse_param
+
+ ! numerix structure (linear algebra, ...)
+ type fuse_numerix
+   real(sp)     , allocatable          :: x0(:)      ! state variables (start of step)
+   real(sp)     , allocatable          :: x1(:)      ! state variables (end of step)
+ end type fuse_numerix
 
  ! adjoint structure (differentiable fuse)
  type fuse_adjoint
@@ -86,6 +95,7 @@ module work_types
    type(fuse_step)    :: step    ! per-step structure
    type(fuse_snow)    :: snow    ! snow structure
    type(fuse_param)   :: par     ! parameter structure
+   type(fuse_numerix) :: num     ! numerix structure (linear algebra, ...)
    type(fuse_adjoint) :: adj     ! adjoint structure (differentiable fuse)
    type(fuse_chunk)   :: chunk   ! chunk buffer
    type(fuse_run)     :: run     ! run-level structure

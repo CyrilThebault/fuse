@@ -33,7 +33,7 @@ REAL(SP)                               :: NO_ZERO=1.E-8  ! avoid divide by zero
 ! saturated area method
 SELECT CASE(SMODL%iQSURF)
  CASE(iopt_arno_x_vic) ! ARNO/Xzang/VIC parameterization (upper zone control)
-  M_FLUX%SATAREA = 1._sp - ( 1._sp - MIN(TSTATE%WATR_1/MPARAM%MAXWATR_1, 1._sp) )**MPARAM%AXV_BEXP
+   M_FLUX%SATAREA = 1._sp - ( 1._sp - MIN(TSTATE%WATR_1/MPARAM%MAXWATR_1, 1._sp) )**MPARAM%AXV_BEXP
  CASE(iopt_prms_varnt) ! PRMS variant (fraction of upper tension storage)
   M_FLUX%SATAREA = MIN(TSTATE%TENS_1/DPARAM%MAXTENS_1, 1._sp) * MPARAM%SAREAMAX
  CASE(iopt_tmdl_param) ! TOPMODEL parameterization (only valid for TOPMODEL qb)

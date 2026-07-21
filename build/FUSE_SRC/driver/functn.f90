@@ -10,6 +10,7 @@ FUNCTION FUNCTN(NOPT,A)
 ! Wrapper for SCE (used to compute the objective function)
 ! ---------------------------------------------------------------------------------------
 USE nrtype                                            ! variable types, etc.
+USE sce_callback_context, only: ctx                   ! access FUSE data structures
 USE fuse_evaluate_module, only: fuse_evaluate         ! run model and compute the metric chosen as objective function
 USE multiforce, only: ncid_forc                       ! NetCDF forcing file ID
 USE fuse_fileManager,only:METRIC, TRANSFO             ! metric and transformation requested in the filemanager
@@ -21,7 +22,7 @@ INTEGER(I4B)                           :: NOPT        ! number of parameters
 REAL(MSP), DIMENSION(100), INTENT(IN)  :: A            ! model parameter set - can be bumped up to 100 elements
 
 ! internal
-REAL(SP), DIMENSION(:), ALLOCATABLE    :: SCE_PAR     ! sce parameter set
+REAL(SP), DIMENSION(NOPT)              :: SCE_PAR     ! sce parameter set
 INTEGER(I4B)                           :: IERR        ! error code for allocate/deallocate
 INTEGER(I4B)                           :: ERR         ! error code for fuse_metric
 CHARACTER(LEN=256)                     :: MESSAGE     ! error message for fuse_metric
@@ -36,25 +37,18 @@ REAL(MSP)                              :: FUNCTN      ! objective function value
 nFUSE_eval = nFUSE_eval + 1
 
 ! get SCE parameter set
-ALLOCATE(SCE_PAR(NOPT), STAT=IERR); IF (IERR.NE.0) STOP ' problem allocating space '
 SCE_PAR(1:NOPT) = A(1:NOPT)  ! convert from MSP used in SCE to SP used in FUSE
+OUTPUT_FLAG=.FALSE.          ! do not produce *runs.nc files only, param.nc files
 
-OUTPUT_FLAG=.FALSE.   ! do not produce *runs.nc files only, param.nc files
-
-CALL FUSE_evaluate(SCE_PAR,.FALSE.,NCID_FORC,METRIC_VAL,OUTPUT_FLAG,1) ! 2nd argument FALSE, always return METRIC value
-
-! deallocate parameter set
-DEALLOCATE(SCE_PAR, STAT=IERR); IF (IERR.NE.0) STOP ' problem deallocating space '
-print *, 'METRIC_VAL [Metric:',METRIC,' / Transfo:',TRANSFO,'] =', METRIC_VAL
+CALL FUSE_evaluate(SCE_PAR, ctx%info, ctx%work, ctx%domain, OUTPUT_FLAG, METRIC_VAL)
 
 ! save objective function value: SCE is a minimization algorithm
-IF (METRIC=="KGE" .OR. METRIC=="KGEP" .OR. METRIC=="NSE") THEN
-  FUNCTN = -METRIC_VAL
-ELSE IF (METRIC=="MAE" .OR. METRIC=="RMSE" ) THEN
-  FUNCTN = METRIC_VAL
-ELSE 
-   STOP 'The requested metric is not available in metrics module'
-END IF
+select case(metric)
+ case ("KGE", "KGEP", "NSE"); FUNCTN = -METRIC_VAL
+ case ("MAE", "RMSE");        FUNCTN = METRIC_VAL
+ case default
+  STOP 'The requested metric is not available in metrics module'
+end select
 
 ! ---------------------------------------------------------------------------------------
 END FUNCTION FUNCTN

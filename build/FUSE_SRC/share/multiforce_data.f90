@@ -59,23 +59,24 @@ MODULE multiforce
  SAVE
  
  ! general
- INTEGER(I4B),PARAMETER                  :: STRLEN=256 ! length of the character string
+ INTEGER(I4B),PARAMETER                :: STRLEN=256        ! length of the character string
  
  ! time data structures
- TYPE(tData)                             :: timDat     ! model time structure
+ TYPE(tData)                           :: timDat            ! model time structure
  
  ! response data structures
- TYPE(vData)                             :: valDat     ! validation structure
- TYPE(vData), DIMENSION(:,:,:), POINTER  :: aValid     ! all model validation data
+ TYPE(vData)                           :: valDat            ! validation structure
+ TYPE(vData), allocatable              :: aValid(:,:,:)     ! all model validation data
  
  ! forcing data structures
- TYPE(FDATA), DIMENSION(:), POINTER      :: AFORCE     ! all model forcing data
- TYPE(FDATA), DIMENSION(:), POINTER      :: CFORCE     ! COPY of model forcing data
- TYPE(FDATA)                             :: MFORCE     ! model forcing data for a single time step
- TYPE(aData), DIMENSION(:,:), POINTER    :: ancilF     ! ancillary forcing data for the 2-d grid
- TYPE(fData), DIMENSION(:,:), POINTER    :: gForce     ! model forcing data for a 2-d grid
- TYPE(fData), DIMENSION(:,:,:), POINTER  :: gForce_3d  ! model forcing data for a 3-d grid (time as 3rd dimension)
- TYPE(aData), DIMENSION(:,:,:), POINTER  :: ancilF_3d  ! ancillary forcing data for the 3-d grid
+ TYPE(FDATA), allocatable              :: AFORCE(:)         ! all model forcing data
+ TYPE(FDATA), allocatable              :: CFORCE(:)         ! COPY of model forcing data
+ TYPE(FDATA)                           :: MFORCE            ! model forcing data for a single time step
+
+ TYPE(aData), allocatable              :: ancilF(:,:)       ! ancillary forcing data for the 2-d grid
+ TYPE(fData), allocatable              :: gForce(:,:)       ! model forcing data for a 2-d grid
+ TYPE(fData), allocatable              :: gForce_3d(:,:,:)  ! model forcing data for a 3-d grid (time as 3rd dimension)
+ TYPE(aData), allocatable              :: ancilF_3d(:,:,:)  ! ancillary forcing data for the 3-d grid
 
  ! NetCDF
 

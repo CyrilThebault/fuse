@@ -6,6 +6,8 @@ module info_types
 
  private
  public :: cli_options
+ public :: time_info
+ public :: space_info
  public :: fuse_info
 
  ! --------------------------------------------------------------------------------------
@@ -79,7 +81,8 @@ module info_types
    ! bookkeeping for time axis
    character(len=:), allocatable :: units
    real(sp)       :: jdate_ref = 0._sp
-   real(sp), allocatable :: jdate(:)    ! julian day for each forcing record
+   real(sp), allocatable :: time_steps(:)   ! time since reference time (transferred to output)
+   real(sp), allocatable :: jdate(:)        ! julian day for each forcing record
  
  end type time_info
 
@@ -117,6 +120,9 @@ module info_types
    character(len=512) :: fname_netcdf_runs = ""
    character(len=512) :: fname_netcdf_para = ""
 
+   ! NetCDF file IDs
+   integer(i4b)       :: ncid_forc = -9999  ! NetCDF file ID for forcing data
+
  end type file_info
 
  ! -------------------------------------------------------------------------------------
@@ -135,7 +141,10 @@ module info_types
   ! model information
   integer(i4b)       :: nState = -9999
   integer(i4b)       :: nParam = -9999
-  
+ 
+  ! number of input variables (3 = ppt, temp, pet; 4 = + obsq)
+  integer(i4b)       :: nInput
+
   ! list of model parameters
   type(par_id), allocatable  :: listParam(:)
 

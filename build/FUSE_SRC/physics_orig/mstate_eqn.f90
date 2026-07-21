@@ -56,7 +56,7 @@ SELECT CASE(SMODL%iARCH2)
  CASE(iopt_unlimfrc_2,iopt_unlimpow_2,iopt_topmdexp_2,iopt_fixedsiz_2) ! single state
   ! (NOTE: M_FLUX%OFLOW_2=0 for 'unlimfrc_2','unlimpow_2','topmdexp_2') 
   DY_DT%WATR_2  = M_FLUX%QPERC_12 - M_FLUX%EVAP_2 - M_FLUX%QBASE_2 - M_FLUX%OFLOW_2
-  !print *, 'in mstate_eqn, layer2 ', M_FLUX%EVAP_2, M_FLUX%QBASE_2, M_FLUX%OFLOW_2
+  !print *, 'in mstate_eqn, layer2 ', DY_DT%WATR_2, M_FLUX%EVAP_2, M_FLUX%QBASE_2, M_FLUX%OFLOW_2
  CASE DEFAULT
   print *, "SMODL%iARCH2 must be iopt_tens2pll_2, iopt_unlimfrc_2, iopt_unlimpow_2"
   print *, "  iopt_topmdexp_2, or iopt_fixedsiz_2"

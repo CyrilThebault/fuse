@@ -8,7 +8,7 @@ module time_io
 
   contains
 
-    SUBROUTINE get_modtim(itim,ncid,ierr,message)
+    SUBROUTINE get_modtim(ncid, itim, ierr, message)
     ! ---------------------------------------------------------------------------------------
     ! Creator:
     ! --------
@@ -31,8 +31,8 @@ module time_io
 
     IMPLICIT NONE
     ! input
-    integer(i4b), intent(in)                :: itim        ! index of model time step
     integer(i4b), intent(in)                :: ncid        ! NetCDF file ID
+    integer(i4b), intent(in)                :: itim        ! index of model time step
     ! output
     integer(i4b), intent(out)               :: ierr        ! error code
     character(*), intent(out)               :: message     ! error message

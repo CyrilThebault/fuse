@@ -34,7 +34,7 @@ SELECT CASE(SMODL%iARCH2)
  ! --------------------------------------------------------------------------------------
  CASE(iopt_unlimpow_2) ! baseflow resvr of unlimited size (0-HUGE), power recession
   M_FLUX%QBASE_2  = DPARAM%QBSAT * (TSTATE%WATR_2/MPARAM%MAXWATR_2)**MPARAM%QB_POWR
- ! --------------------------------------------------------------------------------------
+  ! --------------------------------------------------------------------------------------
  CASE(iopt_topmdexp_2) ! topmodel exponential reservoir (-HUGE to HUGE)
   M_FLUX%QBASE_2  = DPARAM%QBSAT * EXP( -(1. - TSTATE%WATR_2/MPARAM%MAXWATR_2) )
  ! --------------------------------------------------------------------------------------

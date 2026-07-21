@@ -140,10 +140,11 @@ DRIVER_EX = fuse.exe
 
 # Define the driver program and associated subroutines
 FUSE_DRIVER =
-#FUSE_DRIVER += setup_domain.f90
-#FUSE_DRIVER += setup_model_definition.f90
+FUSE_DRIVER += setup_domain.f90
+FUSE_DRIVER += setup_model_definition.f90
+FUSE_DRIVER += sce_callback_context.f90 
 FUSE_DRIVER += fuse_evaluate.f90 functn.f90
-#FUSE_DRIVER += sce_driver.f90
+FUSE_DRIVER += sce_driver.f90
 FUSE_DRIVER += fuse_driver.f90
 DRIVER = $(patsubst %, $(DRIVER_DIR)/%, $(FUSE_DRIVER))
 
@@ -207,8 +208,8 @@ TIMUTILS = $(patsubst %, $(TIME_DIR)/%, $(FUSE_TIMEMS))
 # Utility modules
 FUSE_UTILMS =
 FUSE_UTILMS += fuse_fileManager.f90
-#FUSE_UTILMS += alloc_domain.f90
-#FUSE_UTILMS += alloc_scratch.f90
+FUSE_UTILMS += alloc_domain.f90
+FUSE_UTILMS += alloc_scratch.f90
 FUSE_UTILMS += metaoutput.f90
 FUSE_UTILMS += metaparams.f90
 FUSE_UTILMS += meta_stats.f90
@@ -282,7 +283,7 @@ SOLVER = $(patsubst %, $(SOLVER_DIR)/%, $(FUSE_SOLVER))
 
 # FUSE preliminaries
 FUSE_PRELIM =
-#FUSE_PRELIM += parse_command_args.f90
+FUSE_PRELIM += parse_command_args.f90
 FUSE_PRELIM += ascii_util.f90
 FUSE_PRELIM += uniquemodl.f90
 FUSE_PRELIM += getnumerix.f90
@@ -307,8 +308,7 @@ FUSE_RUNTIME += metrics.f90
 FUSE_RUNTIME += conv_funcs.f90
 FUSE_RUNTIME += clrsky_rad.f90
 FUSE_RUNTIME += getPETgrid.f90
-#FUSE_RUNTIME += get_time_windows.f90
-FUSE_RUNTIME += get_time_indices.f90
+FUSE_RUNTIME += get_time_windows.f90
 FUSE_RUNTIME += initfluxes.f90
 FUSE_RUNTIME += set_all.f90
 FUSE_RUNTIME += ode_int.f90
@@ -321,9 +321,10 @@ RUNTIME = $(patsubst %, $(RUNTIME_DIR)/%, $(FUSE_RUNTIME))
 FUSE_NETCDF =
 FUSE_NETCDF += handle_err.f90
 FUSE_NETCDF += extractor.f90 juldayss.f90 caldatss.f90
-#FUSE_NETCDF += domain_decomp.f90
+FUSE_NETCDF += get_domain_dims.f90
+FUSE_NETCDF += read_elevbands.f90
+FUSE_NETCDF += domain_decomp.f90
 FUSE_NETCDF += get_gforce.f90
-FUSE_NETCDF += get_mbands.f90
 FUSE_NETCDF += get_smodel.f90
 FUSE_NETCDF += get_fparam.f90
 FUSE_NETCDF += def_params.f90

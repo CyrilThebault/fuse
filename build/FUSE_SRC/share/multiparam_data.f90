@@ -20,6 +20,7 @@ MODULE multiparam
  public :: MAXPAR, NUMPAR
  public :: APARAM, MPARAM, DPARAM
  public :: PARMETA, LPARAM
+ public :: MAXN, KSTOP, PCENTO
  public :: SOBOL_INDX
 
  INTEGER(I4B), PARAMETER               :: MAXPAR=50   ! maximum number of parameters for a single model
@@ -32,6 +33,10 @@ MODULE multiparam
  TYPE(PARINFO)                         :: PARMETA     ! parameter metadata (all parameters)
  TYPE(PAR_ID), DIMENSION(MAXPAR)       :: LPARAM      ! list of model parameter names (need to modify to 16 for SCE)
  
+ integer(i4b)                          :: MAXN        ! maximum number of trials before optimization is terminated
+ integer(i4b)                          :: KSTOP       ! number of shuffling loops the value must change by PCENTO
+ REAL(MSP)                             :: PCENTO      ! the percentage
+
  INTEGER(I4B)                          :: SOBOL_INDX  ! code to re-assemble Sobol parameters
 
 END MODULE multiparam

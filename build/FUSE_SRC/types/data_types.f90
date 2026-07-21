@@ -3,7 +3,7 @@ module data_types
  use nrtype
 
  use multiforce_types,  only: ADATA, FDATA, VDATA
- use multibands_types,  only: BANDS_VAR
+ use multibands_types,  only: BANDS_INFO, BANDS_VAR
  use multistate_types,  only: STATEV
  use multi_flux_types,  only: FLUXES
  use multiroute_types,  only: RUNOFF
@@ -39,29 +39,36 @@ module data_types
     type(coord_data)             :: coords
 
     ! 2D ancillary forcing (optional, for PET etc.)
-    type(ADATA), allocatable     :: ancil(:,:)         ! (nx_local, ny_local)
+    type(ADATA), allocatable      :: ancil(:,:)         ! (nx_local, ny_local)
 
-    ! 3D forcing window (nx_local, ny_local, numtim_sub)
-    type(FDATA), allocatable     :: force(:,:,:)       ! force_3d
+    ! 3D forcing window
+    type(FDATA), allocatable      :: force(:,:,:)       ! gForce_3d (nx_local, ny_local, nt_window)
 
-    ! 3D state window (nx_local, ny_local, numtim_sub+1)
-    type(STATEV), allocatable    :: state(:,:,:)       ! state_3d
+    ! 3D state window
+    type(STATEV), allocatable     :: state(:,:,:)       ! gState_3d (nx_local, ny_local, nt_window+1)
 
-    ! 3D flux window (nx_local, ny_local, numtim_sub)
-    type(FLUXES), allocatable    :: flux(:,:,:)        ! flux_3d
+    ! 3D flux window
+    type(FLUXES), allocatable     :: flux(:,:,:)        ! w_flux_3d (nx_local, ny_local, nt_window)
 
-    ! 3D routing window (nx_local, ny_local, numtim_sub)
-    type(RUNOFF), allocatable    :: route(:,:,:)       ! route_3d
+    ! 3D routing window
+    type(RUNOFF), allocatable     :: route(:,:,:)       ! AROUTE_3d (nx_local, ny_local, nt_window)
 
-    ! 4D snow-band state window (nx_local, ny_local, n_bands, numtim_sub+1)
-    type(BANDS_VAR), allocatable :: bands(:,:,:,:)      ! bands_var_4d
+    ! 2D elevation information
+    logical(lgt), allocatable     :: elev_mask(:,:)     ! elev_mask (nx_local, ny_local)
+    real(sp),     allocatable     :: z_forcing(:,:)     ! Z_FORCING_grid (nx_local, ny_local)
+
+    ! 3D snow-band information
+    type(BANDS_INFO), allocatable :: bands_info(:,:,:)  ! MBANDS_INFO_3d (nx_local, ny_local, n_bands)
+
+    ! 4D snow-band state window
+    type(BANDS_VAR), allocatable  :: bands_var(:,:,:,:) ! MBANDS_VAR_4d (nx_local, ny_local, n_bands, nt_window+1)
 
     ! 3D observed discharge / validity (optional)
-    type(VDATA), allocatable     :: valid(:,:,:)       ! (nx_local, ny_local, numtim_sub)
+    type(VDATA), allocatable      :: valid(:,:,:)       ! aValid (nx_local, ny_local, nt_window)
 
     ! basin-average time series for output convenience
-    type(FDATA), allocatable     :: aForce(:)          ! (numtim_sub)
-    type(RUNOFF), allocatable    :: aRoute(:)          ! (numtim_sub)
+    type(FDATA), allocatable      :: aForce(:)          ! (nt_window)
+    type(RUNOFF), allocatable     :: aRoute(:)          ! (nt_window)
 
   end type domain_data
 
