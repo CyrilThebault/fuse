@@ -48,8 +48,6 @@ module work_types
    type(runoff)                        :: route          ! hillslope routing
  end type fuse_step
 
-   real(sp)     , allocatable          :: x0(:)      ! state variables (start of step)
-   real(sp)     , allocatable          :: x1(:)      ! state variables (end of step)
  ! snow structure
  type fuse_snow
    real(sp)                            :: z_forcing      ! elevation of forcing data (m)

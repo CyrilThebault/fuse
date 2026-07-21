@@ -8,11 +8,13 @@ MODULE fuse_filemanager
   use info_types, only: cli_options
   use info_types, only: fuse_info
 
+  use globaldata, only: NVAR_FORC
+  use globaldata, only: iPRECIP, iTEMP, iPET, iQOBS
+
   implicit none
   private
 
   public :: read_fuse_control_file
-  public :: export_domain_to_legacy
 
   ! ----- all of these legacy globals are stored in the "info" data structure ---------------------
 
@@ -24,6 +26,8 @@ MODULE fuse_filemanager
   public :: date_start_sim, date_end_sim, date_start_eval, date_end_eval, numtim_sub_str
   public :: METRIC, TRANSFO
   public :: KSTOP_str, MAXN_str, PCENTO_str
+
+  ! ------------------------------------------------------------------------------------------------
 
   ! FUSE-wide pathlength
   integer(i4b),parameter::fusePathLen=512
@@ -71,12 +75,11 @@ contains
   ! -------------------------------------------------------------------------------------
 
   subroutine read_fuse_control_file(fuseFileManagerIn, opts, info, err, message)
-
-use tomlf_all, only: toml_table, toml_error, toml_key, toml_value ! data types
-use tomlf_all, only: toml_load, get_value                         ! procedures
-! or: use tomlf, only: toml_table, toml_load, toml_error
-!     use tomlf_type_keyval, only: toml_key   (if toml_key not re-exported)
+  use tomlf_all, only: toml_table, toml_error, toml_key, toml_value ! data types
+  use tomlf_all, only: toml_load, get_value                         ! procedures
+  
   ! Purpose: Reads FUSE control file (TOML version) AND populates info structure
+  !
   implicit none
 
   ! dummies
@@ -139,45 +142,56 @@ use tomlf_all, only: toml_load, get_value                         ! procedures
       ! ---------------------------------------------------------------------------------------------------------------
 
       ! ----- control file assignment block ---------------------------------------------------------------------------
-
+      
       lookup = trim(sections(i)%key)//'.'//trim(keys(j)%key)
 
       select case(lookup)
         
         ! ---- files: paths ----
-        case ("paths.input_path"       ); call get_value(subtable, trim(keys(j)%key), info%files%input_path       , stat=istat)
-        case ("paths.output_path"      ); call get_value(subtable, trim(keys(j)%key), info%files%output_path      , stat=istat)
-        case ("paths.setngs_path"      ); call get_value(subtable, trim(keys(j)%key), info%files%setngs_path      , stat=istat)
+        case ("filepaths.input_dir"        ); call get_value(subtable, trim(keys(j)%key), info%files%input_path       , stat=istat)
+        case ("filepaths.output_dir"       ); call get_value(subtable, trim(keys(j)%key), info%files%output_path      , stat=istat)
+        case ("filepaths.settings_dir"     ); call get_value(subtable, trim(keys(j)%key), info%files%setngs_path      , stat=istat)
 
         ! ---- files: suffixes ----
-        case ("input.suffix_forcing"   ); call get_value(subtable, trim(keys(j)%key), info%files%suffix_forcing   , stat=istat)
-        case ("input.suffix_elev_bands"); call get_value(subtable, trim(keys(j)%key), info%files%suffix_elev_bands, stat=istat)
+        case ("input.forcing_suffix"       ); call get_value(subtable, trim(keys(j)%key), info%files%suffix_forcing   , stat=istat)
+        case ("input.elevbands_suffix"     ); call get_value(subtable, trim(keys(j)%key), info%files%suffix_elev_bands, stat=istat)
 
         ! ---- files: settings filenames ----
-        case ("settings.forcinginfo"   ); call get_value(subtable, trim(keys(j)%key), info%files%forcinginfo      , stat=istat)
-        case ("settings.constraints"   ); call get_value(subtable, trim(keys(j)%key), info%files%constraints      , stat=istat)
-        case ("settings.mod_numerix"   ); call get_value(subtable, trim(keys(j)%key), info%files%mod_numerix      , stat=istat)
-        case ("settings.m_decisions"   ); call get_value(subtable, trim(keys(j)%key), info%files%m_decisions      , stat=istat)
+        case ("model.decisions_file"       ); call get_value(subtable, trim(keys(j)%key), info%files%m_decisions      , stat=istat)
+        case ("model.numerics_file"        ); call get_value(subtable, trim(keys(j)%key), info%files%mod_numerix      , stat=istat)
+        case ("model.constraints_file"     ); call get_value(subtable, trim(keys(j)%key), info%files%constraints      , stat=istat)
+        case ("model.forcinginfo_file"     ); call get_value(subtable, trim(keys(j)%key), info%files%forcinginfo      , stat=istat)
+
+        ! ---- files: forcing coordinate names ----
+        case ("forcing_coords.time"        ); call get_value(subtable, trim(keys(j)%key), info%files%time_name        , stat=istat)
+        case ("forcing_coords.latitude"    ); call get_value(subtable, trim(keys(j)%key), info%files%latitude_name    , stat=istat)
+        case ("forcing_coords.longitude"   ); call get_value(subtable, trim(keys(j)%key), info%files%longitude_name   , stat=istat)
+
+        ! ---- files: forcing variable names ----
+        case ("forcing_vars.precip"        ); call get_value(subtable, trim(keys(j)%key), info%files%precip_name      , stat=istat)
+        case ("forcing_vars.temp"          ); call get_value(subtable, trim(keys(j)%key), info%files%temp_name        , stat=istat)
+        case ("forcing_vars.pet"           ); call get_value(subtable, trim(keys(j)%key), info%files%pet_name         , stat=istat)
+        case ("forcing_vars.qobs"          ); call get_value(subtable, trim(keys(j)%key), info%files%qobs_name        , stat=istat)
 
         ! ---- config: runtime ----
-        case ("output.fmodel_id"       ); call get_value(subtable, trim(keys(j)%key),  info%config%fmodel_id      , stat=istat)
-        case ("output.q_only"          ); call get_value(subtable, trim(keys(j)%key),  info%config%q_only         , stat=istat)
+        case ("output.model_id"            ); call get_value(subtable, trim(keys(j)%key),  info%config%fmodel_id      , stat=istat)
+        case ("output.q_only"              ); call get_value(subtable, trim(keys(j)%key),  info%config%q_only         , stat=istat)
 
         ! ---- config: periods ----
-        case ("periods.date_start_sim" ); call get_value(subtable, trim(keys(j)%key), info%config%date_start_sim  , stat=istat)
-        case ("periods.date_end_sim"   ); call get_value(subtable, trim(keys(j)%key), info%config%date_end_sim    , stat=istat)
-        case ("periods.date_start_eval"); call get_value(subtable, trim(keys(j)%key), info%config%date_start_eval , stat=istat)
-        case ("periods.date_end_eval"  ); call get_value(subtable, trim(keys(j)%key), info%config%date_end_eval   , stat=istat)
-        case ("periods.numtim_sub_str" ); call get_value(subtable, trim(keys(j)%key), info%config%numtim_sub_str  , stat=istat)
+        case ("run_periods.date_start_sim" ); call get_value(subtable, trim(keys(j)%key), info%config%date_start_sim  , stat=istat)
+        case ("run_periods.date_end_sim"   ); call get_value(subtable, trim(keys(j)%key), info%config%date_end_sim    , stat=istat)
+        case ("run_periods.date_start_eval"); call get_value(subtable, trim(keys(j)%key), info%config%date_start_eval , stat=istat)
+        case ("run_periods.date_end_eval"  ); call get_value(subtable, trim(keys(j)%key), info%config%date_end_eval   , stat=istat)
+        case ("run_periods.numtim_sub_str" ); call get_value(subtable, trim(keys(j)%key), info%config%numtim_sub_str  , stat=istat)
 
         ! ---- config: calibration ----
-        case ("calibration.metric"     ); call get_value(subtable, trim(keys(j)%key), info%config%metric          , stat=istat)
-        case ("calibration.transfo"    ); call get_value(subtable, trim(keys(j)%key), info%config%transfo         , stat=istat)
+        case ("calibration.metric"         ); call get_value(subtable, trim(keys(j)%key), info%config%metric          , stat=istat)
+        case ("calibration.transfo"        ); call get_value(subtable, trim(keys(j)%key), info%config%transfo         , stat=istat)
 
         ! ---- config: SCE (read numeric, then next populate legacy strings) ----
-        case ("sce.maxn"               ); call get_value(subtable, trim(keys(j)%key), info%config%maxn            , stat=istat)
-        case ("sce.kstop"              ); call get_value(subtable, trim(keys(j)%key), info%config%kstop           , stat=istat)
-        case ("sce.pcento"             ); call get_value(subtable, trim(keys(j)%key), info%config%pcento          , stat=istat)
+        case ("sce.maxn"                   ); call get_value(subtable, trim(keys(j)%key), info%config%maxn            , stat=istat)
+        case ("sce.kstop"                  ); call get_value(subtable, trim(keys(j)%key), info%config%kstop           , stat=istat)
+        case ("sce.pcento"                 ); call get_value(subtable, trim(keys(j)%key), info%config%pcento          , stat=istat)
 
         ! ---- default case (something in the table that is not specified above) -----
         case default
@@ -219,6 +233,9 @@ use tomlf_all, only: toml_load, get_value                         ! procedures
   info%files%fname_netcdf_forc = trim(info%files%input_path)//trim(info%files%forcing_file)
   info%files%fname_netcdf_runs = trim(info%files%fname_tempry)//'_runs_'//trim(run_mode)//'.nc'
   info%files%fname_netcdf_para = trim(info%files%fname_tempry)//'_para_'//trim(run_mode)//'.nc'
+
+  ! ---- populate legacy modules ----
+  call export_domain_to_legacy(info)
 
   end subroutine read_fuse_control_file
 

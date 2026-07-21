@@ -3,6 +3,8 @@ module alloc_domain_module
   USE nrtype
   USE info_types, only: fuse_info
   USE data_types, only: domain_data
+ 
+  use globaldata, only: NVAR_FORC
 
   implicit none
   private
@@ -15,7 +17,7 @@ CONTAINS
 
   implicit none
 
-  type(fuse_info),   intent(in)    :: info
+  type(fuse_info),   intent(inout) :: info
   type(domain_data), intent(inout) :: domain
   integer(i4b),      intent(out)   :: ierr
   character(*),      intent(out)   :: message
@@ -69,6 +71,10 @@ CONTAINS
   ! allocate elevation bands (var)
   allocate(domain%bands_var(nx,ny,nb,nt+1), stat=ierr)
   if(ierr/=0)then; message=trim(message)//"cannot allocate elev bands (var)"; return; endif
+
+  ! allocate forcing lookup table
+  allocate(info%files%forc%name(NVAR_FORC), info%files%forc%varid(NVAR_FORC), stat=ierr)
+  if(ierr/=0)then; message=trim(message)//"cannot allocate forcing lookup table"; return; endif
 
   end subroutine allocate_domain_data
 

@@ -49,7 +49,6 @@ contains
   use nrtype
   use netcdf
   use info_types, only: fuse_info
-  use multiforce, only: vname_aprecip
   implicit none
 
   character(*),    intent(in)    :: filepath
@@ -65,11 +64,12 @@ contains
   integer(i4b) :: idim,dimlen
   integer(i4b) :: time_varid
   
-  associate(grid_flag => info%space%grid_flag, &
-            nx_global => info%space%nx_global, &
-            ny_global => info%space%ny_global, &
-            nt_global => info%time%nt_global,  &
-            nInput    => info%config%nInput)
+  associate(precip_name => info%files%precip_name, &
+            grid_flag   => info%space%grid_flag,   &
+            nx_global   => info%space%nx_global,   &
+            ny_global   => info%space%ny_global,   &
+            nt_global   => info%time%nt_global,    &
+            nInput      => info%config%nInput)
 
   ierr=0; message="read_forcing_dimensions/"
 
@@ -82,9 +82,9 @@ contains
   endif
 
   ! --- get dimension lengths from precip variable shape ---
-  ierr = nf90_inq_varid(ncid, trim(vname_aprecip), varid)
+  ierr = nf90_inq_varid(ncid, trim(precip_name), varid)
   if(ierr /= nf90_noerr) then
-    message = trim(message)//"cannot find var '"//trim(vname_aprecip)//"': "//trim(nf90_strerror(ierr))
+    message = trim(message)//"cannot find var '"//trim(precip_name)//"': "//trim(nf90_strerror(ierr))
     return
   endif
 

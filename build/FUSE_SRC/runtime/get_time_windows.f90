@@ -1,10 +1,8 @@
 module time_windows_module
 
   use nrtype
-  use netcdf
   use info_types, only: fuse_info
-  use fuse_fileManager, only: date_start_sim, date_end_sim, date_start_eval, date_end_eval, numtim_sub_str
-  use time_io, only: date_extractor, juldayss
+  use time_utils, only: date_extractor, juldayss
 
   implicit none
 
@@ -14,14 +12,16 @@ module time_windows_module
 
   contains
 
-  subroutine get_time_windows(info, ierr, message)
+  subroutine get_time_windows(ncid, info, ierr, message)
     
+    integer(i4b),      intent(in)    :: ncid
     type(fuse_info),   intent(inout) :: info
     integer(i4b),      intent(out)   :: ierr
     character(*),      intent(out)   :: message
 
     integer(i4b) :: nt
     character(len=1024) :: units_local
+    real(sp)            :: scale_to_days, dt_native, dt_days
     integer(i4b) :: ios
     character(len=1024) :: cmessage
 
@@ -29,7 +29,7 @@ module time_windows_module
 
     ! ----- read forcing time axis ------------------------------------------------------
 
-    call read_time_axis(info%files%ncid_forc, info%time%time_steps, units_local, nt, ierr, cmessage)
+    call read_time_axis(ncid, info%time%time_steps, units_local, nt, ierr, cmessage)
     if(ierr/=0)then; message=trim(message)//trim(cmessage); return; endif
 
     info%time%nt_global = nt
@@ -37,18 +37,19 @@ module time_windows_module
 
     ! ----- build julian-day axis -------------------------------------------------------
     
-    call build_julian_axis(info%time%time_steps, trim(units_local), info%time%jdate_ref, info%time%jdate, ierr, cmessage)
+    call build_julian_axis(info%time%time_steps, trim(units_local), &
+                           info%time%jdate_ref, info%time%jdate, info%time%deltim_days, ierr, cmessage)
     if(ierr/=0)then; message=trim(message)//trim(cmessage); return; endif
 
     ! ----- compute indices for sim/eval windows ----------------------------------------
 
     ! simulation indices
-    call map_dates_to_indices(info%time%jdate, date_start_sim, date_end_sim, &
+    call map_dates_to_indices(info%time%jdate, info%config%date_start_sim, info%config%date_end_sim, &
                               info%time%sim_beg, info%time%sim_end, ierr, cmessage)
     if (ierr/=0)then; message=trim(message)//trim(cmessage); return; endif
 
     ! evaluation indices
-    call map_dates_to_indices(info%time%jdate, date_start_eval, date_end_eval, &
+    call map_dates_to_indices(info%time%jdate, info%config%date_start_eval, info%config%date_end_eval, &
                               info%time%eval_beg, info%time%eval_end, ierr, cmessage)
     if(ierr/=0)then; message=trim(message)//trim(cmessage); return; endif
 
@@ -64,7 +65,7 @@ module time_windows_module
     ! ----- configure sub-period windowing ----------------------------------------------
     
     ! convert sub-period string to integer
-    read(numtim_sub_str,*,iostat=ios) info%time%nt_window
+    read(info%config%numtim_sub_str,*,iostat=ios) info%time%nt_window
     if(ios/=0) then
       ierr=1; message=trim(message)//"cannot parse numtim_sub_str"; return
     endif
@@ -77,6 +78,11 @@ module time_windows_module
       info%time%use_subperiods = .true.
       ! keep nt_window as user-chosen chunk size
     endif
+
+    ! ----- export info to legacy data structures ---------------------------------------
+
+    ! export info%time -> multiforce to keep legacy code working
+    call export_time_to_multiforce(info)
 
   end subroutine get_time_windows
 
@@ -91,7 +97,7 @@ module time_windows_module
   subroutine export_time_to_multiforce(info)
     use multiforce, only: time_steps, timeUnits
     use multiforce, only: sim_beg, sim_end, eval_beg, eval_end, numtim_sim, numtim_sub, &
-                          SUB_PERIODS_FLAG, istart
+                          SUB_PERIODS_FLAG, istart, deltim
     implicit none
     type(fuse_info), intent(in) :: info
    
@@ -108,6 +114,8 @@ module time_windows_module
     SUB_PERIODS_FLAG = info%time%use_subperiods
    
     istart = sim_beg
+
+    deltim = info%time%deltim_days
   end subroutine
 
   ! -------------------------------------------------------------------------------------
@@ -119,6 +127,10 @@ module time_windows_module
   ! ----- helper: read time axis from NetCDF --------------------------------------------
 
   subroutine read_time_axis(ncid, time_steps, units, nt, ierr, message)
+    
+    use netcdf
+    
+    implicit none
     
     integer(i4b), intent(in) :: ncid
     real(sp), allocatable, intent(out) :: time_steps(:)
@@ -167,12 +179,13 @@ module time_windows_module
 
   ! ----- helper: build julian axis -----------------------------------------------------
 
-  subroutine build_julian_axis(time_steps, units, jref, jdate, ierr, message)
+  subroutine build_julian_axis(time_steps, units, jref, jdate, deltim_days, ierr, message)
     
     real(sp), intent(in) :: time_steps(:)
     character(len=*), intent(in) :: units
     real(sp), intent(out) :: jref
     real(sp), allocatable, intent(out) :: jdate(:)
+    real(sp), intent(out)     :: deltim_days
     integer(i4b), intent(out) :: ierr
     character(*), intent(out) :: message
 
@@ -191,10 +204,13 @@ module time_windows_module
     scale_to_days = time_units_to_days(units, ierr, cmessage)
     if(ierr/=0) then;  message=trim(message)//trim(cmessage); return; endif
 
-    ! build julian axis
+    ! build julian axis (units of days)
     allocate(jdate(size(time_steps)), stat=ierr)
     if(ierr/=0) then; message=trim(message)//"allocate(jdate) failed"; return; endif
     jdate = jref + time_steps * scale_to_days
+
+    ! define length of forcing time steps
+    deltim_days = jdate(2) - jdate(1)
 
   end subroutine build_julian_axis
 

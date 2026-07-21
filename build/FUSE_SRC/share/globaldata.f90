@@ -25,7 +25,11 @@ MODULE globaldata
  logical(lgt), save      :: isPrint=.true.
  logical(lgt), save      :: isDebug=.false.
 
- ! snow parameters
+ ! indices of forcing variables in vectors
+ integer(i4b), parameter :: NVAR_FORC=4
+ integer(i4b), parameter :: iPRECIP=1, iTEMP=2, iPET=3, iQOBS=4
+
+ ! indices of snow parameters in vectors
  integer(i4b), parameter :: NPAR_SNOW=7
  integer(i4b), parameter :: iMBASE=1, iMFMAX=2, iMFMIN=3, iPXTEMP=4, iOPG=5, iLAPSE=6  ! indices in vectors
  integer(i4b), parameter :: iPERR=7   ! not a snow parameter, but used here
