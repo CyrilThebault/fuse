@@ -29,8 +29,7 @@ MODULE multiforce
  public :: gForce, gForce_3d
  
  public :: date_start_input, date_end_input
- public :: numtim_in, numtim_sim, numtim_sub, numtim_sub_cur
- public :: itim_in, itim_sim, itim_sub
+ public :: numtim_in, numtim_sim, numtim_sub
  public :: sim_beg, sim_end, eval_beg, eval_end
  public :: istart, jdayRef
  public :: deltim
@@ -96,10 +95,6 @@ MODULE multiforce
  INTEGER(i4b)                          :: numtim_in = -1              ! number of time steps of input (atmospheric forcing)
  INTEGER(i4b)                          :: numtim_sim = -1             ! number of time steps of FUSE simulations (including spin-up)
  INTEGER(i4b)                          :: numtim_sub = -1             ! number of time steps of subperiod (will be kept in memory)
- INTEGER(i4b)                          :: numtim_sub_cur = -1         ! number of time steps of current subperiod (allows for the last subperiod to be shorter)
- INTEGER(i4b)                          :: itim_in = -1                ! indice within numtim_in
- INTEGER(i4b)                          :: itim_sim = -1               ! indice within numtim_sim
- INTEGER(i4b)                          :: itim_sub = -1               ! indice within numtim_sub
 
  INTEGER(i4b)                          :: sim_beg = -1                ! index for the start of the simulation in fuse_metric
  INTEGER(i4b)                          :: sim_end = -1                ! index for the end of the simulation in fuse_metric

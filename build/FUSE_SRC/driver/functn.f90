@@ -10,7 +10,7 @@ FUNCTION FUNCTN(NOPT,A)
 ! Wrapper for SCE (used to compute the objective function)
 ! ---------------------------------------------------------------------------------------
 USE nrtype                                            ! variable types, etc.
-USE fuse_metric_module                                ! run model and compute the metric chosen as objective function
+USE fuse_evaluate_module, only: fuse_evaluate         ! run model and compute the metric chosen as objective function
 USE multiforce, only: ncid_forc                       ! NetCDF forcing file ID
 USE fuse_fileManager,only:METRIC, TRANSFO             ! metric and transformation requested in the filemanager
 USE globaldata, only: nFUSE_eval                      ! # fuse evaluations
@@ -41,7 +41,7 @@ SCE_PAR(1:NOPT) = A(1:NOPT)  ! convert from MSP used in SCE to SP used in FUSE
 
 OUTPUT_FLAG=.FALSE.   ! do not produce *runs.nc files only, param.nc files
 
-CALL FUSE_METRIC(SCE_PAR,.FALSE.,NCID_FORC,METRIC_VAL,OUTPUT_FLAG,1) ! 2nd argument FALSE, always return METRIC value
+CALL FUSE_evaluate(SCE_PAR,.FALSE.,NCID_FORC,METRIC_VAL,OUTPUT_FLAG,1) ! 2nd argument FALSE, always return METRIC value
 
 ! deallocate parameter set
 DEALLOCATE(SCE_PAR, STAT=IERR); IF (IERR.NE.0) STOP ' problem deallocating space '

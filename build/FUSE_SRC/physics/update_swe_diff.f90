@@ -106,13 +106,13 @@ contains
   ! ---------------------------------------------------------------------------------------
   ! associate variables with elements of data structure
   associate(&
-   TIMDAT => fuseStruct%time         , &  ! time information
-   MFORCE => fuseStruct%force        , &  ! forcing data
-   Z_FORC => fuseStruct%z_forcing    , &  ! elevation of the forcing data
-   M_FLUX => fuseStruct%flux         , &  ! fluxes
-   MBANDS => fuseStruct%sbands       , &  ! elevation band variables: MBANDS(i)%var, MBANDS(i)info
-   MPARAM => fuseStruct%param_adjust , &  ! adjustable model parameters
-   DPARAM => fuseStruct%param_derive   &  ! derived model parameters
+   TIMDAT => fuseStruct%step%time         , &  ! time information
+   MFORCE => fuseStruct%step%force        , &  ! forcing data
+   M_FLUX => fuseStruct%step%flux         , &  ! fluxes
+   MBANDS => fuseStruct%snow%sbands       , &  ! elevation band variables: MBANDS(i)%var, MBANDS(i)info
+   Z_FORC => fuseStruct%snow%z_forcing    , &  ! elevation of the forcing data
+   MPARAM => fuseStruct%par%param_adjust  , &  ! adjustable model parameters
+   DPARAM => fuseStruct%par%param_derive    &  ! derived model parameters
    ) ! (associate)
   ! ---------------------------------------------------------------------------------------
   ! snow accumulation and melt calculations for each band
@@ -320,8 +320,8 @@ contains
    M_FLUX%EFF_PPT = M_FLUX%EFF_PPT + MBANDS(ISNW)%info%AF * (rain + snowmelt)
 
    if(comp_dparam)then
-     fuseStruct%df_dPar(1:NP)%EFF_PPT = fuseStruct%df_dPar(1:NP)%EFF_PPT + & 
-                                        MBANDS(ISNW)%info%AF * (drain(:) + dsnowmelt(:))
+     fuseStruct%adj%df_dPar(1:NP)%EFF_PPT = fuseStruct%adj%df_dPar(1:NP)%EFF_PPT + & 
+                                            MBANDS(ISNW)%info%AF * (drain(:) + dsnowmelt(:))
    endif
 
   END DO  ! looping through elevation bands  
@@ -329,8 +329,8 @@ contains
   end associate
   
   ! TEMPORARY: save the derivative as a "fake" loss function
-  fuseStruct%dL_dPar(:)    = NA_VALUE_SP 
-  fuseStruct%dL_dPar(1:NP) = fuseStruct%df_dPar(1:NP)%EFF_PPT
+  fuseStruct%adj%dL_dPar(:)    = NA_VALUE_SP 
+  fuseStruct%adj%dL_dPar(1:NP) = fuseStruct%adj%df_dPar(1:NP)%EFF_PPT
 
   END SUBROUTINE UPDATE_SWE_DIFF
 

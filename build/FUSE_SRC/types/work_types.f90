@@ -16,6 +16,7 @@ module work_types
  private
 
  public :: bands_var_diff, ebands
+ public :: fuse_chunk
  public :: fuse_work
 
  ! --------------------------------------------------------------------------------------
@@ -33,28 +34,62 @@ module work_types
  end type ebands
 
  ! --------------------------------------------------------------------------------------
- 
- ! omnibus structure that bundles "everything" required to run fuse for a single cell
+ ! structure bundles
 
- type fuse_work
+ ! per-step structure
+ type fuse_step
    type(tdata)                         :: time           ! time data
    type(fdata)                         :: force          ! model forcing data
-   type(ebands) , allocatable          :: sbands(:)      ! info/variables for elevation bands (snow model)
    type(statev)                        :: state0         ! state variables (start of step)
    type(statev)                        :: state1         ! state variables (end of step)
    type(statev)                        :: dx_dt          ! time derivative in state variables
    type(fluxes)                        :: flux           ! fluxes
-   type(fluxes), allocatable           :: df_dS(:)       ! derivative in fluxes w.r.t. states
-   type(fluxes), allocatable           :: df_dPar(:)     ! derivative in fluxes w.r.t. parameters
-   real(sp),     allocatable           :: dL_dPar(:)     ! derivative in loss function w.r.t. parameters
    type(runoff)                        :: route          ! hillslope routing
+ end type fuse_step
+
+ ! snow structure
+ type fuse_snow
+   real(sp)                            :: z_forcing      ! elevation of forcing data (m)
+   type(ebands) , allocatable          :: sbands(:)      ! info/variables for elevation bands (snow model)
+ end type fuse_snow
+
+ ! parameter structure
+ type fuse_param
    type(par_id)                        :: param_name     ! parameter names
    type(parinfo)                       :: param_meta     ! metadata on model parameters
    type(paradj)                        :: param_adjust   ! adjustable model parametrs
    type(pardvd)                        :: param_derive   ! derived model parameters
-   type(summary)                       :: sim_stats      ! simulation statistics
-   real(sp)                            :: z_forcing      ! elevation of forcing data (m)
-   logical(lgt)                        :: is_initialized = .false.
+ end type fuse_param
+
+ ! adjoint structure (differentiable fuse)
+ type fuse_adjoint
+   type(fluxes), allocatable           :: df_dS(:)       ! derivative in fluxes w.r.t. states
+   type(fluxes), allocatable           :: df_dPar(:)     ! derivative in fluxes w.r.t. parameters
+   real(sp),     allocatable           :: dL_dPar(:)     ! derivative in loss function w.r.t. parameters
+ end type fuse_adjoint
+
+ ! chunk buffers (allocate per chunk)
+ type fuse_chunk
+  type(fluxes), allocatable :: w_flux_3d(:,:,:)   ! (nspat1,nspat2,chunk_len)
+  type(runoff), allocatable :: aroute_3d(:,:,:)   ! (nspat1,nspat2,chunk_len)
+ end type fuse_chunk
+
+ ! run-level / evaluation-level
+ type fuse_run
+   type(summary) :: stats
+ end type fuse_run
+
+ ! --------------------------------------------------------------------------------------
+ ! omnibus structure that bundles "everything" required to run fuse for a single cell
+ 
+ type fuse_work
+   type(fuse_step)    :: step    ! per-step structure
+   type(fuse_snow)    :: snow    ! snow structure
+   type(fuse_param)   :: par     ! parameter structure
+   type(fuse_adjoint) :: adj     ! adjoint structure (differentiable fuse)
+   type(fuse_chunk)   :: chunk   ! chunk buffer
+   type(fuse_run)     :: run     ! run-level structure
+   logical(lgt)       :: is_initialized = .false.
  end type fuse_work
 
 end module work_types

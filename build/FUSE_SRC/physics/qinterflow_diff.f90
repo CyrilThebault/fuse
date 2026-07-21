@@ -31,10 +31,10 @@ contains
   ! -------------------------------------------------------------------------------------------------
   ! associate variables with elements of data structure
   associate(&
-   M_FLUX => fuseStruct%flux         , &  ! fluxes
-   TSTATE => fuseStruct%state1       , &  ! trial state variables (end of step)
-   MPARAM => fuseStruct%param_adjust , &  ! adjustable model parameters
-   DPARAM => fuseStruct%param_derive   &  ! derived model parameters
+   M_FLUX => fuseStruct%step%flux         , &  ! fluxes
+   TSTATE => fuseStruct%step%state1       , &  ! trial state variables (end of step)
+   MPARAM => fuseStruct%par%param_adjust  , &  ! adjustable model parameters
+   DPARAM => fuseStruct%par%param_derive    &  ! derived model parameters
    ) ! (associate)
   ! -------------------------------------------------------------------------------------------------
 

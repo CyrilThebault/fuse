@@ -19,23 +19,24 @@ contains
   integer(i4b)                   :: iParam
 
   ! populate fuse work structures
-  fuseStruct%time         = timdat
-  fuseStruct%force        = mForce
-  fuseStruct%state0       = mState
-  fuseStruct%state1       = mState
-  fuseStruct%flux         = m_flux  ! initialized at zero
-  fuseStruct%param_meta   = parMeta
-  fuseStruct%param_adjust = mParam
-  fuseStruct%param_derive = dParam
+  fuseStruct%step%time         = timdat
+  fuseStruct%step%force        = mForce
+  fuseStruct%step%state0       = mState
+  fuseStruct%step%state1       = mState
+  fuseStruct%step%flux         = m_flux  ! initialized at zero
+
+  fuseStruct%par%param_meta   = parMeta
+  fuseStruct%par%param_adjust = mParam
+  fuseStruct%par%param_derive = dParam
 
   ! initialize flux derivatives
   do iState=1,nState
-   fuseStruct%df_dS(iState) = m_flux ! initialized at zero
+   fuseStruct%adj%df_dS(iState) = m_flux ! initialized at zero
   end do
 
   ! initialize parameter derivatives
   do iParam=1,NUMPAR
-   fuseStruct%df_dPar(iParam) = m_flux ! initialized at zero
+   fuseStruct%adj%df_dPar(iParam) = m_flux ! initialized at zero
   end do
 
   end subroutine get_bundle

@@ -142,7 +142,7 @@ DRIVER_EX = fuse.exe
 FUSE_DRIVER =
 #FUSE_DRIVER += setup_domain.f90
 #FUSE_DRIVER += setup_model_definition.f90
-FUSE_DRIVER += fuse_metric.f90 functn.f90
+FUSE_DRIVER += fuse_evaluate.f90 functn.f90
 #FUSE_DRIVER += sce_driver.f90
 FUSE_DRIVER += fuse_driver.f90
 DRIVER = $(patsubst %, $(DRIVER_DIR)/%, $(FUSE_DRIVER))
@@ -166,7 +166,7 @@ G_DATA = $(SHARE_DIR)/globaldata.f90
 FUSE_MODDEF =
 FUSE_MODDEF += $(TYPES_DIR)/model_defn_types.f90
 FUSE_MODDEF += $(SHARE_DIR)/model_defn_data.f90
-MODDEF = $(FUSE_MODDEF) # no patetrn substitution needed
+MODDEF = $(FUSE_MODDEF) # no pattern substitution needed
 
 # Data types
 FUSE_TYPES =
@@ -365,7 +365,11 @@ endif
 
 ifeq ($(FC),gfortran)
   FFLAGS_NORMA = -O3 -ffree-line-length-none -fmax-errors=0 -cpp
-  FFLAGS_DEBUG = -g -Wall -ffree-line-length-none -fmax-errors=0 -fbacktrace -fcheck=bounds -cpp
+  FFLAGS_DEBUG = -O0 -g -fno-omit-frame-pointer \
+               -Wall -Wextra -Wall -Wextra -Wno-unused-parameter -Wno-unused-variable \
+	             -ffree-line-length-none -fmax-errors=0 -cpp \
+               -fbacktrace -fcheck=all -ffpe-trap=invalid,zero,overflow \
+               -finit-real=snan -finit-integer=-999999
   FFLAGS_FIXED = -O2 -c -ffixed-form
 endif
 
