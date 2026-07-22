@@ -27,6 +27,15 @@ work/
 # legacy SVN files
 .svn/
 
+# LaTeX build products
+*.aux
+*.fdb_latexmk
+*.fls
+*.log
+*.toc
+*.out
+*.synctex.gz
+
 # sublime text workspace and project files
 *.sublime-project
 *.sublime-workspace

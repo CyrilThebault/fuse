@@ -113,7 +113,6 @@ module info_types
    character(len=:), allocatable :: output_path
   
    ! settings filenames
-   character(len=:), allocatable :: forcinginfo
    character(len=:), allocatable :: constraints
    character(len=:), allocatable :: mod_numerix
    character(len=:), allocatable :: m_decisions
