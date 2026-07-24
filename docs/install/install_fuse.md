@@ -1,59 +1,116 @@
-# FUSE Installation
+# Installing FUSE
 
-We have successfully installed FUSE on a number of Unix-like (\*nix) operating
-systems, including Linux and Darwin (Mac OS X). 
+FUSE has been successfully compiled and tested on Linux and macOS using a range
+of modern Fortran compilers.
 
-To compile FUSE, change into the `build/` directory inside your FUSE installation and run `make`:
-```
-cd /path/to/fuse/build
+## Download FUSE
+
+The source code is available from
+
+https://github.com/CH-EARTH/fuse
+
+There are several ways to obtain FUSE:
+
+- download the latest stable release from the **Releases** page;
+- clone the `develop` branch to obtain the latest development version; or
+- fork the repository if you plan to contribute to FUSE development.
+
+## Compile FUSE
+
+From the top-level FUSE directory, run
+
+```bash
+cd build
 make
 ```
 
-### Verify the installation
+If compilation completes successfully, the executable will be written to
 
-After compilation, verify that the executable was built successfully:
-
-```
-/path/to/fuse/bin/fuse.exe
+```text
+bin/fuse.exe
 ```
 
-When run without any command-line arguments, FUSE should display a help message
-describing the required command-line arguments and available options. This
-confirms that the executable was built successfully and is ready to run.
+If the build fails because required libraries or tools cannot be found, see
+**Build dependencies** below.
 
-*Current behavior:* The current release terminates with an error because the
-required `fileManager` argument is missing:
+## Verify the installation
 
+Run
+
+```bash
+bin/fuse.exe
 ```
-STOP 1st command-line argument is missing (fileManager)
+
+When executed without command-line arguments, FUSE prints a short usage message
+listing the required command-line arguments. This confirms that the executable
+was built successfully.
+
+To display the complete command-line interface, run
+
+```bash
+bin/fuse.exe --help
 ```
 
-This will be replaced by a usage/help message in a future release.
+which lists all execution modes, required arguments, and optional settings.
 
-# Dependencies
+## Run the example application
 
-To compile FUSE, you will need:
- 
-### A Fortran compiler
+The `test/` directory contains a single example application that demonstrates a
+lumped FUSE simulation for the Bow River above Banff, Alberta, Canada. This example
+provides a simple way to verify that FUSE has been installed correctly and that
+the complete modeling workflow functions as expected.
 
-  We have successfully used the intel Fortran compiler (`ifort`, version 17.x) and the GNU Fortran compiler (`gfortran`, version 6 or higher), the latter of which is freely available. Since we do not use any compiler-specific extensions, you should be able to compile FUSE with other Fortran compilers as well. If you do not have a Fortran compiler, you can install `gfortran` for free. The easiest way is to use a package manager (e.g., Homebrew). Note that `gfortran` is installed as part of the `gcc` compiler suite (for Homebrew, `brew install gcc`).
+The next section of this documentation, **[Quick Start](quick-start/)**,
+provides a step-by-step guide for running the Bow River example and
+interpreting the model output.
 
-### The NetCDF libraries
+Additional example applications, including distributed and gridded model
+configurations, are described in later sections of this documentation.
 
-  [NetCDF](http://www.unidata.ucar.edu/software/netcdf/) or the Network Common Data Format is a set of software libraries and self-describing, machine-independent data formats that support the creation, access, and sharing of array-oriented scientific data. For Homebrew, you can install NetCDF library as `brew install netcdf-fortran`. Most \*nix package managers include a NetCDF port. Note that you need to ensure that:
+Once the Bow River example runs successfully, your FUSE installation is ready
+for use.
 
-  - You have NetCDF version 4.x;
-  - The NetCDF libraries are compiled with the same compiler as you plan to use for compiling FUSE (if you installed NetCDF via Homebrew, and you compile FUSE using the Homebrew gfortran, you’re almost always consistent); and
-  - You have the NetCDF Fortran library installed (`libnetcdff.*`) and not just the C-version.
- 
-### A copy of the FUSE source code from [this repo](https://github.com/CH-EARTH/fuse)
+---
 
-  You have a number of options:
+# Build dependencies
 
-  - If you just want to use the latest stable release of FUSE, then simply look for the [latest release](https://github.com/CH-EARTH/fuse/releases);
-  - If you want the latest and greatest (and potentially erroneous), download a copy of the [development branch](https://github.com/CH-EARTH/fuse/tree/develop) (or clone it);
-  - If you may want to do FUSE development, then fork the repo on github and start editing your own copy.
+If FUSE does not compile successfully, ensure the required compiler, libraries,
+and build tools are installed.
 
-### pkg-config
+## GNU Fortran
 
-  `pkg-config` is a command-line tool that helps software builds find the right compiler and linker flags for installed libraries (like HDF5, netCDF, etc.). After it’s installed, you can use `pkg-config` in build systems (Makefiles, CMake, configure scripts) to automatically discover the correct -I include paths and -L/-l library flags, instead of you having to set those paths manually. In FUSE `pkg-config` is used in the Makefile.
+FUSE has been successfully compiled using
+
+- GNU Fortran (`gfortran`, version 6 or later)
+- Intel Fortran (`ifort`)
+
+Other modern Fortran compilers should also work.
+
+On macOS, install the GNU Compiler Collection (GCC), which includes
+`gfortran`:
+
+```bash
+brew install gcc
+```
+
+## Required libraries and build tools
+
+FUSE requires
+
+- CMake (used to build the bundled `toml-f` library);
+- the NetCDF-C and NetCDF-Fortran libraries;
+- `pkg-config` (used to locate installed libraries during compilation).
+
+On macOS, these can be installed with Homebrew:
+
+```bash
+brew install cmake
+brew install netcdf
+brew install netcdf-fortran
+brew install pkg-config
+```
+
+Homebrew automatically installs HDF5 as a dependency of NetCDF.
+
+The `toml-f` library is included with the FUSE source code and is built
+automatically during compilation.

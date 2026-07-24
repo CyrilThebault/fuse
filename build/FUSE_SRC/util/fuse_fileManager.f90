@@ -21,7 +21,7 @@ MODULE fuse_filemanager
   ! expose legacy globals
   public :: SETNGS_PATH, INPUT_PATH, OUTPUT_PATH
   public :: suffix_forcing, suffix_elev_bands
-  public :: M_DECISIONS, CONSTRAINTS, MOD_NUMERIX, FORCINGINFO, MBANDS_NC
+  public :: M_DECISIONS, CONSTRAINTS, MOD_NUMERIX, MBANDS_NC
   public :: FMODEL_ID, Q_ONLY_STR, Q_ONLY
   public :: date_start_sim, date_end_sim, date_start_eval, date_end_eval, numtim_sub_str
   public :: METRIC, TRANSFO
@@ -45,7 +45,6 @@ MODULE fuse_filemanager
   CHARACTER(LEN=fusePathLen)  :: M_DECISIONS       ! definition of model decisions
   CHARACTER(LEN=fusePathLen)  :: CONSTRAINTS       ! definition of parameter constraints
   CHARACTER(LEN=fusePathLen)  :: MOD_NUMERIX       ! definition of numerical solution technique
-  CHARACTER(LEN=fusePathLen)  :: FORCINGINFO       ! info on forcing data files
   CHARACTER(LEN=fusePathLen)  :: MBANDS_NC         ! netcdf file defining the elevation bands
   
   ! content of output directory
@@ -160,7 +159,6 @@ contains
         case ("model.decisions_file"       ); call get_value(subtable, trim(keys(j)%key), info%files%m_decisions      , stat=istat)
         case ("model.numerics_file"        ); call get_value(subtable, trim(keys(j)%key), info%files%mod_numerix      , stat=istat)
         case ("model.constraints_file"     ); call get_value(subtable, trim(keys(j)%key), info%files%constraints      , stat=istat)
-        case ("model.forcinginfo_file"     ); call get_value(subtable, trim(keys(j)%key), info%files%forcinginfo      , stat=istat)
 
         ! ---- files: forcing coordinate names ----
         case ("forcing_coords.time"        ); call get_value(subtable, trim(keys(j)%key), info%files%time_name        , stat=istat)
@@ -260,7 +258,6 @@ contains
   OUTPUT_PATH       = trim(info%files%output_path)
   suffix_forcing    = trim(info%files%suffix_forcing)
   suffix_elev_bands = trim(info%files%suffix_elev_bands)
-  FORCINGINFO       = trim(info%files%forcinginfo)
   CONSTRAINTS       = trim(info%files%constraints)
   MOD_NUMERIX       = trim(info%files%mod_numerix)
   M_DECISIONS       = trim(info%files%m_decisions)

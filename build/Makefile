@@ -20,6 +20,22 @@ MOD_PATH = $(FUSE_ROOT)/build/
 # Define the directory for the executables
 EXE_PATH = $(FUSE_ROOT)/bin/
 
+# ----------------------------------------------------------------------
+# Build toml-f
+# ----------------------------------------------------------------------
+
+TOMLF_DIR   := $(FUSE_ROOT)/external/toml-f
+TOMLF_BUILD := $(TOMLF_DIR)/build
+TOMLF_LIB   := $(TOMLF_BUILD)/libtoml-f.a
+
+toml: $(TOMLF_LIB)
+
+$(TOMLF_LIB):
+	cmake -S $(TOMLF_DIR) -B $(TOMLF_BUILD) \
+    -DBUILD_TESTING=OFF \
+    -DBUILD_SHARED_LIBS=OFF
+	cmake --build $(TOMLF_BUILD)
+
 #========================================================================
 # Define an include file (fuseversion.inc) with version info
 #========================================================================
@@ -111,47 +127,6 @@ endif
 # define appropriate flags
 INCLUDES += -I$(HDF5_INCLUDE_DIR) -I$(NETCDF_C_INCLUDE) -I$(NETCDF_F_INCLUDE)
 LIBS += -L$(HDF5_LIB_DIR) -lhdf5 -lhdf5_hl -L$(NETCDF_F_LIB) -lnetcdff -L$(NETCDF_C_LIB) -lnetcdf
-
-#========================================================================
-# Define the TOML-f libraries
-#========================================================================
-
-# Optional user override: set TOMLF_PREFIX=/path/to/toml-f/prefix
-# Otherwise prefer pkgconf, then Homebrew.
-ifeq ($(strip $(TOMLF_PREFIX)),)
-  # No user override: try pkgconf first
-  ifneq ($(shell pkgconf --exists toml-f && echo yes),)
-    TOMLF_PREFIX  := $(shell pkgconf --variable=prefix toml-f)
-    TOMLF_INCLUDE := $(shell pkgconf --variable=includedir toml-f)/toml-f
-    TOMLF_LIB     := $(shell pkgconf --variable=libdir toml-f)
-  else
-    # Fallback to Homebrew
-    TOMLF_PREFIX  := $(shell brew --prefix toml-f 2>/dev/null)
-    TOMLF_INCLUDE := $(TOMLF_PREFIX)/include/toml-f
-    TOMLF_LIB     := $(TOMLF_PREFIX)/lib
-  endif
-else
-  # User override provided
-  TOMLF_INCLUDE := $(TOMLF_PREFIX)/include/toml-f
-  TOMLF_LIB     := $(TOMLF_PREFIX)/lib
-endif
-
-# toml-f module directory (where *.mod live on Homebrew)
-TOMLF_MODDIR := $(TOMLF_INCLUDE)/modules
-
-# RPATH (macOS: runtime search path for dylibs)
-RPATHS += -Wl,-rpath,$(TOMLF_LIB)
-
-# add toml-f include+lib
-INCLUDES += -I$(TOMLF_MODDIR) -I$(TOMLF_INCLUDE)
-LIBS     += -L$(TOMLF_LIB) -ltoml-f
-
-$(info TOMLF_PREFIX  = $(TOMLF_PREFIX))
-$(info TOMLF_INCLUDE = $(TOMLF_INCLUDE))
-$(info TOMLF_MODDIR  = $(TOMLF_MODDIR))
-$(info TOMLF_LIB     = $(TOMLF_LIB))
-$(info INCLUDES are $(INCLUDES))
-$(info LIBS are $(LIBS))
 
 #========================================================================
 # Assemble all of the FUSE sub-routines
@@ -407,11 +382,13 @@ ifeq ($(FC),gfortran)
   FFLAGS_FIXED = -O2 -c -ffixed-form
 endif
 
+INCLUDE_FLAGS = -I$(GENINC) -I$(TOMLF_BUILD)/include
+
 # Default flags
-FFLAGS = $(FFLAGS_NORMA) -I$(GENINC)
+FFLAGS = $(FFLAGS_NORMA) $(INCLUDE_FLAGS)
 
 # Target-specific flags for 'debug' target
-debug: FFLAGS = $(FFLAGS_DEBUG) -I$(GENINC)
+debug: FFLAGS = $(FFLAGS_NORMA) $(INCLUDE_FLAGS)
 debug: compile
 
 # Special provision for gcc>13
@@ -454,9 +431,12 @@ sce_16plus.o: $(SCE_DIR)/sce_16plus.f
 all: compile install clean
 
 # compile target
-compile: sce_16plus.o $(VERSIONFILE)
+compile: toml \
+         sce_16plus.o \
+         $(VERSIONFILE)
 	$(FC) $(FUSE_ALL) $(DRIVER) \
-	$(FFLAGS) $(LIBS) $(RPATHS) $(INCLUDES) -o $(DRIVER_EX)
+	      $(FFLAGS) $(LIBS) $(TOMLF_LIB) \
+	      $(RPATHS) $(INCLUDES) -o $(DRIVER_EX)
 
 # Remove object files
 clean:
@@ -470,4 +450,4 @@ install:
 	mv $(DRIVER_EX) $(EXE_PATH)
 
 .PHONY: all compile install clean debug
-.PHONY: $(VERSIONFILE)
+.PHONY: $(VERSIONFILE) toml

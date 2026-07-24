@@ -23,28 +23,28 @@ contains
   character(len=:)    , allocatable   :: kv, pname, pval_str  ! parameter strings
   real(sp)                            :: pval          ! parameter value
   integer(i4b)                        :: nArg          ! number of command line arguments
+  character(len=:)    , allocatable   :: argname
   character(len=:)    , allocatable   :: cmessage
   ! initialize error control
   err=0; message='parse_command_args/'
   
   ! ----- parse command line arguments ------------------------------------------------------
-  
+
   ! -----------------------------------------------------------------------------------------
-  !   CLI parsing for FUSE run modes
-  !    -c/--control   <file>     (required unless --version)
-  !    -m/--runmode   <def|idx|opt|sce> (required unless --version)
-  !    -d/--domid     <string>   (required unless --version)
-  !    -s/--sets      <file>     (required for idx,opt)
-  !    -i/--index     <int>      (required for idx)
-  !    -r/--restart   <y|m|d|e|never>   (optional)
-  !    -t/--tag       <string>          (optional)
-  !    -p/--param     <string>          (optional)
-  !    -v/--version              (prints version info and exits)
-  !    -h/--help                 (prints help and exits)
+  ! Parse command-line options
+  !   -c, --control   <file>             required unless --help/--version
+  !   -m, --runmode   <def|idx|opt|sce>  required unless --help/--version
+  !   -d, --domid     <string>           required unless --help/--version
+  !   -s, --sets      <file>             required for idx,opt
+  !   -i, --index     <int>              required for idx
+  !   -r, --restart   <y|m|d|e|never>    optional
+  !   -t, --tag       <string>           optional
+  !   -p, --param     NAME=VALUE         repeatable
+  !   -v, --version                      print version and exit
+  !   -h, --help                         print help and exit
   ! -----------------------------------------------------------------------------------------
 
   nArg = command_argument_count()
-  if (nArg < 1) call printCommandHelp()
 
   i = 1
   do while (i <= narg)
@@ -157,16 +157,25 @@ contains
   endif
 
   ! Validate required args
-  if (.not. allocated(opts%control_file)) then
-    err = 1; message = trim(message)//"missing required --control; type 'fuse.exe --help' for usage"; return
-  end if
-  if (.not. allocated(opts%domain_id)) then
-    err = 1; message = trim(message)//"missing required --domid;   type 'fuse.exe --help' for usage"; return
-  end if
-  if (.not. allocated(opts%runmode)) then
-    err = 1; message = trim(message)//"missing required --runmode; type 'fuse.exe --help' for usage"; return
+  
+  argname = ""
+  
+  call check_required(allocated(opts%domain_id),    "--domid",   argname)
+  call check_required(allocated(opts%control_file), "--control", argname)
+  call check_required(allocated(opts%runmode),      "--runmode", argname)
+  
+  if (len_trim(argname) > 0) then
+    err = 1
+    message = trim(message)//"Missing required arguments:"//trim(argname)// &
+              new_line("a")//new_line("a")// &
+              "Usage:"//new_line("a")// &
+              "  fuse.exe -d DOMAIN -c CONTROL -m MODE [options]"// &
+              new_line("a")//new_line("a")// &
+              "Try 'fuse.exe --help' for detailed usage."
+    return
   end if
 
+  ! Check run mode
   if (.not. is_valid_mode(opts%runmode)) then
     err = 1; message = trim(message)//"invalid --runmode: "//trim(opts%runmode)//" (expect def|idx|opt|sce)"; return
   end if
@@ -195,6 +204,18 @@ contains
     end if
   end if
 
+  contains
+
+    subroutine check_required(is_present, name, message)
+      logical, intent(in) :: is_present
+      character(*), intent(in) :: name
+      character(:), allocatable, intent(inout) :: message
+    
+      if (.not. is_present) then
+        message = trim(message)//new_line("a")//"  "//name
+      end if
+    end subroutine check_required
+
   end subroutine parse_command_args
 
   ! ----- list version ----------------------------------------------------------------------
@@ -219,58 +240,44 @@ contains
   subroutine printCommandHelp()
     implicit none
     print "(A)", ""
+    print "(A)", "FUSE: Framework for Understanding Structural Errors"
+    print "(A)", ""
     print "(A)", "Usage:"
-    print "(A)", "  fuse.exe -d domain_id -c control_file -m {def|idx|opt|sce} [options]"
+    print "(A)", "  fuse.exe -d DOMAIN -c CONTROL -m MODE [options]"
     print "(A)", ""
-    
-    print "(A)", "Run modes:"
-    print "(A)", "  def : run with default parameter sets"
-    print "(A)", "  idx : run using a given index from a parameter sets file"
-    print "(A)", "  opt : run using best simulation from a parameter sets file"
-    print "(A)", "  sce : optimize (SCE)"
-    print "(A)", ""
-    
     print "(A)", "Required:"
-    print "(A)", "  -d, --domid        <string>   Domain ID"
-    print "(A)", "  -c, --control      <file>     Control file"
-    print "(A)", "  -m, --runmode      <mode>     def|idx|opt|sce"
+    print "(A)", "  -d, --domid <string>        Domain identifier"
+    print "(A)", "  -c, --control <file>        FUSE control file"
+    print "(A)", "  -m, --runmode <mode>        def | idx | opt | sce"
     print "(A)", ""
-    
+    print "(A)", "Run modes:"
+    print "(A)", "  def   Run with default parameters"
+    print "(A)", "  idx   Run parameter-set INDEX from --sets"
+    print "(A)", "  opt   Run best parameter set from --sets"
+    print "(A)", "  sce   Calibrate parameters using SCE"
+    print "(A)", ""
     print "(A)", "Conditional:"
-    print "(A)", "  -s, --sets         <file>   Parameter sets file (required for idx,opt)"
-    print "(A)", "  -i, --index        <int>    Index (required for idx)"
+    print "(A)", "  -s, --sets <file>           Parameter-set file (idx,opt)"
+    print "(A)", "  -i, --index <integer>       Parameter-set index (idx)"
     print "(A)", ""
-    
     print "(A)", "Optional:"
-    print "(A)", "  -r, --restart      <freq>   y|m|d|e|never"
-    print "(A)", "  -t, --tag          <string> Add tag to output filename"
-    print "(A)", "  -v, --version               Print version info and exit"
-    print "(A)", "  -h, --help                  Print this help and exit"
+    print "(A)", "  -p, --param NAME=VALUE      Override parameter (repeatable)"
+    print "(A)", "  -r, --restart <freq>        y | m | d | e | never"
+    print "(A)", "  -t, --tag <string>          Append tag to output files"
+    print "(A)", "  -v, --version               Print version and exit"
+    print "(A)", "  -h, --help                  Print this help message"
     print "(A)", ""
-    
+    print "(A)", "Restart frequencies:"
+    print "(A)", "  y=yearly  m=monthly  d=daily  e=every timestep"
+    print "(A)", ""
     print "(A)", "Examples:"
-    print "(A)", "  Default run (no parameter-set file):"
-    print "(A)", "  fuse.exe -d camels-12345 -c ./control/FUSE_control.txt -m def"
-    print "(A)", ""
-    
-    print "(A)", "  Default run and write restart file every day:"
-    print "(A)", "  fuse.exe -d camels-12345 -c ./control/FUSE_control.txt -m def -r d"
-    print "(A)", ""
-    
-    print "(A)", "  Run using parameter set index 17 from a sets file:"
-    print "(A)", "  fuse.exe -d camels-12345 -c ./control/FUSE_control.txt -m idx -s ./params/sets.nc -i 17"
-    print "(A)", ""
-    
-    print "(A)", "  Run using the best simulation from a sets file:"
-    print "(A)", "  fuse.exe -d camels-12345 -c ./control/FUSE_control.txt -m opt -s ./params/sets.nc"
-    print "(A)", ""
-    
-    print "(A)", "  Optimize using SCE:"
-    print "(A)", "  fuse.exe -d camels-12345 -c ./control/FUSE_control.txt -m sce"
-    print "(A)", ""
-    
-    print "(A)", "  Print version information:"
-    print "(A)", "  fuse.exe --version"
+    print "(A)", "  fuse.exe -d CAN_05BB001 -c control.txt -m def"
+    print "(A)", "  fuse.exe -d CAN_05BB001 -c control.txt -m idx \\"
+    print "(A)", "           -s params.nc -i 17"
+    print "(A)", "  fuse.exe -d CAN_05BB001 -c control.txt -m opt \\"
+    print "(A)", "           -s params.nc"
+    print "(A)", "  fuse.exe -d CAN_05BB001 -c control.txt -m def \\"
+    print "(A)", "           -p MAXWATR_1=1000 -p PERCRTE=0.25"
     print "(A)", ""
   end subroutine printCommandHelp
 

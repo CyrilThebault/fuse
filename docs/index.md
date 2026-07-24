@@ -1,18 +1,27 @@
 ## FUSE in a nutshell
 
-The Framework for Understanding Structural Errors or [FUSE](https://github.com/CH-Earth/fuse) is modular modelling framework (MMF) which enables the generation of a myriad of conceptual hydrological models by recombining elements from commonly-used models.
-
-FUSE was build from scratch to be modular, it offers several options for each important modelling decision and enables the addition of new modules. In contrast, most traditional hydrological models rely on a single model structure (most processes are simulated by a single set of equations). FUSE modularity makes it easier to i) understand differences between models, ii) run a large ensemble of models, iii) capture the spatial variability of hydrological processes and iv) develop and improve hydrological models in a coordinated fashion across the community.
+The Framework for Understanding Structural Errors or [FUSE](https://github.com/CH-Earth/fuse) is modular modelling framework which enables generating a myriad of conceptual hydrological models by recombining elements from commonly-used models. This modular architecture makes it possible to (i) systematically understand the effects of model structural choices, (ii) generate large ensembles of alternative model structures, and (iii) represent spatial variability by combining process representations appropriate for different landscapes.
 
 ## Description and credits
 
-FUSE initial implementation (FUSE1) is described in [Clark et al. (WRR, 2008)](http://dx.doi.org/10.1029/2007WR006735). The implementation documented here (which will become FUSE2) was created with users in mind and significantly increases the usability and range of applicability of the original version. In particular, it involves 5 main additional features:
+The original implementation of the Framework for Understanding Structural Errors (FUSE1) is described in
+[Clark et al. (2008)](https://doi.org/10.1029/2007WR006735). FUSE1 introduced a modular framework for constructing conceptual hydrologic models by recombining alternative representations of individual hydrologic processes. Subsequent developments extended the framework to support multiple numerical solution methods
+([Clark and Kavetski, 2010](https://doi.org/10.1029/2009WR008894);
+[Kavetski and Clark, 2010](https://doi.org/10.1029/2009WR008896))
+and an optional temperature-index snow model
+([Henn et al., 2015](https://doi.org/10.1002/2014WR016736)).
 
-1. an interface enabling the use of the different FUSE modes (default, calibration, regionalisation),
-2. a distributed mode enabling FUSE to run on a grid whilst efficiently managing memory,
-3. all the input, output and parameter files are now NetCDF files to improve reproducibility,
-4. a calibration mode based on the shuffled complex evolution algorithm [(Duan et al., WRR, 1992)](http://dx.doi.org/10.1029/91WR02985),
-5. a snow module described in [Henn et al. (WRR, 2015)](http://dx.doi.org/10.1002/2014WR016736).
+FUSE2 builds on these scientific foundations with a redesigned software architecture that supports reproducible workflows, scalable model execution, and differentiable hydrologic modeling.
+
+Major additions in FUSE2 include
+
+- an improved command-line interface supporting runtime configuration, parameter overrides, and multiple execution modes
+- structured configuration files based on TOML that simplify experiment specification and future software extensions
+- self-describing NetCDF-based input, output, and parameter files that facilitate visualization, analysis, and integration with external software
+- extension from lumped to spatially distributed model configurations
+- MPI-based parallel execution across large model domains
+- a differentiable physics architecture for gradient-based calibration and machine learning;
+- a modular software architecture that improves maintainability, extensibility, and reproducibility.
 
 ## License
 
