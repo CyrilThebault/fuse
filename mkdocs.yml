@@ -3,31 +3,39 @@ repo_url: https://github.com/CH-Earth/fuse
 site_url: https://ch-earth.github.io/fuse/
 edit_uri: edit/develop/docs/
 docs_dir: docs
+
 theme:
   name: readthedocs
   nav_style: dark
+
 nav:
   - Home: index.md
-  - Installation and test cases:
+
+  - Getting Started:
       - Installation: 'install/install_fuse.md'
-      - Test data: 'install/test_data.md'
-      - Test cases: 'install/test_cases.md'
-  - Execution:
-      - Overview: 'modes/overview.md'
-      - Arguments: 'modes/arguments.md'
-      - Model structure: 'modes/structure.md'
-      - Parameter modes: 'modes/execution_modes.md'
-      - Spatial modes: 'modes/spatial_modes.md'
-      - Numerical methods: 'modes/numerical_methods.md'
-  - Files:
-      - File manager: 'files/file_manager.md'
-      - Input files: 'files/input_files.md'
-      - Settings files: 'files/settings_files.md'
-      - Output files: 'files/output_files.md'
-  - Modules:
+      - Quick Start: 'install/test_cases.md'
+      - Preparing Input Data for FUSE: 'install/test_data.md'
+
+  - User Guide:
+      - Running FUSE:
+          - Overview: 'modes/overview.md'
+          - Command-line arguments: 'modes/arguments.md'
+          - Execution modes: 'modes/execution_modes.md'
+          - Spatial modes: 'modes/spatial_modes.md'
+          - Numerical methods: 'modes/numerical_methods.md'
+      - Model configuration:
+          - Model structure: 'modes/structure.md'
+      - Input and output:
+          - File manager: 'files/file_manager.md'
+          - Input files: 'files/input_files.md'
+          - Settings files: 'files/settings_files.md'
+          - Output files: 'files/output_files.md'
+
+  - Process modules:
       - Precipitation: 'modules/1_precip.md'
-  - Extras:
-      - MPI: 'extras/mpi.md'
-      - mizuRoute for FUSE: 'extras/mizuRoute.md'
-      - Tools for FUSE: 'extras/tofu.md'
+
+  - Advanced topics:
+      - MPI execution: 'extras/mpi.md'
+      - Coupling with mizuRoute: 'extras/mizuRoute.md'
+      - Tools for FUSE (TOFU): 'extras/tofu.md'
       - CAMELS for FUSE: 'extras/camels_for_fuse.md'
