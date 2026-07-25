@@ -1,30 +1,71 @@
-## Overview
+# Overview
 
-Running a hydrological model means making a wide range of decisions, which will influence the simulations in different ways and to different extents. Our goal with FUSE is enable users to be in charge of these decisions, so that they can understand their effects, and thereby, develop and use better models. The modelling decisions FUSE enables can be split in four main groups:
+FUSE (Framework for Understanding Structural Errors) is a flexible
+hydrologic modelling framework for constructing, calibrating, and
+evaluating conceptual rainfall–runoff models. Rather than providing a
+single fixed model, FUSE allows users to construct alternative model
+instantiations within a common software framework.
 
-**Model structure** FUSE is a master template for model generation. It enables users to create and run their own model structures by combining pre-existing modules - see the [Model structure section](../structure).
+A central concept in FUSE is that constructing a hydrologic model
+requires a series of subjective modelling decisions. These decisions
+include, for example, how to represent soil moisture storage, runoff
+generation, evaporation, routing, and snow processes. Rather than
+embedding these choices within a fixed model structure, FUSE represents
+each decision explicitly, allowing alternative model structures to be
+assembled by selecting among alternative process representations.
 
-**Parameter estimation** The parameters of any FUSE structure can be estimated in different ways. One can for instance decide to use default parameter values or to run a calibration algorithm - the different options are described in the [Parameter modes section](../execution_modes).
+The model structure is therefore defined independently of the model
+parameters and numerical solution methods. This separation makes it
+possible to investigate the influence of structural, parametric, and
+numerical choices on model behaviour within a consistent modelling
+framework.
 
-**Spatial configuration** Any FUSE model structure can be run either for individual catchments or on a grid - see the [Spatial modes section](../spatial_modes).
+A FUSE simulation is configured by defining five complementary aspects
+of the simulation:
 
-**Numerical scheme** The equation underpinning any FUSE model structure can be solved using a range of numerical methods - see the [Numerical methods section](../numerical_methods).
+**[Simulation setup](simulation_setup.md).** Define the simulation
+period, evaluation period, calibration options, objective function, the
+spatial configuration, and the locations of the input, output, and
+settings files. These settings are specified in the control file. The
+Bow River test case uses
 
-## FUSE execution
-
-Depending on the execution mode, FUSE requires 3-4 arguments to run:
-
+```text
+test/CAN_05BB001/settings/fuse_v2/fuse_control_CAN_05BB001.toml
 ```
-./fuse.exe file_manager.txt region_id parameter_mode parameter_file
+
+**[Spatial configuration](spatial_configuration.md).** Define whether
+the hydrologic model is applied to a single catchment or a gridded
+domain, together with the use of elevation bands to improve the
+representation of snow accumulation and melt. These settings are
+specified through entries in the toml control file.
+
+**[Hydrologic model definition](hydrologic_model.md).** Define the
+hydrologic model by specifying the model structure, parameter
+definitions, and numerical solution methods. These settings are
+specified through three settings files identified by entries in the
+control file.
+
+**[Input data files](../files/input_files.md).** Provide the meteorological forcing, catchment
+characteristics, observations, and other information required for a
+simulation. The Bow River test case stores these files in
+
+```text
+test/CAN_05BB001/input/
 ```
 
-  1. FUSE file manager, which sets the FUSE file system (see [here](../../files/file_manager)),
-  2. region ID, which will be use to load the forcing and to name the output files,
-  3. parameter estimation mode (see [here](../execution_modes)),
-  4. parameter file, only when using the `run_pre_catch` and `run_pre_grid` modes (see [here](../execution_modes)).
+**[Output files](../files/output_files.md).** FUSE simulations of streamflow, model
+state variables, fluxes, and diagnostic information are written during
+model execution. The output directory is specified by the `output_dir`
+entry in the control file.
 
-For example:
+The remainder of this User Guide describes each of these aspects of the
+simulation in detail.
 
-```
-./fuse.exe fm_catch.txt us_09066300 run_def
-```
+## Running FUSE
+
+FUSE is controlled through a command-line interface that supports
+multiple run modes for model evaluation and parameter calibration.
+
+For details of the command-line interface, required arguments, and
+example simulations, see
+**[Running simulations](../install/test_cases.md)**.

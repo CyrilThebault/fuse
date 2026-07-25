@@ -8,7 +8,7 @@ Most users do **not** need to run these scripts. The FUSE repository already
 includes the processed input files required to run the example application.
 These scripts are provided to ensure complete reproducibility and to
 facilitate preparation of FUSE applications for additional CAMELS-SPAT
-catchments. :contentReference[oaicite:0]{index=0}
+catchments.
 
 ## Workflows
 
@@ -22,35 +22,51 @@ The preprocessing scripts support two independent workflows:
 
 ## Hydrometeorological preprocessing
 
-The complete hydrometeorological preprocessing workflow is executed using
+Meteorological forcing and streamflow observations are prepared using the
+master preprocessing script
 
 ```bash
 ./prepare_fuse_input_data.sh \
-    forcing.nc \
-    streamflow.nc \
-    output.nc
+    $forcing_file \
+    $streamflow_file \
+    $output_file
 ```
 
-This driver script performs the following steps:
+where
 
-1. Standardize the time coordinates in the forcing and streamflow files.
-2. Remove unnecessary dimensions from forcing coordinate variables.
-3. Compute daily mean air temperature.
-4. Merge meteorological forcing and streamflow observations.
-5. Compute Oudin potential evapotranspiration.
-6. Add basin area and observed runoff depth.
-7. Simplify global metadata.
-8. Create a legacy-format FUSE input file. :contentReference[oaicite:1]{index=1}
+| Argument | Description |
+|----------|-------------|
+| `$forcing_file`    | NetCDF file containing the meteorological forcing variables. |
+| `$streamflow_file` | NetCDF file containing the observed streamflow time series for the catchment. |
+| `$output_file`     | Name of the output NetCDF file that will contain the processed FUSE input data. |
+
+This workflow
+
+- standardizes time-coordinate conventions;
+- simplifies forcing coordinate variables;
+- computes daily mean air temperature;
+- merges meteorological forcing with streamflow observations;
+- estimates potential evapotranspiration using the Oudin method;
+- adds basin area and runoff depth;
+- simplifies metadata; and
+- creates a legacy-format FUSE input file.
+
+For the Bow River test case, these shell variables can be defined as
+```bash
+forcing_file=test/CAN_05BB001/input/forcing/CAN_05BB001_daymet_lumped.nc
+streamflow_file=test/CAN_05BB001/input/q_obs/CAN_05BB001_daily_flow_observations.nc
+output_file=test/CAN_05BB001/input/CAN_05BB001_daymet_qobs_merged.nc
+```
 
 Intermediate files are written to a `work/` directory beneath the output
-directory and are retained to facilitate inspection and debugging. :contentReference[oaicite:2]{index=2}
+directory and are retained to facilitate inspection and debugging.
 
 ### `prepare_fuse_input_data.sh`
 
 Master preprocessing script that coordinates the complete workflow. It calls
 the individual preprocessing scripts in sequence and produces the final FUSE
 input file together with a legacy-format version compatible with older FUSE
-applications. :contentReference[oaicite:3]{index=3}
+applications.
 
 ### `standardize_time_coordinates.sh`
 
@@ -65,12 +81,12 @@ the interval bounds. Common processing routines are implemented in
 
 Simplifies CAMELS-SPAT forcing files by removing the unnecessary time
 dimension from the latitude, longitude, and HRU identifier variables while
-preserving their values. :contentReference[oaicite:5]{index=5}
+preserving their values.
 
 ### `compute_mean_temperature.sh`
 
 Computes daily mean air temperature from the daily minimum and maximum air
-temperature fields and adds the resulting variable to the forcing dataset. :contentReference[oaicite:6]{index=6}
+temperature fields and adds the resulting variable to the forcing dataset.
 
 ### `merge_netcdf_files.sh`
 
@@ -78,45 +94,71 @@ Creates a single FUSE input file by merging meteorological forcing with
 streamflow observations. The forcing record defines the master time axis,
 while streamflow observations are inserted over the period where the two
 datasets overlap. Missing values are assigned outside the observation
-period. :contentReference[oaicite:7]{index=7}
+period.
 
 ### `compute_oudin_pet.R`
 
 Computes daily potential evapotranspiration using the Oudin method
 (implemented in the `airGR` package) from daily mean air temperature and
 catchment latitude, and appends the resulting variable to the merged NetCDF
-file. :contentReference[oaicite:8]{index=8}
+file.
 
 ### `common_time_coordinates.sh`
 
 Provides shared routines used to standardize time coordinates across forcing,
 streamflow, and legacy FUSE datasets. This script is called internally by
-`standardize_time_coordinates.sh` and is not intended to be run directly. :contentReference[oaicite:9]{index=9}
+`standardize_time_coordinates.sh` and is not intended to be run directly.
 
 ## Geospatial preprocessing
 
-Distributed FUSE model configurations require a description of the
-catchment elevation bands. This workflow derives the required information
-from a digital elevation model (DEM) and a catchment boundary.
+Distributed FUSE model configurations require an elevation-band
+description derived from a digital elevation model (DEM) and a catchment
+boundary.
 
-The workflow is executed using
-
-```bash
-Rscript make_elev_bands.R \
-    dem.tif \
-    catchment.shp \
-    band_width_m \
-    elevation_bands.nc
-```
 
 ### `make_elev_bands.R`
 
 Creates an elevation-band description for distributed FUSE applications from
-a digital elevation model (DEM) and a catchment boundary. The script
+a digital elevation model (DEM) and a catchment boundary. The R script
 partitions the catchment into fixed-width elevation bands and computes the
 area fraction and mean elevation of each band. The resulting NetCDF file is
 used by FUSE to distribute meteorological forcing and model states across
-elevation bands. :contentReference[oaicite:10]{index=10}
+elevation bands.
+
+This preprocessing step is performed using
+
+```bash
+Rscript make_elev_bands.R \
+    $dem_file \
+    $catchment_file \
+    $band_width_m \
+    $output_file
+```
+
+where
+
+| Argument | Description |
+|----------|-------------|
+| `$dem_file` | Digital elevation model (DEM) covering the catchment. |
+| `$catchment_file` | Catchment boundary polygon (ESRI Shapefile). |
+| `$band_width_m` | Width of each elevation band, in metres. |
+| `$output_file` | Output NetCDF file containing the elevation-band description for FUSE. |
+
+This workflow
+
+- clips the DEM to the catchment boundary;
+- partitions the catchment into elevation bands;
+- computes the area and mean elevation of each band; and
+- writes the elevation-band description to a NetCDF file compatible with FUSE.
+
+For the Bow River test case, these shell variables can be defined as
+
+```bash
+dem_file=test/CAN_05BB001/input/geospatial/tif/CAN_05BB001_merit_hydro_elv.tif
+catchment_file=test/CAN_05BB001/input/geospatial/shp/CAN_05BB001_lumped.shp
+band_width_m=100
+output_file=test/CAN_05BB001/input/CAN_05BB001_elev_bands.nc
+```
 
 ## Software requirements
 
