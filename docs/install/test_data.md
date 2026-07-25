@@ -43,19 +43,18 @@ master preprocessing script
 
 ```bash
 ./prepare_fuse_input_data.sh \
-    forcing.nc \
-    streamflow.nc \
-    output.nc
+    $forcing_file \
+    $streamflow_file \
+    $output_file
 ```
 
 where
 
 | Argument | Description |
 |----------|-------------|
-| `forcing.nc` | NetCDF file containing the meteorological forcing variables. |
-| `streamflow.nc` | NetCDF file containing the observed streamflow time series for the catchment. |
-| `output.nc` | Name of the output NetCDF file that will contain the processed FUSE input data. |
-
+| `$forcing_file`    | NetCDF file containing the meteorological forcing variables. |
+| `$streamflow_file` | NetCDF file containing the observed streamflow time series for the catchment. |
+| `$output_file`     | Name of the output NetCDF file that will contain the processed FUSE input data. |
 
 This workflow
 
@@ -67,6 +66,13 @@ This workflow
 - adds basin area and runoff depth;
 - simplifies metadata; and
 - creates a legacy-format FUSE input file.
+
+For the Bow River test case, these shell variables can be defined as
+```bash
+forcing_file=test/CAN_05BB001/input/forcing/CAN_05BB001_daymet_lumped.nc
+streamflow_file=test/CAN_05BB001/input/q_obs/CAN_05BB001_daily_flow_observations.nc
+output_file=test/CAN_05BB001/input/CAN_05BB001_daymet_qobs_merged.nc
+```
 
 Intermediate files are written to a `work/` directory beneath the output
 directory to facilitate inspection and debugging.
@@ -82,20 +88,36 @@ boundary. This preprocessing step is performed using
 
 ```bash
 Rscript make_elev_bands.R \
-    dem.tif \
-    catchment.shp \
-    band_width_m \
-    elevation_bands.nc
+    $dem_file \
+    $catchment_file \
+    $band_width_m \
+    $output_file
 ```
 
 where
 
 | Argument | Description |
 |----------|-------------|
-| `dem.tif` | Digital elevation model (DEM) covering the catchment. |
-| `catchment.shp` | Catchment boundary polygon (ESRI Shapefile). |
-| `band_width_m` | Width of each elevation band, in metres. |
-| `elevation_bands.nc` | Output NetCDF file containing the elevation-band description for FUSE. |
+| `$dem_file` | Digital elevation model (DEM) covering the catchment. |
+| `$catchment_file` | Catchment boundary polygon (ESRI Shapefile). |
+| `$band_width_m` | Width of each elevation band, in metres. |
+| `$output_file` | Output NetCDF file containing the elevation-band description for FUSE. |
 
-Additional information on this workflow is provided in
+This workflow
+
+- clips the DEM to the catchment boundary;
+- partitions the catchment into elevation bands;
+- computes the area and mean elevation of each band; and
+- writes the elevation-band description to a NetCDF file compatible with FUSE.
+
+For the Bow River test case, these shell variables can be defined as
+
+```bash
+dem_file=test/CAN_05BB001/input/geospatial/tif/CAN_05BB001_merit_hydro_elv.tif
+catchment_file=test/CAN_05BB001/input/geospatial/shp/CAN_05BB001_lumped.shp
+band_width_m=100
+output_file=test/CAN_05BB001/input/CAN_05BB001_elev_bands.nc
+```
+
+Detailed descriptions of the preprocessing workflow are provided in
 `scripts/README.md`.

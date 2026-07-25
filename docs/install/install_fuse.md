@@ -5,15 +5,41 @@ of modern Fortran compilers.
 
 ## Download FUSE
 
-The source code is available from
+Clone the repository and initialize the required Git submodules:
 
-https://github.com/CH-EARTH/fuse
+```bash
+git clone https://github.com/CH-Earth/fuse.git
+cd fuse
+git submodule update --init --recursive
+```
 
-There are several ways to obtain FUSE:
+The default branch is suitable for most users. If you wish to work with a
+different development branch, switch branches after cloning. For example,
 
-- download the latest stable release from the **Releases** page;
-- clone the `develop` branch to obtain the latest development version; or
-- fork the repository if you plan to contribute to FUSE development.
+```bash
+git checkout develop
+```
+
+or
+
+```bash
+git checkout staging
+```
+
+where
+
+- **develop** contains the latest development version and is the primary
+  branch for ongoing development; and
+- **staging** contains code that is being prepared for the next release.
+
+Alternatively, you may download the latest stable release from the
+**Releases** page if you do not require the development version.
+
+## Build dependencies
+
+Before compiling FUSE, ensure the required compiler, libraries, and
+build tools are installed. The required software is described in
+**[Build dependencies](build_dependencies.md)**.
 
 ## Compile FUSE
 
@@ -21,7 +47,7 @@ From the top-level FUSE directory, run
 
 ```bash
 cd build
-make
+make all
 ```
 
 If compilation completes successfully, the executable will be written to
@@ -31,7 +57,7 @@ bin/fuse.exe
 ```
 
 If the build fails because required libraries or tools cannot be found, see
-**Build dependencies** below.
+**[Build dependencies](build_dependencies.md)**.
 
 ## Verify the installation
 
@@ -60,7 +86,7 @@ lumped FUSE simulation for the Bow River above Banff, Alberta, Canada. This exam
 provides a simple way to verify that FUSE has been installed correctly and that
 the complete modeling workflow functions as expected.
 
-The next section of this documentation, **[Quick Start](quick-start/)**,
+The next section of this documentation, **[Running simulations](test_cases.md/)**,
 provides a step-by-step guide for running the Bow River example and
 interpreting the model output.
 
@@ -69,48 +95,3 @@ configurations, are described in later sections of this documentation.
 
 Once the Bow River example runs successfully, your FUSE installation is ready
 for use.
-
----
-
-# Build dependencies
-
-If FUSE does not compile successfully, ensure the required compiler, libraries,
-and build tools are installed.
-
-## GNU Fortran
-
-FUSE has been successfully compiled using
-
-- GNU Fortran (`gfortran`, version 6 or later)
-- Intel Fortran (`ifort`)
-
-Other modern Fortran compilers should also work.
-
-On macOS, install the GNU Compiler Collection (GCC), which includes
-`gfortran`:
-
-```bash
-brew install gcc
-```
-
-## Required libraries and build tools
-
-FUSE requires
-
-- CMake (used to build the bundled `toml-f` library);
-- the NetCDF-C and NetCDF-Fortran libraries;
-- `pkg-config` (used to locate installed libraries during compilation).
-
-On macOS, these can be installed with Homebrew:
-
-```bash
-brew install cmake
-brew install netcdf
-brew install netcdf-fortran
-brew install pkg-config
-```
-
-Homebrew automatically installs HDF5 as a dependency of NetCDF.
-
-The `toml-f` library is included with the FUSE source code and is built
-automatically during compilation.
