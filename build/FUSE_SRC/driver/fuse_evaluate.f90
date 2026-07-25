@@ -86,7 +86,7 @@ MODULE fuse_evaluate_module
       CALL MEAN_STATS()
       METRIC_VAL = MSTATS%METRIC_VAL
 
-      write(*,'(i6,1x,a6,1x,f12.6,1x,a20,1x,f12.6)') nFUSE_eval, "NSE = ", MSTATS%NASH_SUTT, "; TIME ELAPSED = ", t2-t1
+      write(*,'(i6,1x,a11,1x,f12.6,1x,a20,1x,f12.6)') nFUSE_eval, "OBJ FUNC = ", METRIC_VAL, "; TIME ELAPSED = ", t2-t1
       !if(nFUSE_eval > 10) stop "checking results"
 
     endif ! if catchment mode (lumped or distributed)
