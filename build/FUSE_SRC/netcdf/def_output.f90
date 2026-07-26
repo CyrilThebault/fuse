@@ -57,19 +57,21 @@ contains
     ierr = nf90_def_dim(ncid_out, "x", nSpat1, dim_x);               call handle_err(ierr)
     ierr = nf90_def_dim(ncid_out, "y", nSpat2, dim_y);               call handle_err(ierr)
 
-    dimids_3    = (/ dim_y, dim_y, dim_time /)
-    dimids_band = (/ dim_y, dim_y, dim_band, dim_time /)
-    dimids_par  = (/ dim_y, dim_y, dim_par,  dim_time /)
+    dimids_3    = (/ dim_x, dim_y, dim_time /)
+    dimids_band = (/ dim_x, dim_y, dim_band, dim_time /)
+    dimids_par  = (/ dim_x, dim_y, dim_par,  dim_time /)
 
     ! Time-varying output vars
     do ivar = 1, NOUTVAR
 
-      if (Q_ONLY) then
-        write_var = .false.
-        if (trim(VNAME(ivar)) == "q_instnt") write_var = .true.
-        if (trim(VNAME(ivar)) == "q_routed") write_var = .true.
-        if (.not. write_var) cycle
+      if (q_only) then
+        select case (trim(vname(ivar)))
+          case ('q_instnt', 'q_routed');  write_var = .true.
+          case default;                   write_var = .false.
+        end select
       end if
+      
+      if (.not. write_var) cycle
 
       if (isBand(ivar)) then
         ierr = nf90_def_var(ncid_out, trim(VNAME(ivar)), NF90_FLOAT, dimids_band, varid)

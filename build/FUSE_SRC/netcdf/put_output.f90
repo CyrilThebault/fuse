@@ -91,11 +91,13 @@ contains
 
     ! optional "Q_ONLY" filter
     if (q_only) then
-      write_var = .false.
-      if (trim(vname(ivar)) == 'q_instnt') write_var = .true.
-      if (trim(vname(ivar)) == 'q_routed') write_var = .true.
-      if (.not. write_var) cycle
+      select case (trim(vname(ivar)))
+        case ('q_instnt', 'q_routed');  write_var = .true.
+        case default;                   write_var = .false.
+      end select
     end if
+
+    if (.not. write_var) cycle
 
     ! get var id
     ierr = nf90_inq_varid(ncid_out, trim(vname(ivar)), ivar_id)

@@ -30,8 +30,12 @@ INTEGER(I4B)                           :: JTIM        ! (loop through future tim
 REAL(SP), PARAMETER                    :: SNEG=-1.e-5 ! small negative number, used for checking
 LOGICAL, PARAMETER                     :: USE_NTDH_NEED=.TRUE. ! flag to use NTDH_NEED to reduce array operations (loop length)
 ! ---------------------------------------------------------------------------------------
-! compute total runoff (sum of surface runoff, overflow, interflow, and baseflow
-MROUTE%Q_INSTNT = W_FLUX%QSURF + W_FLUX%OFLOW_1 + W_FLUX%QINTF_1 + W_FLUX%OFLOW_2 + W_FLUX%QBASE_2
+! compute total runoff (sum of surface runoff, overflow, interflow, and baseflow)
+MROUTE%Q_INSTNT = ( W_FLUX%QSURF   + &
+                    W_FLUX%OFLOW_1 + &
+                    W_FLUX%QINTF_1 + &
+                    W_FLUX%OFLOW_2 + &
+                    W_FLUX%QBASE_2 )
 
 if (W_FLUX%QSURF.lt.SNEG .or. W_FLUX%OFLOW_1.lt.SNEG .or. W_FLUX%QINTF_1.lt.SNEG .or. &
     W_FLUX%OFLOW_2.lt.SNEG .or. W_FLUX%QBASE_2.lt.SNEG) THEN
