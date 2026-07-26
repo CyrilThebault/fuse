@@ -18,7 +18,7 @@ snow modelling decision (Decision 9) described by
 The Bow River test case uses the decision file
 
 ```text
-test/CAN_05BB001/settings/fuse_v2/fuse_zDecisions_2.txt
+test/CAN_05BB001/lumped/settings/fuse_v2/fuse_zDecisions_2.txt
 ```
 
 The decision file begins by specifying one selected process

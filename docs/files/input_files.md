@@ -9,7 +9,7 @@ For the Bow River test case, the control file specifies
 
 ```toml
 [filepaths]
-input_dir = "test/CAN_05BB001/input/"
+input_dir = "test/CAN_05BB001/lumped/input/"
 ```
 
 The input directory contains the following files.
@@ -31,7 +31,7 @@ forcing_suffix = "_daymet_qobs_merged_legacy.nc"
 which identifies the input file
 
 ```text
-test/CAN_05BB001/input/CAN_05BB001_daymet_qobs_merged_legacy.nc
+test/CAN_05BB001/lumped/input/CAN_05BB001_daymet_qobs_merged_legacy.nc
 ```
 
 The input file is stored in NetCDF format and contains the
@@ -81,7 +81,7 @@ elevbands_suffix = "_elev_bands.nc"
 which identifies the elevation-band file
 
 ```text
-test/CAN_05BB001/input/CAN_05BB001_elev_bands.nc
+test/CAN_05BB001/lumped/input/CAN_05BB001_elev_bands.nc
 ```
 
 The elevation-band file is stored in NetCDF format and is required when

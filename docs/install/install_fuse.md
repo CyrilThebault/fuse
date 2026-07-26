@@ -81,8 +81,8 @@ which lists all execution modes, required arguments, and optional settings.
 
 ## Run the example application
 
-The `test/` directory contains a single example application that demonstrates a
-lumped FUSE simulation for the Bow River above Banff, Alberta, Canada. This example
+The `test/CAN_05BB001/` directory contains examples that demonstrate
+FUSE simulations for the Bow River above Banff, Alberta, Canada. These examples
 provides a simple way to verify that FUSE has been installed correctly and that
 the complete modeling workflow functions as expected.
 

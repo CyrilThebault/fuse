@@ -1,9 +1,9 @@
 # FUSE control file for CAN_05BB001
 
 [filepaths]
-settings_dir = "test/CAN_05BB001/settings/fuse_v2/"
-input_dir    = "test/CAN_05BB001/input/"
-output_dir   = "test/CAN_05BB001/output/"
+settings_dir = "test/CAN_05BB001/lumped/settings/fuse_v2/"
+input_dir    = "test/CAN_05BB001/lumped/input/"
+output_dir   = "test/CAN_05BB001/lumped/work/"
 
 [input]
 forcing_suffix   = "_daymet_qobs_merged_legacy.nc"
@@ -27,7 +27,7 @@ qobs   = "runoff_obs"
 
 [output]
 model_id = "2"
-q_only   = false
+q_only   = true
 
 [run_periods]
 date_start_sim  = "1987-01-02"

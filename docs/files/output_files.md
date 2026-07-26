@@ -7,7 +7,7 @@ For the Bow River test case, the control file specifies
 
 ```toml
 [filepaths]
-output_dir = "test/CAN_05BB001/output/"
+output_dir = "test/CAN_05BB001/lumped/output/"
 ```
 
 The output directory contains the following files.

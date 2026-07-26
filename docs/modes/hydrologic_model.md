@@ -20,7 +20,7 @@ Example settings files are provided with the Bow River test case included
 in the FUSE repository. Specifically, the settings directory
 
 ```text
-test/CAN_05BB001/settings/fuse_v2/
+test/CAN_05BB001/lumped/settings/fuse_v2/
 ```
 
 contains the following files:

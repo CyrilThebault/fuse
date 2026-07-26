@@ -28,7 +28,7 @@ debug <- FALSE
 
 if (debug) {
 
-    nc_file <- "../CAN_05BB001/input/CAN_05BB001_daymet_qobs_merged.nc"
+    nc_file <- "../CAN_05BB001/lumped/input/CAN_05BB001_daymet_qobs_merged.nc"
 
 } else {
 
