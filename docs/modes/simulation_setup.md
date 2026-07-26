@@ -11,7 +11,7 @@ primary entry point for a FUSE simulation. An example control file is
 provided with the Bow River test case:
 
 ```text
-test/CAN_05BB001/control_active.txt
+test/CAN_05BB001/lumped/settings/fuse_v2/fuse_control_CAN_05BB001.toml
 ```
 
 The control file is organized into several sections, each defining a

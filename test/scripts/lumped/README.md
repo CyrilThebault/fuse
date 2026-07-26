@@ -53,9 +53,9 @@ This workflow
 
 For the Bow River test case, these shell variables can be defined as
 ```bash
-forcing_file=test/CAN_05BB001/input/forcing/CAN_05BB001_daymet_lumped.nc
-streamflow_file=test/CAN_05BB001/input/q_obs/CAN_05BB001_daily_flow_observations.nc
-output_file=test/CAN_05BB001/input/CAN_05BB001_daymet_qobs_merged.nc
+forcing_file=test/CAN_05BB001/lumped/input/forcing/CAN_05BB001_daymet_lumped.nc
+streamflow_file=test/CAN_05BB001/lumped/input/q_obs/CAN_05BB001_daily_flow_observations.nc
+output_file=test/CAN_05BB001/lumped/input/CAN_05BB001_daymet_qobs_merged.nc
 ```
 
 Intermediate files are written to a `work/` directory beneath the output
@@ -154,10 +154,10 @@ This workflow
 For the Bow River test case, these shell variables can be defined as
 
 ```bash
-dem_file=test/CAN_05BB001/input/geospatial/tif/CAN_05BB001_merit_hydro_elv.tif
-catchment_file=test/CAN_05BB001/input/geospatial/shp/CAN_05BB001_lumped.shp
+dem_file=test/CAN_05BB001/lumped/input/geospatial/tif/CAN_05BB001_merit_hydro_elv.tif
+catchment_file=test/CAN_05BB001/lumped/input/geospatial/shp/CAN_05BB001_lumped.shp
 band_width_m=100
-output_file=test/CAN_05BB001/input/CAN_05BB001_elev_bands.nc
+output_file=test/CAN_05BB001/lumped/input/CAN_05BB001_elev_bands.nc
 ```
 
 ## Software requirements

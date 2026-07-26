@@ -15,6 +15,7 @@ build/generated/fuseversion.inc
 
 # Intermediate processing files
 work/
+*_temp/
 
 # any 'junk' files or directories
 *junk*/

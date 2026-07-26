@@ -16,7 +16,7 @@ The parameter definitions correspond to those described by
 The Bow River test case uses the parameter constraints file
 
 ```text
-test/CAN_05BB001/settings/fuse_v2/fuse_zConstraints_snow.txt
+test/CAN_05BB001/lumped/settings/fuse_v2/fuse_zConstraints_snow.txt
 ```
 
 Each entry in the parameter constraints file specifies

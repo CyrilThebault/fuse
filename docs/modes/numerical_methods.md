@@ -12,7 +12,7 @@ which is identified by the `numerics_file` entry in the control file.
 The Bow River test case uses the numerics file
 
 ```text
-test/CAN_05BB001/settings/fuse_v2/fuse_zNumerix.txt
+test/CAN_05BB001/lumped/settings/fuse_v2/fuse_zNumerix.txt
 ```
 
 The numerical methods implemented in FUSE were developed and evaluated

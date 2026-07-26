@@ -30,7 +30,7 @@ settings files. These settings are specified in the control file. The
 Bow River test case uses
 
 ```text
-test/CAN_05BB001/settings/fuse_v2/fuse_control_CAN_05BB001.toml
+test/CAN_05BB001/lumped/settings/fuse_v2/fuse_control_CAN_05BB001.toml
 ```
 
 **[Spatial configuration](spatial_configuration.md).** Define whether
@@ -50,7 +50,7 @@ characteristics, observations, and other information required for a
 simulation. The Bow River test case stores these files in
 
 ```text
-test/CAN_05BB001/input/
+test/CAN_05BB001/lumped/input/
 ```
 
 **[Output files](../files/output_files.md).** FUSE simulations of streamflow, model

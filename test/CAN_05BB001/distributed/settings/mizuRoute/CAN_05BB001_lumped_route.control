@@ -1,0 +1,82 @@
+! *************************************************************************************************************************
+! ***** DEFINITION OF MODEL CONTROL INFORMATION ***************************************************************************
+! *************************************************************************************************************************
+! Note: Lines starting with "!" are treated as comment lines and ignored.
+!       Lines starting with <xxx> are read until the first "!" character.
+!       Every control-value line must contain "!" after the value.
+!       Do not include empty lines because they can cause runtime errors.
+! *************************************************************************************************************************
+! DEFINE DIRECTORIES
+! ------------------
+<ancil_dir>             test/CAN_05BB001/distributed/input/          ! directory containing the hydrofabric, remapping file, and parameter namelist
+<input_dir>             test/CAN_05BB001/                            ! directory containing the lumped FUSE runoff NetCDF file
+<output_dir>            test/CAN_05BB001/distributed/work/           ! directory where mizuRoute output files are written
+! *************************************************************************************************************************
+! DEFINE SIMULATION CONTROLS
+! --------------------------
+<case_name>             CAN_05BB001_lumped_route                     ! simulation name used to construct output NetCDF filenames
+<sim_start>             1989-01-01 12:00:00                          ! first runoff timestamp in the FUSE runoff file
+<sim_end>               1999-12-30 12:00:00                          ! last runoff timestamp in the FUSE runoff file
+<dt_qsim>               3600                                         ! mizuRoute simulation time interval [s]
+<newFileFrequency>      single                                       ! output-file frequency: daily, monthly, yearly, or single
+<outputFrequency>       daily                                        ! temporal aggregation frequency for output variables
+<histTimeStamp_offset>  0                                            ! offset applied to output timestamps [s]
+! *************************************************************************************************************************
+! DEFINE ROUTING OPTIONS
+! ----------------------
+<route_opt>             2                                            ! routing schemes: 0=SUM, 1=IRF, 2=KWT, 3=KW, 4=MC, 5=DW
+<doesBasinRoute>        0                                            ! basin routing: 0=no basin UH, 1=apply basin UH
+! *************************************************************************************************************************
+! DEFINE RIVER NETWORK FILE
+! -------------------------
+! The compact hydrofabric contains the river topology, reach properties, and routing-HRU areas.
+! Dimensions are seg for river segments and hru for routing HRUs.
+! Variables are segId, NextDownID, hruId, length [m], slope [m/m], and area [m2].
+<fname_ntopOld>         hydrofabric_mizuRoute.nc                     ! NetCDF file containing the compact mizuRoute hydrofabric
+<dname_sseg>            seg                                          ! name of the river-segment dimension
+<dname_nhru>            hru                                          ! name of the routing-HRU dimension
+<varname_segId>         segId                                        ! variable containing river-segment identifiers
+<varname_downSegId>     NextDownID                                   ! variable containing downstream river-segment identifiers
+<varname_hruSegId>      hruId                                        ! variable linking each routing HRU to a river segment
+<varname_HRUid>         hruId                                        ! variable containing routing-HRU identifiers
+<varname_length>        length                                       ! variable containing river-reach lengths [m]
+<varname_slope>         slope                                        ! variable containing river-reach slopes [m/m]
+<varname_area>          area                                         ! variable containing routing-HRU areas [m2]
+! *************************************************************************************************************************
+! DEFINE RUNOFF FILE
+! ------------------
+! FUSE writes one basin-average q_routed value for each day on a 1-by-1 spatial grid.
+! The runoff values have units of mm/day and are timestamped at 12:00 in the middle of each day.
+! mizuRoute applies the runoff depth to every routing HRU using the runoff-remapping file.
+<fname_qsim>            lumped/work/CAN_05BB001_2__runs_opt.nc       ! NetCDF file containing the lumped FUSE runoff
+<vname_qsim>            q_routed                                     ! variable containing routed runoff
+<vname_time>            time                                         ! variable containing runoff timestamps
+<dname_time>            time                                         ! name of the runoff time dimension
+<dname_xlon>            x                                            ! name of the runoff-grid x dimension
+<dname_ylat>            y                                            ! name of the runoff-grid y dimension
+<units_qsim>            mm/day                                       ! units of the runoff variable
+<dt_ro>                 86400                                        ! time interval between runoff records [s]
+<ro_calendar>           standard                                     ! calendar used by the runoff time coordinate
+<ro_time_units>         days since 1950-01-01 00:00:00               ! units of the runoff time coordinate
+<ro_time_stamp>         middle                                       ! runoff timestamps represent the middle of each daily interval
+! *************************************************************************************************************************
+! DEFINE RUNOFF MAPPING FILE
+! --------------------------
+! The mapping file assigns the single runoff-grid cell at index (1,1) to every routing HRU.
+! The polyid dimension contains one entry per routing HRU.
+! The data dimension contains one entry per runoff-cell-to-HRU overlap.
+! Because every routing HRU has one overlap, size(data) equals the number of routing HRUs.
+<is_remap>              T                                            ! logical indicating that runoff must be mapped to routing HRUs
+<fname_remap>           lumped_to_hru.nc                             ! NetCDF file containing the lumped-to-HRU runoff mapping
+<vname_hruid_in_remap>  polyid                                       ! variable containing routing-HRU identifiers
+<vname_num_qhru>        nOverlaps                                    ! variable containing the number of runoff-cell overlaps per HRU
+<vname_weight>          weight                                       ! variable containing runoff-remapping weights
+<vname_i_index>         i_index                                      ! variable containing runoff-grid x indices
+<vname_j_index>         j_index                                      ! variable containing runoff-grid y indices
+<dname_hru_remap>       polyid                                       ! name of the routing-HRU dimension in the remapping file
+<dname_data_remap>      data                                         ! name of the overlap-data dimension in the remapping file
+! *************************************************************************************************************************
+! DEFINE ROUTING PARAMETER NAMELIST
+! ---------------------------------
+<param_nml>             distributed/settings/mizuRoute/param.nml.default  ! namelist containing spatially constant routing parameters
+! *************************************************************************************************************************

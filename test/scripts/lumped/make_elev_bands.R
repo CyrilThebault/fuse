@@ -35,10 +35,10 @@ debug <- TRUE
 
 if (debug) {
 
-  dem_file    <- "../CAN_05BB001/input/geospatial/tif/CAN_05BB001_merit_hydro_elv.tif"
-  basin_file  <- "../CAN_05BB001/input/geospatial/shp/CAN_05BB001_lumped.shp"
+  dem_file    <- "../CAN_05BB001/lumped/input/geospatial/tif/CAN_05BB001_merit_hydro_elv.tif"
+  basin_file  <- "../CAN_05BB001/lumped/input/geospatial/shp/CAN_05BB001_lumped.shp"
   band_width  <- 100
-  output_file <- "../CAN_05BB001/input/CAN_05BB001_elev_bands.nc"
+  output_file <- "../CAN_05BB001/lumped/input/CAN_05BB001_elev_bands.nc"
 
 } else {
 

@@ -35,7 +35,7 @@
 
 set -euo pipefail
 
-METADATA_FILE="../metadata/camels-spat-metadata.csv"
+METADATA_FILE="test/metadata/camels-spat-metadata.csv"
 
 # ------------------------------------------------------------------------------
 # Check command-line arguments
@@ -216,12 +216,14 @@ echo
 
 echo "Step 6: Add runoff and basin area variables"
 
+# get columns
 id_col=$(head -1 ${METADATA_FILE} | tr ',' '\n' | grep -nx Station_id | cut -d: -f1)
 area_col=$(head -1 ${METADATA_FILE} | tr ',' '\n' | grep -nx Basin_area_km2 | cut -d: -f1)
 echo id column: $id_col
 echo area column: $area_col
 
-station_id=$(basename "$(dirname "${INPUT_DIR}")")
+# station id is the dirname up two directories
+station_id=$(basename "$(dirname "$(dirname "$INPUT_DIR")")")
 station_id=${station_id#*_} # remove XXX_ (USA_, CAN_)
 echo station id: $station_id
 
@@ -280,7 +282,6 @@ ncatted -O -h \
     -a forcing_source,global,o,c,"Daymet meteorological forcing distributed through CAMELS-SPAT" \
     -a streamflow_source,global,o,c,"Water Survey of Canada streamflow observations distributed through CAMELS-SPAT" \
     -a references,global,o,c,"CAMELS-SPAT dataset: doi:10.20383/103.01306; Knoben et al. (2025): doi:10.5194/hess-29-5791-2025" \
-    -a processing,global,o,c,"Time coordinates standardized; coordinate variables corrected; daily mean air temperature calculated from minimum and maximum temperature; meteorological forcing merged with streamflow observations." \
     -a history,global,o,c,"${creation_date}: Created by prepare_fuse_input_data.sh" \
     "${MERGED_FILE}"
 
@@ -314,6 +315,9 @@ ncap2 -O -h -s "
     latitude[latitude]=${lat};
     longitude[longitude]=${lon};
 " "${LEGACY_FILE}" "${LEGACY_FILE}"
+
+# Copy the basin area (and all its attributes)
+ncks -A -h -v basin_area "${MERGED_FILE}" "${LEGACY_FILE}"
 
 echo
 
