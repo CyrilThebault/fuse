@@ -12,12 +12,12 @@ contains
   SUBROUTINE DEF_OUTPUT(coords,nSpat1,nSpat2,n_bands,NUMPAR)
 
     USE metaoutput, only: VARDESCRIBE
-    USE globaldata, only: FUSE_VERSION, FUSE_BUILDTIME, FUSE_GITBRANCH, FUSE_GITHASH
+    USE fuse_globaldata, only: FUSE_VERSION, FUSE_BUILDTIME, FUSE_GITBRANCH, FUSE_GITHASH
     USE metaoutput, only: NOUTVAR, VNAME, LNAME, VUNIT, isBand, isFlux
     USE model_defn, only: FNAME_NETCDF_RUNS
     USE fuse_fileManager, only: Q_ONLY
     USE multiforce, only: timeUnits
-    USE globaldata, only: ncid_out
+    USE fuse_globaldata, only: ncid_out
 
     implicit none
 

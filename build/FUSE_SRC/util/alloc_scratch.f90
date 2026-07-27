@@ -13,7 +13,7 @@ CONTAINS
 
   subroutine init_fuse_work(info, work, ierr, message)
 
-    use globaldata, only: NPAR_SNOW
+    use fuse_globaldata, only: NPAR_SNOW
     implicit none
 
     type(fuse_info),   intent(in)    :: info

@@ -11,7 +11,7 @@ module implicit_solve_module
  ! global data
  use model_defn, only: nState            ! number of state variables
  use multiforce, only: dt => deltim      ! time step
- use globaldata, only: isDebug           ! print flag
+ use fuse_globaldata, only: isDebug           ! print flag
 
  use model_numerix, only: NUM_FUNCS      ! number of function calls
  use model_numerix, only: NUM_JACOBIAN   ! number of times Jacobian is calculated

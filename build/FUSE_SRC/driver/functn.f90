@@ -14,7 +14,7 @@ USE sce_callback_context, only: ctx                   ! access FUSE data structu
 USE fuse_evaluate_module, only: fuse_evaluate         ! run model and compute the metric chosen as objective function
 USE multiforce, only: ncid_forc                       ! NetCDF forcing file ID
 USE fuse_fileManager,only:METRIC, TRANSFO             ! metric and transformation requested in the filemanager
-USE globaldata, only: nFUSE_eval                      ! # fuse evaluations
+USE fuse_globaldata, only: nFUSE_eval                      ! # fuse evaluations
 
 IMPLICIT NONE
 ! input

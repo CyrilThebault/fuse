@@ -24,7 +24,7 @@ MODULE PAREXTRACT_MODULE
   ! Extracts parameter from data structures
   ! ---------------------------------------------------------------------------------------
   USE model_numerix                                     ! model numerix parameters
-  USE globaldata, only: NA_VALUE_SP                     ! missing value
+  USE fuse_globaldata, only: NA_VALUE_SP                     ! missing value
   USE multiparam, only: MPARAM, DPARAM, SOBOL_INDX      ! model parameters
   USE multibands, only: Z_FORCING                       ! scalar variables from elevation bands
   IMPLICIT NONE

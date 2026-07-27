@@ -223,8 +223,8 @@ contains
   subroutine printVersionInfo()
     ! Assumes these are available, e.g. from:
     !   include "fuseversion.inc"
-    ! somewhere in a used module (e.g., globaldata) OR add that include here.
-    use globaldata, only: FUSE_VERSION, FUSE_BUILDTIME, FUSE_GITBRANCH, FUSE_GITHASH
+    ! somewhere in a used module (e.g., fuse_globaldata) OR add that include here.
+    use fuse_globaldata, only: FUSE_VERSION, FUSE_BUILDTIME, FUSE_GITBRANCH, FUSE_GITHASH
     implicit none
     print '(A)', repeat('-', 70)
     print '(A)', 'FUSE'

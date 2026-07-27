@@ -20,8 +20,8 @@ USE data_types, only: domain_data                         ! domain data
 USE multistats, only: PCOUNT                              ! counter 
 
 ! data
-USE globaldata, only: isPrint
-USE globaldata, only: ncid_out
+USE fuse_globaldata, only: isPrint
+USE fuse_globaldata, only: ncid_out
 USE multiparam, only: NUMPAR
 USE multiforce, only: NUMPSET
 USE multiforce, only: SUB_PERIODS_FLAG

@@ -22,7 +22,7 @@ contains
 
   subroutine read_elevbands(info, domain, ierr, message)
 
-    use globaldata,   only: NA_VALUE_SP
+    use fuse_globaldata,   only: NA_VALUE_SP
 
     implicit none
 

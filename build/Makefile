@@ -174,7 +174,7 @@ FUSE_NRUTIL += nr.f90 nrutil.f90
 NRUTIL = $(patsubst %, $(NUMREC_DIR)/%, $(FUSE_NRUTIL))
 
 # Global data (needs to be defined before model_defn)
-G_DATA = $(SHARE_DIR)/globaldata.f90
+G_DATA = $(SHARE_DIR)/fuse_globaldata.f90
 
 # Model definition
 FUSE_MODDEF =

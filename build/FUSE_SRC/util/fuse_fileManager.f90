@@ -8,8 +8,8 @@ MODULE fuse_filemanager
   use info_types, only: cli_options
   use info_types, only: fuse_info
 
-  use globaldata, only: NVAR_FORC
-  use globaldata, only: iPRECIP, iTEMP, iPET, iQOBS
+  use fuse_globaldata, only: NVAR_FORC
+  use fuse_globaldata, only: iPRECIP, iTEMP, iPET, iQOBS
 
   implicit none
   private

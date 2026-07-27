@@ -32,8 +32,8 @@ MODULE DEF_PARAMS_MODULE
   USE model_defn, only: FNAME_NETCDF_PARA               ! model definition (includes filename)
   USE multistats, ONLY: MSTATS                          ! model statistics structure
   USE multibands, ONLY: N_BANDS                         ! number of elevation bands
-  USE globaldata, only: ncid_out                        ! NetCDF output file ID
-  USE globaldata, only: FUSE_VERSION, FUSE_BUILDTIME, FUSE_GITBRANCH, FUSE_GITHASH
+  USE fuse_globaldata, only: ncid_out                        ! NetCDF output file ID
+  USE fuse_globaldata, only: FUSE_VERSION, FUSE_BUILDTIME, FUSE_GITBRANCH, FUSE_GITHASH
 
   IMPLICIT NONE
   

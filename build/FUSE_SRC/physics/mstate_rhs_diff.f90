@@ -1,6 +1,6 @@
 module MSTATE_RHS_DIFF_module
 
-  use globaldata, only: isDebug   ! print flag
+  use fuse_globaldata, only: isDebug   ! print flag
 
   implicit none
 

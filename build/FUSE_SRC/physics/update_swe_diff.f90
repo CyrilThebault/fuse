@@ -2,7 +2,7 @@ module update_swe_DIFF_MODULE
 
   USE model_defn                                        ! model definition structure
   USE model_defnames                                    ! integer model definitions
-  USE globaldata, only : NA_VALUE_SP                    ! missing vale
+  USE fuse_globaldata, only : NA_VALUE_SP                    ! missing vale
 
   implicit none
 
@@ -42,8 +42,8 @@ contains
   use smoothers,  only: smax, dsmax                        ! max smoothers
   use smoothers,  only: smin, dsmin                        ! min smoothers (based on smax, dsmax)
   use smoothers,  only: sigmoid, dsigmoid                  ! sigmoid smoothers
-  USE globaldata, only: NP => NPAR_SNOW                    ! number of snow parameters
-  USE globaldata, only: iMBASE, iMFMAX, iMFMIN, iPXTEMP, iOPG, iLAPSE, &  ! indices in vectors
+  USE fuse_globaldata, only: NP => NPAR_SNOW                    ! number of snow parameters
+  USE fuse_globaldata, only: iMBASE, iMFMAX, iMFMIN, iPXTEMP, iOPG, iLAPSE, &  ! indices in vectors
                         iPERR ! not a snow parameter but used in the snow model
   USE multibands, only: N_BANDS                            ! number of elevation bands
   IMPLICIT NONE

@@ -19,8 +19,8 @@ contains
   USE multiparam, only: KSTOP   ! number of shuffling loops the value must change by PCENTO
   USE multiparam, only: PCENTO  ! the percentage
   USE multiparam, only: NUMPAR  ! # parameters
-  USE globaldata, only: isPrint ! used to turn of printing for calibration runs
-  USE globaldata, only: nFUSE_eval ! # FUSE evaluations 
+  USE fuse_globaldata, only: isPrint ! used to turn of printing for calibration runs
+  USE fuse_globaldata, only: nFUSE_eval ! # FUSE evaluations 
   USE model_defn, only: FNAME_TEMPRY, FNAME_ASCII
   implicit none
   ! input/output

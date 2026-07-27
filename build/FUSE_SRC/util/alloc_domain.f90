@@ -4,7 +4,7 @@ module alloc_domain_module
   USE info_types, only: fuse_info
   USE data_types, only: domain_data
  
-  use globaldata, only: NVAR_FORC
+  use fuse_globaldata, only: NVAR_FORC
 
   implicit none
   private

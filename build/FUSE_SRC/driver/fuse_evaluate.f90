@@ -30,7 +30,7 @@ MODULE fuse_evaluate_module
     ! ---------------------------------------------------------------------------------------
 
     use nrtype
-    use globaldata,only: NPAR_SNOW, isPrint, nFUSE_eval
+    use fuse_globaldata,only: NPAR_SNOW, isPrint, nFUSE_eval
     use model_defn,only: NSTATE
     use multiparam,only: NUMPAR
     use multiforce,only: nspat1, nspat2, numtim_sub
@@ -108,7 +108,7 @@ MODULE fuse_evaluate_module
 
   subroutine initialize_run(xpar, work, err, message)
   
-  use globaldata,  only: isPrint, fracstate0
+  use fuse_globaldata,  only: isPrint, fracstate0
   use model_defn,  only: SMODL
   use model_defnames
   
@@ -207,7 +207,7 @@ MODULE fuse_evaluate_module
 
   subroutine run_time_loop(info, work, output_flag, ierr, message)
 
-  use globaldata, only: isPrint
+  use fuse_globaldata, only: isPrint
   use multiforce, only: timDat  ! NOTE: used in legacy cides
   use multiforce, only: nspat1, nspat2, DELTIM, sim_beg, sim_end, numtim_sub
   use multistate, only: gState_3d
@@ -367,7 +367,7 @@ MODULE fuse_evaluate_module
   subroutine advance_one_cell(work, sub_idx, iSpat1, iSpat2, dt_sub, dt_full, err, message)
 
   ! switches / options
-  use globaldata,   only: NA_VALUE_SP
+  use fuse_globaldata,   only: NA_VALUE_SP
   use model_defn,   only: SMODL, NSTATE
   use model_defnames
   use multiforce,   only: DELTIM, gForce_3d, aForce, MFORCE, nspat1, nspat2

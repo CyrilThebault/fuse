@@ -1,4 +1,4 @@
-MODULE globaldata
+MODULE fuse_globaldata
 
  USE nrtype
  
@@ -37,4 +37,4 @@ MODULE globaldata
  ! number of fuse evaluations
  integer(i4b), save      :: nFUSE_eval
 
-end MODULE globaldata
+end MODULE fuse_globaldata

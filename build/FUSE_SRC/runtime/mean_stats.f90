@@ -17,7 +17,7 @@ SUBROUTINE MEAN_STATS()
 USE nrtype                                            ! variable types, etc.
 USE metrics                                           ! available metrics and transformations
 USE fuse_fileManager,only:METRIC, TRANSFO             ! metric and transformation requested in the filemanager
-USE globaldata, only: isPrint
+USE fuse_globaldata, only: isPrint
 ! FUSE modules
 USE multiforce                                        ! model forcing data (obs streamflow)
 USE multiroute                                        ! routed runoff
