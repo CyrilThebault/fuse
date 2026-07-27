@@ -16,6 +16,14 @@ use kinds_dmsl_kit_FUSE,only:mrk
 !   REAL(SP), PARAMETER :: PI_D=3.141592653589793238462643383279502884197_dp
 !   REAL(SP), PARAMETER :: PIO2_D=1.57079632679489661923132169163975144209858_dp
 !   REAL(SP), PARAMETER :: TWOPI_D=6.283185307179586476925286766559005768394_dp
+
+  integer, parameter :: I8B = selected_int_kind(15)
+  integer, parameter :: DPC = kind((1.0D0,1.0D0))
+
+  integer(i4b), parameter :: strLen     = 256
+  integer(i4b), parameter :: FileStrLen = 300
+  integer(i4b), parameter :: gageStrLen = 30
+
   TYPE sprs2_sp
     INTEGER(I4B) :: n,len
     REAL(SP), DIMENSION(:), POINTER :: val

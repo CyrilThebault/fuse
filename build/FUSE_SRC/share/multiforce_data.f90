@@ -58,9 +58,6 @@ MODULE multiforce
 
  SAVE
  
- ! general
- INTEGER(I4B),PARAMETER                :: STRLEN=256        ! length of the character string
- 
  ! time data structures
  TYPE(tData)                           :: timDat            ! model time structure
  
