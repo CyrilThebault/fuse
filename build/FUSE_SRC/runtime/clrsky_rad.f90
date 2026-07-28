@@ -14,7 +14,8 @@ SUBROUTINE CLRSKY_RAD(MONTH,DAY,HOUR,DT,SLOPE,AZI,LAT,HRI,COSZEN)
 !  - Modified to integrate over time step up to, but not greater than, 24 hours (D. Rupp, July 2006)
 !  
 ! ----------------------------------------------------------------------------------------
-USE nrtype
+USE nrtype, only: i4b,sp
+USE nrtype, only: PI => PI_SP
 IMPLICIT NONE
 ! Input variables
 INTEGER(I4B), INTENT(IN)                  :: MONTH   ! month as mm integer

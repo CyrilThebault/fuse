@@ -129,6 +129,20 @@ INCLUDES += -I$(HDF5_INCLUDE_DIR) -I$(NETCDF_C_INCLUDE) -I$(NETCDF_F_INCLUDE)
 LIBS += -L$(HDF5_LIB_DIR) -lhdf5 -lhdf5_hl -L$(NETCDF_F_LIB) -lnetcdff -L$(NETCDF_C_LIB) -lnetcdf
 
 #========================================================================
+# Assemble the required mizuRoute subroutines
+#========================================================================
+
+MIZU_DIR := $(FUSE_ROOT)/external/mizuRoute/route/build/src
+
+# foundational mizuRoute subroutines
+MIZU_BASE =
+MIZU_BASE += $(MIZU_DIR)/public_var.f90
+MIZU_BASE += $(MIZU_DIR)/datetime_data.f90
+MIZU_BASE += $(MIZU_DIR)/dataTypes.f90
+MIZU_BASE += $(MIZU_DIR)/var_lookup.f90
+
+
+#========================================================================
 # Assemble all of the FUSE sub-routines
 #========================================================================
 
@@ -352,6 +366,7 @@ FUSE_ALL += $(NRUTIL)
 FUSE_ALL += $(DATAMS)
 FUSE_ALL += $(UTILMS)
 FUSE_ALL += $(TIMUTILS)
+FUSE_ALL += $(MIZU_BASE)
 FUSE_ALL += $(NR_SUB)
 FUSE_ALL += $(PHYSICS)
 FUSE_ALL += $(MODGUT)

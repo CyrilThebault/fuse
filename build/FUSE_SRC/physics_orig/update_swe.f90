@@ -16,7 +16,8 @@ SUBROUTINE UPDATE_SWE(DT)
 ! -----------------
 ! MODULE multibands -- SWE bands stored in MODULE multibands
 ! ---------------------------------------------------------------------------------------
-USE nrtype                                            ! variable types, etc.
+USE nrtype, only: i4b, sp                             ! variable types, etc.
+USE nrtype, only: PI => PI_SP                         ! PI=3.14159265...
 USE model_defn                                        ! model definition structure
 USE model_defnames                                    ! integer model definitions
 USE multiparam                                        ! model parameters

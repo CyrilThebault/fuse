@@ -1,8 +1,11 @@
 module update_swe_DIFF_MODULE
 
-  USE model_defn                                        ! model definition structure
+  USE nrtype, only: i4b, sp                             ! variable types, etc.
+  USE nrtype, only: PI => PI_SP                         ! PI=3.14159265...
+  
+  USE model_defn
   USE model_defnames                                    ! integer model definitions
-  USE fuse_globaldata, only : NA_VALUE_SP                    ! missing vale
+  USE fuse_globaldata, only : NA_VALUE_SP               ! missing vale
 
   implicit none
 
