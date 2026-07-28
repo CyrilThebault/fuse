@@ -140,6 +140,18 @@ MIZU_BASE += $(MIZU_DIR)/public_var.f90
 MIZU_BASE += $(MIZU_DIR)/datetime_data.f90
 MIZU_BASE += $(MIZU_DIR)/dataTypes.f90
 MIZU_BASE += $(MIZU_DIR)/var_lookup.f90
+MIZU_BASE += $(MIZU_DIR)/nr_utils.f90
+MIZU_BASE += $(MIZU_DIR)/ncio_utils.f90
+
+# Thin compatibility layer
+MIZU_HOOK =
+MIZU_HOOK += $(FUSE_SOURCE_DIR)/mizuRoute/globalData.f90
+
+# Network topology
+MIZU_TOPO =
+MIZU_TOPO += $(MIZU_DIR)/allocation.f90
+MIZU_TOPO += $(MIZU_DIR)/read_streamSeg.f90
+
 
 
 #========================================================================
