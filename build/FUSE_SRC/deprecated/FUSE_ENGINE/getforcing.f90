@@ -14,7 +14,7 @@ SUBROUTINE GETFORCING(INFERN_START,NTIM,err,message)
 ! -----------------
 ! MODULE multiforce -- populate structure AFORCE(*)%(*)
 ! ---------------------------------------------------------------------------------------
-use nrtype,only:I4B,LGT,SP
+use nrtype, only: I4B, LGT, WP
 use utilities_dmsl_kit_FUSE,only:getSpareUnit,stripTrailString
 USE fuse_fileManager,only:INPUT_PATH,SETNGS_PATH,FORCINGINFO     ! defines data directory 
 USE multiforce,only:AFORCE,DELTIM,ISTART,NUMTIM,NA_VALUE,timDat,valDat  ! model forcing structures
@@ -47,7 +47,7 @@ INTEGER(I4B)                           :: IHEAD       ! header index
 CHARACTER(LEN=lenPath)                 :: TMPTXT      ! descriptive text
 INTEGER(I4B)                           :: ITIME       ! time index (input data)
 INTEGER(I4B)                           :: JTIME       ! time index (internal data structure)
-REAL(SP),DIMENSION(:),ALLOCATABLE      :: TMPDAT      ! one line of data
+REAL(WP),DIMENSION(:),ALLOCATABLE      :: TMPDAT      ! one line of data
 ! output
 INTEGER(I4B), INTENT(OUT)              :: INFERN_START ! index of start of inference period
 INTEGER(I4B), INTENT(OUT)              :: NTIM         ! index of start of inference period
@@ -111,7 +111,7 @@ ALLOCATE(AFORCE(NSTEPS),STAT=IERR(2))  ! (shared in module multiforce)
 ALLOCATE(AROUTE(NSTEPS),STAT=IERR(3))  ! (shared in module multiroute)
 IF (ANY(IERR.NE.0)) STOP ' problem allocating space for data structures '
 ! initialize the Q_ACCURATE vector
-AROUTE(1:NSTEPS)%Q_ACCURATE = -9999._SP
+AROUTE(1:NSTEPS)%Q_ACCURATE = -9999._WP
 ! ---------------------------------------------------------------------------------------
 ! read data
 JTIME = 0
@@ -151,15 +151,15 @@ DO ITIME=1,INFERN_END
   !timDat(JTIME)%ID    = INT(TMPDAT(3))
   !timDat(JTIME)%IH    = INT(TMPDAT(4))
   !timDat(JTIME)%IMIN  = 0
-  !timDat(JTIME)%DSEC  = 0._SP
-  !timDat(JTIME)%DTIME = 0._SP
+  !timDat(JTIME)%DSEC  = 0._WP
+  !timDat(JTIME)%DTIME = 0._WP
   AFORCE(JTIME)%IY    = INT(TMPDAT(1))
   AFORCE(JTIME)%IM    = INT(TMPDAT(2))
   AFORCE(JTIME)%ID    = INT(TMPDAT(3))
   AFORCE(JTIME)%IH    = INT(TMPDAT(4))
   AFORCE(JTIME)%IMIN  = 0
-  AFORCE(JTIME)%DSEC  = 0._SP
-  AFORCE(JTIME)%DTIME = 0._SP
+  AFORCE(JTIME)%DSEC  = 0._WP
+  AFORCE(JTIME)%DTIME = 0._WP
   AFORCE(JTIME)%PPT   = TMPDAT(IX_PPT)
   !AFORCE(JTIME)%TEMP  = TMPDAT(IX_TEMP)
   AFORCE(JTIME)%PET   = TMPDAT(IX_PET)

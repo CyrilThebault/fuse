@@ -21,7 +21,7 @@ IMPLICIT NONE
 INTEGER(I4B)                           :: IUNIT       ! file unit
 integer(i4b),parameter::lenPath=1024 !DK211008: allows longer file paths
 INTEGER(I4B)                           :: IERR        ! error code for read statement\
-REAL(SP)                               :: XVAR        ! argument for SUBROUTINE putpar_str
+REAL(WP)                               :: XVAR        ! argument for SUBROUTINE putpar_str
 CHARACTER(LEN=lenPath)                 :: CFILE       ! name of constraints file
 LOGICAL(LGT)                           :: LEXIST      ! .TRUE. if file exists
 CHARACTER(LEN=256)                     :: KEY         ! format code

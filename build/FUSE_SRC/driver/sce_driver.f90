@@ -19,17 +19,17 @@ contains
   USE multiparam, only: KSTOP   ! number of shuffling loops the value must change by PCENTO
   USE multiparam, only: PCENTO  ! the percentage
   USE multiparam, only: NUMPAR  ! # parameters
-  USE globaldata, only: isPrint ! used to turn of printing for calibration runs
-  USE globaldata, only: nFUSE_eval ! # FUSE evaluations 
+  USE fuse_globaldata, only: isPrint ! used to turn of printing for calibration runs
+  USE fuse_globaldata, only: nFUSE_eval ! # FUSE evaluations 
   USE model_defn, only: FNAME_TEMPRY, FNAME_ASCII
   implicit none
   ! input/output
   type(fuse_info)       , intent(inout)  :: info     ! info structures (runtime settings etc.)
   type(fuse_work)       , intent(inout)  :: work     ! work structures that depend on npar/nState
   type(domain_data)     , intent(inout)  :: domain   ! the fuse domain structure that stores data arrays
-  real(sp)              , intent(in)     :: APAR(:)  ! model parameter set
-  real(sp)              , intent(in)     :: BL(:)    ! vector of lower parameter bounds
-  real(sp)              , intent(in)     :: BU(:)    ! vector of upper parameter bounds
+  real(wp)              , intent(in)     :: APAR(:)  ! model parameter set
+  real(wp)              , intent(in)     :: BL(:)    ! vector of lower parameter bounds
+  real(wp)              , intent(in)     :: BU(:)    ! vector of upper parameter bounds
   ! internal variables
   REAL(MSP)                              :: AF_MSP    ! objective function value
   REAL(MSP), DIMENSION(:), ALLOCATABLE   :: APAR_MSP  ! ! lower bound of model parameters
@@ -61,7 +61,7 @@ contains
   NUMPSET=1.2*MAXN         ! will be used to define the parameter set dimension of the NetCDF files
                            ! using 1.2MAXN since the final number of parameter sets produced by SCE is unknown
 
-  ! convert from SP used in FUSE to MSP used in SCE
+  ! convert from WP used in FUSE to MSP used in SCE
   ALLOCATE(APAR_MSP(NUMPAR), BL_MSP(NUMPAR), BU_MSP(NUMPAR))
   APAR_MSP=APAR; BL_MSP=BL; BU_MSP=BU
 

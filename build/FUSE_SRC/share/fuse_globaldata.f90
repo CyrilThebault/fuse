@@ -1,4 +1,4 @@
-MODULE globaldata
+MODULE fuse_globaldata
 
  USE nrtype
  
@@ -6,17 +6,17 @@ MODULE globaldata
  include "fuseversion.inc"
 
  ! time step
- REAL(SP), save          :: CURRENT_DT            ! current time step (days)
+ REAL(WP), save          :: CURRENT_DT            ! current time step (days)
 
  ! missing values
  INTEGER(I4B),PARAMETER  :: NA_VALUE=-9999        ! integer designating missing values - TODO: retrieve from NetCDF file
- REAL(SP),PARAMETER      :: NA_VALUE_SP=-9999_sp  ! integer designating missing values - TODO: retrieve from NetCDF file
+ REAL(WP),PARAMETER      :: NA_VALUE_SP=-9999_wp  ! integer designating missing values - TODO: retrieve from NetCDF file
 
  ! NetCDF
  integer(i4b), save      :: ncid_out=-1           ! NetCDF output file ID
 
  ! initial store fraction (initialization)
- real(sp), parameter     :: fracState0=0.25_sp
+ real(wp), parameter     :: fracState0=0.25_wp
 
  ! original code
  logical(lgt), save      :: isOriginal=.true.
@@ -37,4 +37,4 @@ MODULE globaldata
  ! number of fuse evaluations
  integer(i4b), save      :: nFUSE_eval
 
-end MODULE globaldata
+end MODULE fuse_globaldata

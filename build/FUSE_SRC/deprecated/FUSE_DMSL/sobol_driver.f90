@@ -66,11 +66,11 @@ TYPE(PAR_TXT),DIMENSION(:),ALLOCATABLE :: PARNAMES_ALL    ! list of all possible
 INTEGER(I4B)                           :: IPOS,JPOS,KPOS  ! position in header string
 INTEGER(I4B)                           :: IPAR_ALL        ! loop through all possible model parameters
 ! Index and values of parameters
-REAL(SP),DIMENSION(:),ALLOCATABLE      :: ALLPARS         ! vector of model all parameters
-REAL(SP),DIMENSION(:),ALLOCATABLE      :: TRYPARS         ! vector of model parameters to trial
+REAL(WP),DIMENSION(:),ALLOCATABLE      :: ALLPARS         ! vector of model all parameters
+REAL(WP),DIMENSION(:),ALLOCATABLE      :: TRYPARS         ! vector of model parameters to trial
 INTEGER(I4B)                           :: IPAR_MOD        ! loop through parameters of the current model
 INTEGER(I4B)                           :: ONEMOD          ! index of the model used (=1)
-REAL(SP)                               :: FPAR            ! function value for parameter set
+REAL(WP)                               :: FPAR            ! function value for parameter set
 ! ---------------------------------------------------------------------------------------
 ! (0) READ COMMAND LINE ARGUMENTS
 ! ---------------------------------------------------------------------------------------

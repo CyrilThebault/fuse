@@ -129,12 +129,37 @@ INCLUDES += -I$(HDF5_INCLUDE_DIR) -I$(NETCDF_C_INCLUDE) -I$(NETCDF_F_INCLUDE)
 LIBS += -L$(HDF5_LIB_DIR) -lhdf5 -lhdf5_hl -L$(NETCDF_F_LIB) -lnetcdff -L$(NETCDF_C_LIB) -lnetcdf
 
 #========================================================================
+# Assemble the required mizuRoute subroutines
+#========================================================================
+
+MIZU_DIR := $(FUSE_ROOT)/external/mizuRoute/route/build/src
+
+# foundational mizuRoute subroutines
+MIZU_BASE =
+MIZU_BASE += $(MIZU_DIR)/public_var.f90
+MIZU_BASE += $(MIZU_DIR)/datetime_data.f90
+MIZU_BASE += $(MIZU_DIR)/dataTypes.f90
+MIZU_BASE += $(MIZU_DIR)/var_lookup.f90
+MIZU_BASE += $(MIZU_DIR)/nr_utils.f90
+MIZU_BASE += $(MIZU_DIR)/ncio_utils.f90
+
+# Thin compatibility layer
+MIZU_HOOK =
+MIZU_HOOK += $(FUSE_SOURCE_DIR)/mizuRoute/globalData.f90
+
+# Network topology
+MIZU_TOPO =
+MIZU_TOPO += $(MIZU_DIR)/allocation.f90
+MIZU_TOPO += $(MIZU_DIR)/read_streamSeg.f90
+
+
+
+#========================================================================
 # Assemble all of the FUSE sub-routines
 #========================================================================
 
 # Define directories
 NUMREC_DIR  = $(FUSE_SOURCE_DIR)numrec
-HOOKUP_DIR  = $(FUSE_SOURCE_DIR)hookup
 DRIVER_DIR  = $(FUSE_SOURCE_DIR)driver
 NETCDF_DIR  = $(FUSE_SOURCE_DIR)netcdf
 SHARE_DIR   = $(FUSE_SOURCE_DIR)share
@@ -161,20 +186,18 @@ FUSE_DRIVER += sce_driver.f90
 FUSE_DRIVER += fuse_driver.f90
 DRIVER = $(patsubst %, $(DRIVER_DIR)/%, $(FUSE_DRIVER))
 
-# Manager modules
-FUSE_HOOKUP =
-FUSE_HOOKUP += kinds_dmsl_kit_FUSE.f90
-FUSE_HOOKUP += utilities_dmsl_kit_FUSE.f90
-HOOKUP = $(patsubst %, $(HOOKUP_DIR)/%, $(FUSE_HOOKUP))
+# data kinds and constants
+INIT =
+INIT += $(FUSE_SOURCE_DIR)numrec/nrtype.f90
+INIT += $(FUSE_SOURCE_DIR)share/multiconst.f90
 
 # Numerical Recipes utilities
 FUSE_NRUTIL =
-FUSE_NRUTIL += nrtype.f90
 FUSE_NRUTIL += nr.f90 nrutil.f90
 NRUTIL = $(patsubst %, $(NUMREC_DIR)/%, $(FUSE_NRUTIL))
 
 # Global data (needs to be defined before model_defn)
-G_DATA = $(SHARE_DIR)/globaldata.f90
+G_DATA = $(SHARE_DIR)/fuse_globaldata.f90
 
 # Model definition
 FUSE_MODDEF =
@@ -347,11 +370,12 @@ SCE = sce_16plus.o
 
 # ... and stitch it all together...
 FUSE_ALL = 
-FUSE_ALL += $(HOOKUP)
+FUSE_ALL += $(INIT)
 FUSE_ALL += $(NRUTIL)
 FUSE_ALL += $(DATAMS)
 FUSE_ALL += $(UTILMS)
 FUSE_ALL += $(TIMUTILS)
+FUSE_ALL += $(MIZU_BASE)
 FUSE_ALL += $(NR_SUB)
 FUSE_ALL += $(PHYSICS)
 FUSE_ALL += $(MODGUT)

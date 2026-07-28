@@ -24,7 +24,7 @@ USE nrtype                                            ! variable types, etc.
 USE multiparam                                        ! model parameters
 IMPLICIT NONE
 ! input
-REAL(SP), INTENT(IN), DIMENSION(:)     :: PARSET      ! parameter set 
+REAL(WP), INTENT(IN), DIMENSION(:)     :: PARSET      ! parameter set 
 ! local
 INTEGER(I4B)                           :: IPAR        ! looping
 ! ---------------------------------------------------------------------------------------
@@ -50,7 +50,7 @@ USE nrtype                                            ! variable types, etc.
 USE multiparam                                        ! model parameters
 IMPLICIT NONE
 ! input
-REAL(SP), INTENT(IN)                   :: XVAR        ! parameter value
+REAL(WP), INTENT(IN)                   :: XVAR        ! parameter value
 CHARACTER(*), INTENT(IN)               :: PARNAME     ! parameter name
 ! ---------------------------------------------------------------------------------------
 ! model parameters

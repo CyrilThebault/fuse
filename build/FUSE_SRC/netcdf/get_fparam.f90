@@ -36,9 +36,9 @@ INTEGER(I4B)                           :: IDIMID      ! NetCDF dimension ID
 INTEGER(I4B)                           :: IVARID      ! NetCDF variable ID
 INTEGER(I4B)                           :: IPAR        ! loop through model parameters
 INTEGER(I4B)                           :: NPAR        ! number of parameter sets in output file
-REAL(DP)                               :: APAR        ! parameter value (single precision)
+REAL(WP)                               :: APAR        ! parameter value
 ! output
-REAL(SP), DIMENSION(MPAR), INTENT(OUT) :: XPAR        ! parameter value (whatever precision SP is)
+REAL(WP), DIMENSION(MPAR), INTENT(OUT) :: XPAR        ! parameter vector
 include 'netcdf.inc'                                  ! use netCDF libraries
 ! ---------------------------------------------------------------------------------------
 ! check that the file exists
@@ -123,14 +123,14 @@ INTEGER(I4B)                           :: IDIMID      ! NetCDF dimension ID
 INTEGER(I4B)                           :: IVARID      ! NetCDF variable ID
 INTEGER(I4B)                           :: I_METRIC    ! NetCDF METRIC ID
 INTEGER(I4B)                           :: I_OPT_PARA  ! index of the optimum parameter set (e.g. lowest RSME) - MUST BE DIMENSIONED
-REAL(DP), DIMENSION(:),ALLOCATABLE     :: METRIC_VAL  ! Metric value for each parameter set
+REAL(WP), DIMENSION(:),ALLOCATABLE     :: METRIC_VAL  ! Metric value for each parameter set
 INTEGER(I4B), DIMENSION(1)             :: ARRAY_SIZE  ! Dimension of the metric chosen as objective function 
-REAL(DP)                               :: BEST_METRIC ! best value of the metric chosen as objective function 
+REAL(WP)                               :: BEST_METRIC ! best value of the metric chosen as objective function 
 INTEGER(I4B)                           :: IPAR        ! loop through model parameters
 INTEGER(I4B)                           :: NPAR        ! number of parameter sets in output file
-REAL(DP)                               :: APAR        ! parameter value (single precision)
+REAL(WP)                               :: APAR        ! parameter value
 ! output
-REAL(SP), DIMENSION(MPAR), INTENT(OUT) :: XPAR        ! parameter value (whatever precision SP is)
+REAL(WP), DIMENSION(MPAR), INTENT(OUT) :: XPAR        ! parameter vector
 include 'netcdf.inc'                                  ! use netCDF libraries
 ! ---------------------------------------------------------------------------------------
 ! check that the file exists

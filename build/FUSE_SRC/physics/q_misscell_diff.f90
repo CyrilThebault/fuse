@@ -34,8 +34,8 @@ contains
   logical(lgt), intent(in), optional     :: want_dflux  ! if we want flux derivatives
   ! internal
   logical(lgt)                           :: comp_dflux  ! flag to compute flux derivatives
-  REAL(SP), PARAMETER                    :: PSMOOTH=0.05_SP ! smoothing parameter
-  REAL(SP)                               :: W_FUNC      ! result from smoother
+  REAL(WP), PARAMETER                    :: PSMOOTH=0.05_WP ! smoothing parameter
+  REAL(WP)                               :: W_FUNC      ! result from smoother
   ! -------------------------------------------------------------------------------------------------
   ! associate variables with elements of data structure
   associate(&
@@ -63,7 +63,7 @@ contains
     M_FLUX%OFLOW_1     = W_FUNC * M_FLUX%TENS2FREE_1
    CASE(iopt_tension1_1) ! upper layer broken up into tension and free storage
     ! no separate recharge zone (flux should never be used)
-    M_FLUX%RCHR2EXCS   = 0._SP
+    M_FLUX%RCHR2EXCS   = 0._WP
     ! compute flow from tension storage to free storage (mm s-1)
     W_FUNC = SMOOTHER(TSTATE%TENS_1,DPARAM%MAXTENS_1,PSMOOTH)
     M_FLUX%TENS2FREE_1 = W_FUNC * (M_FLUX%EFF_PPT - M_FLUX%QSURF)
@@ -72,11 +72,11 @@ contains
     M_FLUX%OFLOW_1     = W_FUNC * M_FLUX%TENS2FREE_1
    CASE(iopt_onestate_1) ! upper layer defined by a single state variable
     ! no tension stores
-    M_FLUX%RCHR2EXCS   = 0._SP
-    M_FLUX%TENS2FREE_1 = 0._SP
+    M_FLUX%RCHR2EXCS   = 0._WP
+    M_FLUX%TENS2FREE_1 = 0._WP
     ! compute over-flow of free water
     if(SMODL%iQSURF == iopt_arno_x_vic)then
-      M_FLUX%OFLOW_1 = 0._sp ! no need for overflow since the vic parmaeterization is smoothed now
+      M_FLUX%OFLOW_1 = 0._wp ! no need for overflow since the vic parmaeterization is smoothed now
     else
      W_FUNC = SMOOTHER(TSTATE%WATR_1,MPARAM%MAXWATR_1,PSMOOTH)
      M_FLUX%OFLOW_1     = W_FUNC * (M_FLUX%EFF_PPT - M_FLUX%QSURF)
@@ -91,28 +91,28 @@ contains
    CASE(iopt_tens2pll_2) ! tension reservoir plus two parallel tanks
     ! compute flow from tension storage to free storage (mm s-1)
     W_FUNC = SMOOTHER(TSTATE%TENS_2,DPARAM%MAXTENS_2,PSMOOTH)
-    M_FLUX%TENS2FREE_2 = W_FUNC * M_FLUX%QPERC_12*(1._SP-MPARAM%PERCFRAC)
+    M_FLUX%TENS2FREE_2 = W_FUNC * M_FLUX%QPERC_12*(1._WP-MPARAM%PERCFRAC)
     ! compute over-flow of free water in the primary reservoir
     W_FUNC = SMOOTHER(TSTATE%FREE_2A,DPARAM%MAXFREE_2A,PSMOOTH)
-    M_FLUX%OFLOW_2A    = W_FUNC * (M_FLUX%QPERC_12*(MPARAM%PERCFRAC/2._SP) + M_FLUX%TENS2FREE_2/2._SP)
+    M_FLUX%OFLOW_2A    = W_FUNC * (M_FLUX%QPERC_12*(MPARAM%PERCFRAC/2._WP) + M_FLUX%TENS2FREE_2/2._WP)
     ! compute over-flow of free water in the secondary reservoir
     W_FUNC = SMOOTHER(TSTATE%FREE_2B,DPARAM%MAXFREE_2B,PSMOOTH)
-    M_FLUX%OFLOW_2B    = W_FUNC * (M_FLUX%QPERC_12*(MPARAM%PERCFRAC/2._SP) + M_FLUX%TENS2FREE_2/2._SP)
+    M_FLUX%OFLOW_2B    = W_FUNC * (M_FLUX%QPERC_12*(MPARAM%PERCFRAC/2._WP) + M_FLUX%TENS2FREE_2/2._WP)
     ! compute total overflow
     M_FLUX%OFLOW_2     = M_FLUX%OFLOW_2A + M_FLUX%OFLOW_2B
    CASE(iopt_fixedsiz_2)
     ! no tension store
-    M_FLUX%TENS2FREE_2 = 0._SP
-    M_FLUX%OFLOW_2A    = 0._SP
-    M_FLUX%OFLOW_2B    = 0._SP
+    M_FLUX%TENS2FREE_2 = 0._WP
+    M_FLUX%OFLOW_2A    = 0._WP
+    M_FLUX%OFLOW_2B    = 0._WP
     ! compute over-flow of free water
     W_FUNC = SMOOTHER(TSTATE%WATR_2,MPARAM%MAXWATR_2,PSMOOTH)
     M_FLUX%OFLOW_2     = W_FUNC * M_FLUX%QPERC_12
    CASE(iopt_unlimfrc_2,iopt_unlimpow_2,iopt_topmdexp_2) ! unlimited size
-    M_FLUX%TENS2FREE_2 = 0._SP
-    M_FLUX%OFLOW_2     = 0._SP
-    M_FLUX%OFLOW_2A    = 0._SP
-    M_FLUX%OFLOW_2B    = 0._SP
+    M_FLUX%TENS2FREE_2 = 0._WP
+    M_FLUX%OFLOW_2     = 0._WP
+    M_FLUX%OFLOW_2A    = 0._WP
+    M_FLUX%OFLOW_2B    = 0._WP
    CASE DEFAULT
     print *, "SMODL%iARCH2 must be iopt_tens2pll_2, iopt_unlimfrc_2, iopt_unlimpow_2"
     print *, "  iopt_topmdexp_2, or iopt_fixedsiz_2"

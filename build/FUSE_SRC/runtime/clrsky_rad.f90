@@ -14,54 +14,55 @@ SUBROUTINE CLRSKY_RAD(MONTH,DAY,HOUR,DT,SLOPE,AZI,LAT,HRI,COSZEN)
 !  - Modified to integrate over time step up to, but not greater than, 24 hours (D. Rupp, July 2006)
 !  
 ! ----------------------------------------------------------------------------------------
-USE nrtype
+USE nrtype, only: i4b, wp
+USE multiconst, only: PI
 IMPLICIT NONE
 ! Input variables
 INTEGER(I4B), INTENT(IN)                  :: MONTH   ! month as mm integer
 INTEGER(I4B), INTENT(IN)                  :: DAY     ! day of month as dd integer
-REAL(SP), INTENT(IN)                      :: HOUR    ! hour of day as real
-REAL(SP), INTENT(IN)                      :: DT      ! time step in units of hours
-REAL(SP), INTENT(IN)                      :: SLOPE   ! slope of ground surface in degrees
-REAL(SP), INTENT(IN)                      :: AZI     ! aspect (azimuth) of ground surface in degrees
-REAL(SP), INTENT(IN)                      :: LAT     ! latitude in degrees (negative for southern hemisphere)
+REAL(WP), INTENT(IN)                      :: HOUR    ! hour of day as real
+REAL(WP), INTENT(IN)                      :: DT      ! time step in units of hours
+REAL(WP), INTENT(IN)                      :: SLOPE   ! slope of ground surface in degrees
+REAL(WP), INTENT(IN)                      :: AZI     ! aspect (azimuth) of ground surface in degrees
+REAL(WP), INTENT(IN)                      :: LAT     ! latitude in degrees (negative for southern hemisphere)
 ! Outputs
-REAL(SP), INTENT(OUT)                     :: HRI     ! average radiation index over time step DT
-REAL(SP), INTENT(OUT)                     :: COSZEN  ! average cosine of the zenith angle over time step DT
+REAL(WP), INTENT(OUT)                     :: HRI     ! average radiation index over time step DT
+REAL(WP), INTENT(OUT)                     :: COSZEN  ! average cosine of the zenith angle over time step DT
 ! Internal
-REAL(SP)                                  :: CRAD    ! conversion from degrees to radians
-REAL(SP)                                  :: YRAD    ! conversion from year to radians
-REAL(SP)                                  :: T       ! time from noon in radians
-REAL(SP)                                  :: DELT1   ! time step in radians
-REAL(SP)                                  :: SLOPE1  ! slope of ground surface in radians
-REAL(SP)                                  :: AZI1    ! aspect (azimuth) of ground surface in radians
-REAL(SP)                                  :: LAT1    ! latitude in radians
-REAL(SP)                                  :: FJULIAN ! julian date as real
-REAL(SP)                                  :: D       ! solar declination
-REAL(SP)                                  :: LP      ! latitude adjusted for non-level surface (= LAT1 for level surface)
-REAL(SP)                                  :: TD      ! used to calculate sunrise/set
-REAL(SP)                                  :: TPI     ! used to calculate sunrise/set
-REAL(SP)                                  :: TP      ! used to calculate sunrise/set
-REAL(SP)                                  :: DDT     ! used to calculate sunrise/set(= 0 for level surface)
-REAL(SP)                                  :: T1      ! first time in time step or sunrise
-REAL(SP)                                  :: T2      ! last time in time step or sunset
+REAL(WP)                                  :: CRAD    ! conversion from degrees to radians
+REAL(WP)                                  :: YRAD    ! conversion from year to radians
+REAL(WP)                                  :: T       ! time from noon in radians
+REAL(WP)                                  :: DELT1   ! time step in radians
+REAL(WP)                                  :: SLOPE1  ! slope of ground surface in radians
+REAL(WP)                                  :: AZI1    ! aspect (azimuth) of ground surface in radians
+REAL(WP)                                  :: LAT1    ! latitude in radians
+REAL(WP)                                  :: FJULIAN ! julian date as real
+REAL(WP)                                  :: D       ! solar declination
+REAL(WP)                                  :: LP      ! latitude adjusted for non-level surface (= LAT1 for level surface)
+REAL(WP)                                  :: TD      ! used to calculate sunrise/set
+REAL(WP)                                  :: TPI     ! used to calculate sunrise/set
+REAL(WP)                                  :: TP      ! used to calculate sunrise/set
+REAL(WP)                                  :: DDT     ! used to calculate sunrise/set(= 0 for level surface)
+REAL(WP)                                  :: T1      ! first time in time step or sunrise
+REAL(WP)                                  :: T2      ! last time in time step or sunset
 ! ----------------------------------------------------------------------------------------
 ! CONVERSION FACTORS
 !   degrees to radians
-CRAD=PI/180._sp
+CRAD=PI/180._wp
 !   days-of-year to radians
-YRAD=2._sp*PI/365._sp
+YRAD=2._wp*PI/365._wp
 ! CONVERT TIME TO RADIANS FROM NOON
-T=(HOUR-12._sp)*PI/12._sp
+T=(HOUR-12._wp)*PI/12._wp
 ! Convert time step to radians
-DELT1=DT*PI/12._sp
+DELT1=DT*PI/12._wp
 ! CONVERT ground slope, ground aspect, and latitude TO RADIANS
 SLOPE1=SLOPE*CRAD  ! tilt angle
 AZI1=AZI*CRAD ! surface-solar Azimuth ??
 LAT1=LAT*CRAD ! latitude
 ! Calculate julian date
-FJULIAN=real(JULIAN(MONTH,DAY), kind(sp))
+FJULIAN=real(JULIAN(MONTH,DAY), kind(wp))
 ! Calculate solar declination
-D=CRAD*23.5_sp*SIN((FJULIAN-82._sp)*YRAD)
+D=CRAD*23.5_wp*SIN((FJULIAN-82._wp)*YRAD)
 ! Calculate latitude "adjustment" for ground slope, aspect and latitude (LP = LAT1 for level surface)
 LP=ASIN(SIN(SLOPE1)*COS(AZI1)*COS(LAT1) + COS(SLOPE1)*SIN(LAT1)) ! angle between solar rays and surface (tilted) ??
 ! Calculate time of sunrise/sunset on level surface as radians from noon
@@ -69,10 +70,10 @@ TD=ACOS(-TAN(LAT1)*TAN(D))
 ! print *, 'Sunrise = ', TD
 ! Calculate time of sunrise/sunset adjusted for inclined ground surface as radians from noon???
 TPI=-TAN(LP)*TAN(D)
-IF(ABS(TPI).LT.1._sp) THEN
+IF(ABS(TPI).LT.1._wp) THEN
  TP=ACOS(TPI)
 ELSE
- TP=0._sp
+ TP=0._wp
 ENDIF
 ! Calculate time adjustment for ground slope, aspect and latitude (DDT = 0 for level surface)
 DDT=ATAN(SIN(AZI1)*SIN(SLOPE1)/(COS(SLOPE1)*COS(LAT1)-COS(AZI1)*SIN(SLOPE1)*SIN(LAT1)))
@@ -82,7 +83,7 @@ T1=MAX(T,-TP-DDT,-TD)
 T2=MIN(T+DELT1,TD,TP-DDT)
 ! print *, 'First t1 and t2 = ', t1, t2
 IF(T2.LE.T1) THEN
- HRI=0._sp ! nighttime
+ HRI=0._wp ! nighttime
 ELSE
 ! Calculate integral of radiation index from T1 to T2 and divide by time step DELTA1
 ! NOTE: this assumes the declination does not change from T1 to T2
@@ -94,18 +95,18 @@ ENDIF
 ! Check to see of timestep extends to following day
 IF((T+DELT1).GT.PI) THEN
  ! Advance julian day by 1
- FJULIAN = FJULIAN + 1._sp
+ FJULIAN = FJULIAN + 1._wp
  ! Calculate solar declination
- D=CRAD*23.5_sp*SIN((FJULIAN-82._sp)*YRAD)
+ D=CRAD*23.5_wp*SIN((FJULIAN-82._wp)*YRAD)
  ! Calculate time of sunrise/sunset on level surface as radians from noon
  TD=ACOS(-TAN(LAT1)*TAN(D))
  ! print *, 'Sunrise #2 = ', TD, DELT1
  ! Calculate time of sunrise/sunset adjusted for inclined ground surface as radians from noon???
  TPI=-TAN(LP)*TAN(D)
- IF(ABS(TPI).LT.1._sp) THEN
+ IF(ABS(TPI).LT.1._wp) THEN
   TP=ACOS(TPI)
  ELSE
-  TP=0._sp
+  TP=0._wp
  ENDIF
  ! Set beginning time to sunrise
  T1=MAX(-TP-DDT,-TD)

@@ -33,7 +33,7 @@ module info_types
    logical(lgt)                  :: show_version = .false.
    logical(lgt)                  :: show_help    = .false.
    character(len=:), allocatable :: param_name(:)    ! list of parameter names
-   real(sp), allocatable         :: param_value(:)   ! list of parameter values
+   real(wp), allocatable         :: param_value(:)   ! list of parameter values
  end type cli_options
 
  ! -------------------------------------------------------------------------------------
@@ -80,11 +80,11 @@ module info_types
   
    ! bookkeeping for time axis
    character(len=:), allocatable :: units
-   real(sp)       :: jdate_ref = 0._sp
-   real(sp), allocatable :: time_steps(:)   ! time since reference time (transferred to output)
-   real(sp), allocatable :: jdate(:)        ! julian day for each forcing record
+   real(wp)       :: jdate_ref = 0._wp
+   real(wp), allocatable :: time_steps(:)   ! time since reference time (transferred to output)
+   real(wp), allocatable :: jdate(:)        ! julian day for each forcing record
 
-   real(sp)              :: deltim_days     ! forcing time step in units of days
+   real(wp)              :: deltim_days     ! forcing time step in units of days
 
  end type time_info
 
@@ -193,7 +193,7 @@ module info_types
   ! SCE settings (store as numeric types)
   integer(i4b)      :: maxn  = -9999
   integer(i4b)      :: kstop = -9999
-  real(sp)          :: pcento = -9999._sp
+  real(wp)          :: pcento = -9999._wp
 
   ! store raw strings too
   character(len=20) :: maxn_str  = ""

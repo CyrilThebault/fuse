@@ -42,9 +42,9 @@ LOGICAL(LGT)                           :: SSTATS_FLAG  ! .TRUE. if desire summar
 ! generate a new parameter set
 INTEGER(I4B)                           :: IPAR    ! loop through model parameters
 TYPE(PARATT)                           :: PARAM_META ! parameter metadata (model parameters)
-REAL(SP), DIMENSION(:), ALLOCATABLE    :: BL      ! vector of lower parameter bounds
-REAL(SP), DIMENSION(:), ALLOCATABLE    :: BU      ! vector of upper parameter bounds
-REAL(SP), DIMENSION(:), ALLOCATABLE    :: APAR    ! model parameter set
+REAL(WP), DIMENSION(:), ALLOCATABLE    :: BL      ! vector of lower parameter bounds
+REAL(WP), DIMENSION(:), ALLOCATABLE    :: BU      ! vector of upper parameter bounds
+REAL(WP), DIMENSION(:), ALLOCATABLE    :: APAR    ! model parameter set
 INTEGER(KIND=4)                        :: ISEED   ! seed for the random sequence
 REAL(KIND=4),DIMENSION(:), ALLOCATABLE :: URAND   ! vector of quasi-random numbers U[0,1]
 ! ---------------------------------------------------------------------------------------

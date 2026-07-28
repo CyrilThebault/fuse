@@ -14,7 +14,6 @@ SUBROUTINE SELECTMODL(FUSE_ID,ERR,MESSAGE)
 ! Reads a control file and identifies a unique model index
 ! ---------------------------------------------------------------------------------------
 USE nrtype,ONLY:I4B,LGT                               ! defines data types
-USE utilities_dmsl_kit_FUSE,ONLY:getSpareUnit,stripTrailString
 USE fuse_fileManager,only:SETNGS_PATH,M_DECISIONS     ! defines data directory
 USE model_defn,ONLY:NDEC,SMODL,AMODL,&                ! defines model decisions
   LIST_RFERR,LIST_ARCH1,LIST_ARCH2,LIST_QSURF,LIST_QPERC,LIST_ESOIL,&
@@ -31,9 +30,12 @@ CHARACTER(LEN=*), INTENT(OUT)          :: MESSAGE     ! error message
 ! (1) read in the component choice and model component
 LOGICAL(LGT)                           :: READ_FILE   ! .TRUE. if read model decisions from a file
 integer(i4b),parameter::lenPath=1024 !DK/2008/10/21: allows longer file paths
-INTEGER(I4B)                           :: IUNIT       ! file unit
+integer                                :: iunit       ! file unit
+integer                                :: ios         ! I/O error code
+character(len=256)                     :: iomsg       ! I/O error message
 CHARACTER(LEN=lenPath)                 :: CFILE       ! name of constraints file
 LOGICAL(LGT)                           :: LEXIST      ! .TRUE. if file exists
+integer(i4b)                           :: ixc         ! index of the start of the comment
 CHARACTER(LEN=256)                     :: KEY         ! format code
 INTEGER(I4B)                           :: IDEC        ! loop thru model decisions
 CHARACTER(LEN=16)                      :: M_CHOICE    ! model choice
@@ -89,18 +91,33 @@ ELSE
   print *, 'Now reading model decisions from:', trim(CFILE)
 ENDIF
 
-! open up model decisions file
-CALL getSpareUnit(IUNIT,err,message) ! make sure IUNIT is actually available
-IF (err/=0) THEN
-message="f-SELECTMODL/weird/&"//message
-err=100; return
-ENDIF
+! open up model decisions file for reading
+open( &
+    newunit = iunit, &
+    file    = cfile, &
+    status  = 'old', &
+    action  = 'read', &
+    iostat  = ios, &
+    iomsg   = iomsg )
 
-OPEN(IUNIT,FILE=CFILE,STATUS='old')
+! check for errors
+if (ios /= 0) then
+    err = 100
+    message = 'f-SELECTMODL: '//trim(iomsg)
+    return
+end if
 
-! read format key (and strip out descriptive text)
-READ(IUNIT,'(a)') KEY
-CALL stripTrailString(string=KEY,trailStart='!')
+! read format key
+read(iunit, '(a)', iostat=ios, iomsg=iomsg) key
+if (ios /= 0) then
+    err = 100
+    message = trim(iomsg)
+    return
+end if
+
+! strip out descriptive text
+ixc = index(key, '!')
+if (ixc > 0) key = trim(key(:ixc-1))
 
 ! read model decisions
 print *, 'Model decisions:'

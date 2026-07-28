@@ -21,7 +21,7 @@ INTEGER(I4B), INTENT(IN)               :: IMOD        ! model index
 INTEGER(I4B)                           :: IERR,NCID   ! error code; NetCDF ID
 INTEGER(I4B), DIMENSION(2)             :: INDX        ! indices for parameter write
 INTEGER(I4B)                           :: IVAR        ! loop through parameters
-REAL(SP)                               :: XPAR        ! desired parameter
+REAL(WP)                               :: XPAR        ! desired parameter
 REAL(MSP)                              :: APAR        ! convert to SP (need for SP write)
 INTEGER(I4B)                           :: IVAR_ID     ! variable ID
 INTEGER(I4B), PARAMETER                :: NDESC=8     ! number of model descriptors

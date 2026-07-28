@@ -18,37 +18,37 @@ USE nrtype                                            ! variable definitions, et
 USE model_numerix                                     ! define method/parameters used for numerical solution
 IMPLICIT NONE
 ! input/output variables
-REAL(SP), DIMENSION(:), INTENT(IN)     :: STATE_START ! state vector at the start of the full step
-REAL(SP), DIMENSION(:), INTENT(OUT)    :: STATE_END   ! state vector at the end of the full step
-REAL(SP), INTENT(INOUT)                :: DT_SUB      ! length of the sub-step
-REAL(SP), INTENT(IN)                   :: DT_FULL     ! length of the full step
+REAL(WP), DIMENSION(:), INTENT(IN)     :: STATE_START ! state vector at the start of the full step
+REAL(WP), DIMENSION(:), INTENT(OUT)    :: STATE_END   ! state vector at the end of the full step
+REAL(WP), INTENT(INOUT)                :: DT_SUB      ! length of the sub-step
+REAL(WP), INTENT(IN)                   :: DT_FULL     ! length of the full step
 INTEGER(I4B), INTENT(OUT)              :: IERR        ! error code
 CHARACTER(LEN=*), INTENT(OUT)          :: MESSAGE     ! error message
 ! internal variables
-REAL(SP)                               :: STEP        ! new step size
-REAL(SP)                               :: ETIME       ! part of the time step completed
-REAL(SP)                               :: PREVSTEP    ! save pen-ultimate step size so small steps not carried over
+REAL(WP)                               :: STEP        ! new step size
+REAL(WP)                               :: ETIME       ! part of the time step completed
+REAL(WP)                               :: PREVSTEP    ! save pen-ultimate step size so small steps not carried over
 LOGICAL(LGT)                           :: NEWSTEP     ! .TRUE. if new step (determine if a new Jacobian is needed)
 LOGICAL(LGT)                           :: NEW_SUBSTEP ! .TRUE. if new sub-step (determine if need to calculate derivatives)
 LOGICAL(LGT)                           :: STEP_INCREASE ! FLAG to determine if the end time step has been increased
-REAL(SP), DIMENSION(SIZE(STATE_START)) :: STATE0      ! state vector at the start of the sub-step
-REAL(SP), DIMENSION(SIZE(STATE_START)) :: STATE1_LO   ! state vector at the end of the sub-step (lower-order solution)
-REAL(SP), DIMENSION(SIZE(STATE_START)) :: STATE1_HI   ! state vector at the end of the sub-step (higher-order solution)
-REAL(SP), DIMENSION(SIZE(STATE_START)) :: STATE1_LO_S ! safeguarded explicit Euler solution, also used in explicit Heun
-REAL(SP), DIMENSION(SIZE(STATE_START)) :: STATE1_HI_S ! safeguarded explicit Heun and implicit Heun solutions
-REAL(SP), DIMENSION(SIZE(STATE_START)) :: STATE1_INIT ! initial state vector used in the implicit solution
-REAL(SP), DIMENSION(SIZE(STATE_START)) :: STATE1_RETAIN ! states retained at the end of the sub-step
-REAL(SP), DIMENSION(SIZE(STATE_START)) :: DYDT_0      ! model derivatives at the start of the sub-step
-REAL(SP), DIMENSION(SIZE(STATE_START)) :: DYDT_1      ! model derivatives at the end of the sub-step
-REAL(SP), DIMENSION(SIZE(STATE_START)) :: EVEC        ! error estimate for each state
-REAL(SP), DIMENSION(SIZE(STATE_START)) :: TVEC        ! error threshold for each state
-REAL(SP)                               :: MULT        ! multiplier for new step size
-REAL(SP), PARAMETER                    :: EPS=1.E-10_SP ! machine constant to prevent floating point errors
+REAL(WP), DIMENSION(SIZE(STATE_START)) :: STATE0      ! state vector at the start of the sub-step
+REAL(WP), DIMENSION(SIZE(STATE_START)) :: STATE1_LO   ! state vector at the end of the sub-step (lower-order solution)
+REAL(WP), DIMENSION(SIZE(STATE_START)) :: STATE1_HI   ! state vector at the end of the sub-step (higher-order solution)
+REAL(WP), DIMENSION(SIZE(STATE_START)) :: STATE1_LO_S ! safeguarded explicit Euler solution, also used in explicit Heun
+REAL(WP), DIMENSION(SIZE(STATE_START)) :: STATE1_HI_S ! safeguarded explicit Heun and implicit Heun solutions
+REAL(WP), DIMENSION(SIZE(STATE_START)) :: STATE1_INIT ! initial state vector used in the implicit solution
+REAL(WP), DIMENSION(SIZE(STATE_START)) :: STATE1_RETAIN ! states retained at the end of the sub-step
+REAL(WP), DIMENSION(SIZE(STATE_START)) :: DYDT_0      ! model derivatives at the start of the sub-step
+REAL(WP), DIMENSION(SIZE(STATE_START)) :: DYDT_1      ! model derivatives at the end of the sub-step
+REAL(WP), DIMENSION(SIZE(STATE_START)) :: EVEC        ! error estimate for each state
+REAL(WP), DIMENSION(SIZE(STATE_START)) :: TVEC        ! error threshold for each state
+REAL(WP)                               :: MULT        ! multiplier for new step size
+REAL(WP), PARAMETER                    :: EPS=1.E-10_WP ! machine constant to prevent floating point errors
 INTEGER(I4B), DIMENSION(1)             :: IMAX        ! index of maximum error
 INTEGER(I4B)                           :: NITER       ! number of iterations in newtoniter
 LOGICAL(LGT)                           :: CHECK       ! convergence check in SUBROUTINE newtoniter
 LOGICAL(LGT)                           :: FEXCESS     ! FLAG to denote if states are corrected for excessive extrapolation
-REAL(SP)                               :: TEMPSTEP    ! suggested new time step, for case of non-convergence
+REAL(WP)                               :: TEMPSTEP    ! suggested new time step, for case of non-convergence
 ! -------------------------------------------------------------------------------------------------
 INTERFACE
  SUBROUTINE MODL_SOLVE(CALCDSDT,IE_SOLVE,SI_SOLVE,B_IMPOSE,AVG_FLUX,ADD_FLUX,NEWSTATE, & ! define functionality of the routine
@@ -63,10 +63,10 @@ INTERFACE
  LOGICAL(LGT), INTENT(IN),OPTIONAL             :: AVG_FLUX    ! FLAG to average fluxes from start & end states
  LOGICAL(LGT), INTENT(IN),OPTIONAL             :: ADD_FLUX    ! FLAG to add accepted fluxes to the total flux
  LOGICAL(LGT), INTENT(IN),OPTIONAL             :: NEWSTATE    ! FLAG to use weighted fluxes to compute end state
- REAL(SP), INTENT(IN), OPTIONAL                :: DT          ! length of the sub-step
- REAL(SP), DIMENSION(:),INTENT(IN), OPTIONAL   :: S0          ! input state vector
- REAL(SP), DIMENSION(:), INTENT(OUT),OPTIONAL  :: S1          ! state vector from the implicit euler solution
- REAL(SP), DIMENSION(:),INTENT(INOUT),OPTIONAL :: DSDT        ! state derivatives
+ REAL(WP), INTENT(IN), OPTIONAL                :: DT          ! length of the sub-step
+ REAL(WP), DIMENSION(:),INTENT(IN), OPTIONAL   :: S0          ! input state vector
+ REAL(WP), DIMENSION(:), INTENT(OUT),OPTIONAL  :: S1          ! state vector from the implicit euler solution
+ REAL(WP), DIMENSION(:),INTENT(INOUT),OPTIONAL :: DSDT        ! state derivatives
  LOGICAL(LGT), INTENT(IN),OPTIONAL             :: NEWSTEP     ! FLAG to denote a new model time step
  LOGICAL(LGT), INTENT(IN),OPTIONAL             :: CONVCHECK   ! FLAG to check for convergence of the implicit scheme
  INTEGER(I4B), INTENT(OUT), OPTIONAL           :: NITER       ! number of iterations
@@ -80,7 +80,7 @@ END INTERFACE
 ! (0) INITIALIZATION
 ! ---------------------------------------------------------------------------------------
 ! intilize states and counters
-ETIME         = 0._sp                        ! part of the time step completed
+ETIME         = 0._wp                        ! part of the time step completed
 CHECK         = .FALSE.
 STATE0        = STATE_START                  ! save model states at the start of the full step
 STATE1_RETAIN = STATE_START                  ! initial state (needed for rejected steps)
@@ -139,7 +139,7 @@ SUBSTEPS: DO  ! continuous (recursive) loop over sub-steps
    ! estimate the initial conditions used in the Newton scheme
    SELECT CASE (INITIAL_NEWTON)
     CASE (STATE_OLD);     STATE1_INIT = STATE0
-    CASE (EXPLICIT_MID);  STATE1_INIT = STATE0 + DYDT_0*DT_SUB/2.0_SP ! estimate at mid-point
+    CASE (EXPLICIT_MID);  STATE1_INIT = STATE0 + DYDT_0*DT_SUB/2.0_WP ! estimate at mid-point
     CASE (EXPLICIT_FULL); STATE1_INIT = STATE0 + DYDT_0*DT_SUB        ! estimate at end
    END SELECT
    ! estimate state vector at end of time step
@@ -166,7 +166,7 @@ SUBSTEPS: DO  ! continuous (recursive) loop over sub-steps
    ! calculate explicit Heun solution (NOTE: using safeguarded states)
    CALL MODL_SOLVE(CALCDSDT=.TRUE.,S0=STATE1_LO_S,DT=DT_SUB,DSDT=DYDT_1,SOLUTION=1,IERR=IERR,MESSAGE=MESSAGE)
    IF (IERR.NE.0) THEN; PRINT *, IERR, MESSAGE; STOP; ENDIF
-   STATE1_HI = STATE0 + 0.5_SP*(DYDT_0+DYDT_1)*DT_SUB
+   STATE1_HI = STATE0 + 0.5_WP*(DYDT_0+DYDT_1)*DT_SUB
    ! average fluxes (average fluxes before imposing bounds)
    CALL MODL_SOLVE(AVG_FLUX=.TRUE.,IERR=IERR,MESSAGE=MESSAGE)
    IF (IERR.NE.0) THEN; PRINT *, IERR, TRIM(MESSAGE); STOP; ENDIF
@@ -182,7 +182,7 @@ SUBSTEPS: DO  ! continuous (recursive) loop over sub-steps
    ! estimate the initial conditions used in the Newton scheme
    SELECT CASE (INITIAL_NEWTON)
     CASE (STATE_OLD);     STATE1_INIT = STATE0
-    CASE (EXPLICIT_MID);  STATE1_INIT = STATE0 + DYDT_0*DT_SUB/2.0_SP ! estimate at mid-point
+    CASE (EXPLICIT_MID);  STATE1_INIT = STATE0 + DYDT_0*DT_SUB/2.0_WP ! estimate at mid-point
     CASE (EXPLICIT_FULL); STATE1_INIT = STATE0 + DYDT_0*DT_SUB        ! estimate at end
    END SELECT
    ! estimate state vector at end of sub-step
@@ -193,7 +193,7 @@ SUBSTEPS: DO  ! continuous (recursive) loop over sub-steps
    IF (NITER > MAXNUM_ITERNS) MAXNUM_ITERNS=NITER
    newStep=.false.
    ! re-compute state vector at the end of the sub-step (needed for non-convergence)
-   STATE1_HI = STATE0 + 0.5_SP*(DYDT_0+DYDT_1)*DT_SUB
+   STATE1_HI = STATE0 + 0.5_WP*(DYDT_0+DYDT_1)*DT_SUB
    ! average fluxes (average fluxes before imposing bounds)
    CALL MODL_SOLVE(AVG_FLUX=.TRUE.,IERR=IERR,MESSAGE=MESSAGE)
    IF (IERR.NE.0) THEN; PRINT *, IERR, TRIM(MESSAGE); STOP; ENDIF
@@ -257,7 +257,7 @@ SUBSTEPS: DO  ! continuous (recursive) loop over sub-steps
     NEW_SUBSTEP = .TRUE.
   ENDIF
  ELSE
-  EVEC = 0._SP; TVEC = 0._SP; IMAX = 0
+  EVEC = 0._WP; TVEC = 0._WP; IMAX = 0
   NEW_SUBSTEP = .TRUE. ! (accept if fixed time steps)
  ENDIF
  ! --------------------------------------------------------------------------------------
@@ -317,8 +317,8 @@ DT_SUB=PREVSTEP                       ! ensure stepsize is not equal to the smal
 ! ---------------------------------------------------------------------------------------
 CONTAINS
  FUNCTION REVISE_STEP()
- REAL(SP)    :: REVISE_STEP
- REAL(SP)    :: T_MGN
+ REAL(WP)    :: REVISE_STEP
+ REAL(WP)    :: T_MGN
  SELECT CASE(SMALL_ENDSTEP)
   ! -------------------------------------------------------------------------------------
   CASE(STEP_TRUNC)  ! truncate the time step if near the end
@@ -329,8 +329,8 @@ CONTAINS
    IF (ETIME + STEP .GE. DT_FULL) THEN
     REVISE_STEP = DT_FULL - ETIME
    ELSE
-    IF (ETIME + STEP*2._SP .GE. DT_FULL) THEN
-     REVISE_STEP = (DT_FULL - ETIME)/2._SP
+    IF (ETIME + STEP*2._WP .GE. DT_FULL) THEN
+     REVISE_STEP = (DT_FULL - ETIME)/2._WP
     ELSE
      REVISE_STEP = STEP
     ENDIF
@@ -346,7 +346,7 @@ CONTAINS
      REVISE_STEP   = DT_FULL - ETIME
      STEP_INCREASE = .TRUE.
     ELSE
-     IF (ETIME + STEP + T_MGN*2._SP .GE. DT_FULL) THEN
+     IF (ETIME + STEP + T_MGN*2._WP .GE. DT_FULL) THEN
       REVISE_STEP   = STEP + T_MGN*(T_MGN/(DT_FULL-(ETIME+STEP)))
       STEP_INCREASE = .TRUE.
      ELSE

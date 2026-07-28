@@ -29,10 +29,10 @@ LOGICAL(LGT), INTENT(IN),OPTIONAL             :: B_IMPOSE    ! FLAG to impose bo
 LOGICAL(LGT), INTENT(IN),OPTIONAL             :: AVG_FLUX    ! FLAG to average fluxes from start & end states
 LOGICAL(LGT), INTENT(IN),OPTIONAL             :: ADD_FLUX    ! FLAG to add accepted fluxes to the total flux
 LOGICAL(LGT), INTENT(IN),OPTIONAL             :: NEWSTATE    ! FLAG to use weighted fluxes to compute end state
-REAL(SP), INTENT(IN), OPTIONAL                :: DT          ! length of the sub-step
-REAL(SP), DIMENSION(:),INTENT(IN), OPTIONAL   :: S0          ! input state vector
-REAL(SP), DIMENSION(:), INTENT(OUT),OPTIONAL  :: S1          ! state vector from the implicit euler solution
-REAL(SP), DIMENSION(:),INTENT(INOUT),OPTIONAL :: DSDT        ! state derivatives
+REAL(WP), INTENT(IN), OPTIONAL                :: DT          ! length of the sub-step
+REAL(WP), DIMENSION(:),INTENT(IN), OPTIONAL   :: S0          ! input state vector
+REAL(WP), DIMENSION(:), INTENT(OUT),OPTIONAL  :: S1          ! state vector from the implicit euler solution
+REAL(WP), DIMENSION(:),INTENT(INOUT),OPTIONAL :: DSDT        ! state derivatives
 LOGICAL(LGT), INTENT(IN),OPTIONAL             :: NEWSTEP     ! FLAG to denote a new model time step
 LOGICAL(LGT), INTENT(OUT),OPTIONAL            :: CONVCHECK   ! FLAG to check for convergence of the implicit scheme
 INTEGER(I4B), INTENT(OUT), OPTIONAL           :: NITER       ! number of iterations
@@ -41,14 +41,14 @@ LOGICAL(LGT), INTENT(OUT),OPTIONAL            :: HBOUND      ! FLAG to denote if
 INTEGER(I4B), INTENT(OUT)                     :: IERR        ! error code
 CHARACTER(LEN=*), INTENT(OUT)                 :: MESSAGE     ! error message
 ! internal variables
-REAL(SP), PARAMETER                           :: XACC=1.E-10 ! accuracy of implicit estimate 
+REAL(WP), PARAMETER                           :: XACC=1.E-10 ! accuracy of implicit estimate 
 LOGICAL(LGT)                                  :: ERROR_FLAG  ! FLAG to denote if violated constraints
-REAL(SP), TARGET                              :: DT1         ! full time step
-REAL(SP), TARGET                              :: DT2         ! half time step
-REAL(SP), DIMENSION(:), ALLOCATABLE, TARGET   :: XI          ! initial state vector
-REAL(SP), DIMENSION(:), ALLOCATABLE, TARGET   :: DSEE        ! change in state by explicit euler
-REAL(SP), DIMENSION(:), ALLOCATABLE           :: DSDT0       ! state derivative at start of step
-REAL(SP), DIMENSION(:), ALLOCATABLE           :: DSDT_SIE    ! state derivative for semi-implicit euler
+REAL(WP), TARGET                              :: DT1         ! full time step
+REAL(WP), TARGET                              :: DT2         ! half time step
+REAL(WP), DIMENSION(:), ALLOCATABLE, TARGET   :: XI          ! initial state vector
+REAL(WP), DIMENSION(:), ALLOCATABLE, TARGET   :: DSEE        ! change in state by explicit euler
+REAL(WP), DIMENSION(:), ALLOCATABLE           :: DSDT0       ! state derivative at start of step
+REAL(WP), DIMENSION(:), ALLOCATABLE           :: DSDT_SIE    ! state derivative for semi-implicit euler
 ! ---------------------------------------------------------------------------------------
 IERR=0; MESSAGE='fuse_solve, just started'
 ! ---------------------------------------------------------------------------------------
@@ -122,7 +122,7 @@ IF (PRESENT(IE_SOLVE)) THEN
   CURRENT_DT = DT
   ! populate targets
   DT1=DT                        ! full sub-step
-  DT2=DT/2._SP                  ! half sub-step
+  DT2=DT/2._WP                  ! half sub-step
   CALL STR_2_XTRY(MSTATE,XI)    ! retrieve state at the start of the sub-step
   CALL STR_2_XTRY(DYDT_0,DSDT0) ! retrieve derivatives at the start of the sub-step
   DSEE = DSDT0*DT2              ! calculate explicit euler component of Heun solution

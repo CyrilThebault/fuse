@@ -31,8 +31,8 @@ INTEGER(I4B)                           :: IPAR        ! loop through model param
 REAL(MSP)                              :: OF_VAL      ! objective function value (single precision)
 REAL(MSP)                              :: APAR        ! parameter value (single precision)
 ! output
-REAL(SP), INTENT(OUT)                  :: OF          ! objective function value (whatever precision SP is)
-REAL(SP), DIMENSION(:), INTENT(OUT)    :: XOPT        ! optimal parameter set
+REAL(WP), INTENT(OUT)                  :: OF          ! objective function value (working precision)
+REAL(WP), DIMENSION(:), INTENT(OUT)    :: XOPT        ! optimal parameter set
 ! ---------------------------------------------------------------------------------------
 ! CONTENT REMOVED FOR COPYRIGHT VIOLATION
 ! ---------------------------------------------------------------------------------------

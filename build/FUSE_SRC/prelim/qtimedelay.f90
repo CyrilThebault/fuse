@@ -24,36 +24,36 @@ integer(i4b),intent(out)::err
 character(*),intent(out)::message
 ! locals
 INTEGER(I4B)                           :: NTDH        ! maximum number of future time steps
-REAL(SP)                               :: ALPHA       ! shape parameter
-REAL(SP)                               :: ALAMB       ! scale parameter
+REAL(WP)                               :: ALPHA       ! shape parameter
+REAL(WP)                               :: ALAMB       ! scale parameter
 INTEGER(I4B)                           :: JTIM        ! (loop through future time steps)
-REAL(SP)                               :: TFUTURE     ! future time (units of days)
-REAL(SP)                               :: CUMPROB     ! cumulative probability at JTIM
-REAL(SP)                               :: PSAVE       ! cumulative probability at JTIM-1
+REAL(WP)                               :: TFUTURE     ! future time (units of days)
+REAL(WP)                               :: CUMPROB     ! cumulative probability at JTIM
+REAL(WP)                               :: PSAVE       ! cumulative probability at JTIM-1
 ! ---------------------------------------------------------------------------------------
 err=0
 SELECT CASE(SMODL%iQ_TDH)
  CASE(iopt_rout_gamma) ! use a Gamma distribution with shape parameter = 2.5
-  ALPHA = 2.5_SP                                             ! shape parameter
+  ALPHA = 2.5_WP                                             ! shape parameter
 
   !PRINT *, 'MPARAM= ', MPARAM
 
   ALAMB = ALPHA/MPARAM%TIMEDELAY                             ! scale parameter
-  PSAVE = 0._SP                                              ! cumulative probability at JTIM-1
+  PSAVE = 0._WP                                              ! cumulative probability at JTIM-1
   NTDH = SIZE(DPARAM%FRAC_FUTURE)                            ! maximum number of future time steps
   ! loop through time steps and compute the fraction of runoff in future time steps
   DO JTIM=1,NTDH
-   TFUTURE                   = REAL(JTIM,SP)*DELTIM          ! future time (units of days)
+   TFUTURE                   = REAL(JTIM, WP)*DELTIM          ! future time (units of days)
    CUMPROB                   = GAMMP(ALPHA,ALAMB*TFUTURE)    ! cumulative probability at JTIM
-   DPARAM%FRAC_FUTURE(JTIM)  = MAX(0._SP, CUMPROB-PSAVE)     ! probability between JTIM-1 and JTIM
+   DPARAM%FRAC_FUTURE(JTIM)  = MAX(0._WP, CUMPROB-PSAVE)     ! probability between JTIM-1 and JTIM
    PSAVE                     = CUMPROB                       ! cumulative probability at JTIM-1
    !WRITE(*,'(3(F11.5))') TFUTURE, DPARAM%FRAC_FUTURE(JTIM), CUMPROB
-   IF(DPARAM%FRAC_FUTURE(JTIM)<EPSILON(1._SP))EXIT
+   IF(DPARAM%FRAC_FUTURE(JTIM)<EPSILON(1._WP))EXIT
   END DO
   DPARAM%NTDH_NEED = MIN(JTIM,NTDH)
-  DPARAM%FRAC_FUTURE(DPARAM%NTDH_NEED+1:)=0._SP
+  DPARAM%FRAC_FUTURE(DPARAM%NTDH_NEED+1:)=0._WP
   ! check there are enough bins
-  IF (CUMPROB.LT.0.99_SP) THEN
+  IF (CUMPROB.LT.0.99_WP) THEN
    err=100; message='f-QTIMEDELAY/not enough bins in dparam%frac_future'
    return
   ENDIF
@@ -62,8 +62,8 @@ SELECT CASE(SMODL%iQ_TDH)
  CASE(iopt_no_routing) ! no routing
   NTDH                       = SIZE(DPARAM%FRAC_FUTURE)
   DPARAM%NTDH_NEED           = 2
-  DPARAM%FRAC_FUTURE(1)      = 1._SP
-  DPARAM%FRAC_FUTURE(2:NTDH) = 0._SP
+  DPARAM%FRAC_FUTURE(1)      = 1._WP
+  DPARAM%FRAC_FUTURE(2:NTDH) = 0._WP
  CASE DEFAULT       ! check for errors
   err=100; message="f-QTIMEDELAY/SMODL%iQ_TDH must be either iopt_rout_gamma or iopt_no_routing"
   return

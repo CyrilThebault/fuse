@@ -16,15 +16,15 @@ MODULE multibands_types
 
  TYPE BANDS_INFO ! invariant characteristics
   INTEGER(I4B)                         :: NUM             ! band number (-)
-  REAL(SP)                             :: Z_MID           ! band mid-point elevation (m)
-  REAL(SP)                             :: AF              ! fraction of basin area in band (-)
+  REAL(WP)                             :: Z_MID           ! band mid-point elevation (m)
+  REAL(WP)                             :: AF              ! fraction of basin area in band (-)
  ENDTYPE BANDS_INFO
 
  TYPE BANDS_VAR ! time-dependent characteristics
-  REAL(SP)                             :: SWE             ! band snowpack water equivalent (mm)
-  REAL(SP)                             :: SNOWACCMLTN     ! new snow accumulation in band (mm day-1)
-  REAL(SP)                             :: SNOWMELT        ! snowmelt in band (mm day-1)
-  REAL(SP)                             :: DSWE_DT         ! rate of change of band SWE (mm day-1)
+  REAL(WP)                             :: SWE             ! band snowpack water equivalent (mm)
+  REAL(WP)                             :: SNOWACCMLTN     ! new snow accumulation in band (mm day-1)
+  REAL(WP)                             :: SNOWMELT        ! snowmelt in band (mm day-1)
+  REAL(WP)                             :: DSWE_DT         ! rate of change of band SWE (mm day-1)
  ENDTYPE BANDS_VAR
 
  ! Combined structure

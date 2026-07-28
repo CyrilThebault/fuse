@@ -35,16 +35,16 @@ IMPLICIT NONE
 ! (1) DUMMIES
 ! ---------------------------------------------------------------------------------------
 ! input
-REAL(SP),DIMENSION(:),INTENT(IN)        :: X0I             ! initial estimate of solution
-REAL(SP),DIMENSION(:),INTENT(IN)        :: XLO             ! lower bound on solution, either none or both bounds must be present
-REAL(SP),DIMENSION(:),INTENT(IN)        :: XHI             ! upper bound on solution, either none or both bounds must be present
-REAL(SP),DIMENSION(:),INTENT(IN)        :: XSCALE          ! typical scale of parameters
+REAL(WP),DIMENSION(:),INTENT(IN)        :: X0I             ! initial estimate of solution
+REAL(WP),DIMENSION(:),INTENT(IN)        :: XLO             ! lower bound on solution, either none or both bounds must be present
+REAL(WP),DIMENSION(:),INTENT(IN)        :: XHI             ! upper bound on solution, either none or both bounds must be present
+REAL(WP),DIMENSION(:),INTENT(IN)        :: XSCALE          ! typical scale of parameters
 INTEGER(I4B),INTENT(IN)                 :: FDIGITS         ! number of reliable digits in function evaluation
 !                                                          ! (-2=estimate,-1=full machine precision)
 INTEGER(I4B),INTENT(IN)                 :: UOUT            ! output unit for run-time information 
 ! output
-REAL(SP),DIMENSION(:),INTENT(OUT)       :: XOPT            ! optimum value of "x", for which f(x) takes its minimum value
-REAL(SP),INTENT(OUT)                    :: FOPT            ! function value at optimum
+REAL(WP),DIMENSION(:),INTENT(OUT)       :: XOPT            ! optimum value of "x", for which f(x) takes its minimum value
+REAL(WP),INTENT(OUT)                    :: FOPT            ! function value at optimum
 INTEGER(I4B),INTENT(OUT)                :: ITER            ! number of steps (iterations)
 INTEGER(I4B),INTENT(OUT)                :: FCALLS          ! number of function calls
 INTEGER(I4B),INTENT(OUT)                :: GCALLS          ! number of gradient calls
@@ -58,28 +58,28 @@ CHARACTER(*),INTENT(OUT)                :: MESSAGE         ! error message
 ! Active set (to identify parameters on bounds)
 INTEGER(I4B),DIMENSION(SIZE(X0I))       :: ACTIVESET       ! active set (-1=lo,0=free,+1=hi), must be present if using xLo and xHi
 ! Define termination tolerances
-REAL(SP)                                :: EPSF            ! desired precision
-REAL(SP)                                :: GTOL            ! scaled gradient tolerance
-REAL(SP)                                :: STOL            ! scaled step tolerance
-REAL(SP)                                :: FTOL            ! scaled function tolerance
+REAL(WP)                                :: EPSF            ! desired precision
+REAL(WP)                                :: GTOL            ! scaled gradient tolerance
+REAL(WP)                                :: STOL            ! scaled step tolerance
+REAL(WP)                                :: FTOL            ! scaled function tolerance
 ! Define scaling settings
-REAL(SP),PARAMETER                      :: FSCALE=1._SP    ! scale of function
-REAL(SP)                                :: STPMAX          ! maximum scaled stepsize/trust radius (set<0 for default)
+REAL(WP),PARAMETER                      :: FSCALE=1._WP    ! scale of function
+REAL(WP)                                :: STPMAX          ! maximum scaled stepsize/trust radius (set<0 for default)
 ! Define computational algorithms used in qnewton
 INTEGER(I4B),PARAMETER                  :: IMETH=5         ! iteration globalisation method; 5=Near-exact trust method ("hookstep")
 INTEGER(I4B),PARAMETER                  :: GMETH=1         ! gradient evaluation method; 1=Forward difference gradient
 INTEGER(I4B),PARAMETER                  :: HMETH=6         ! Hessian evaluation method; 6=BFGS update of unfactored Hessian
 ! Define initialization settings
 INTEGER(I4B),PARAMETER                  :: HIMETH=5        ! Diagonal of estimated d2f/dx2
-REAL(SP)                                :: TRUSTRAD        ! initial scaled trust region radius (set<0 for internal default)
+REAL(WP)                                :: TRUSTRAD        ! initial scaled trust region radius (set<0 for internal default)
 ! Define maximum effort expended before termination
 INTEGER(I4B),PARAMETER                  :: MAXITER=5000    ! Maximum number of iterations
 INTEGER(I4B),PARAMETER                  :: MAXFEV=500      ! Maximum number of function calls
 ! Useful diagnostics and information
-REAL(SP),DIMENSION(SIZE(X0I))           :: GRADOPT         ! gradient at the optimum
-REAL(SP),DIMENSION(SIZE(X0I),SIZE(X0I)) :: HESSOPT         ! Hessian at optimum
+REAL(WP),DIMENSION(SIZE(X0I))           :: GRADOPT         ! gradient at the optimum
+REAL(WP),DIMENSION(SIZE(X0I),SIZE(X0I)) :: HESSOPT         ! Hessian at optimum
 ! Memory footprint
-REAL(SP)                                :: MEMHESS2        ! additional memory necessary for allocating internal Hessian storage
+REAL(WP)                                :: MEMHESS2        ! additional memory necessary for allocating internal Hessian storage
 ! Return codes and runtime messages
 INTEGER(I4B)                            :: ERR_QN          ! error diagnostic, err=0->ok,<0=warning,>0=error
 CHARACTER(LEN=256)                      :: MESSAGE_QN      ! status description
@@ -88,12 +88,12 @@ INTEGER(I4B)                            :: I               ! looping variable
 ! ---------------------------------------------------------------------------------------
 ! initialize variables
 ACTIVESET(:) =  0      ! define active set (-1=lo,0=free,+1=hi)
-TRUSTRAD     = -1._SP  ! use internal default for trust region radius
-STPMAX       = -1._SP  ! use internal default for maximum scaled stepsize/trust radius
+TRUSTRAD     = -1._WP  ! use internal default for trust region radius
+STPMAX       = -1._WP  ! use internal default for maximum scaled stepsize/trust radius
 MSTATS%ERR_MESSAGE(1:31)='searching for the local optimum'
 FORALL(I=32:LEN(MSTATS%ERR_MESSAGE)) MSTATS%ERR_MESSAGE(I:I)=' '
 ! define termination tolerances
-EPSF = 10._SP**(-FDIGITS)  ! desired precision
+EPSF = 10._WP**(-FDIGITS)  ! desired precision
 GTOL = SQRT(EPSF)          ! scaled gradient tolerance
 STOL = EPSF                ! scaled step tolerance
 FTOL = EPSF                ! scaled function tolerance

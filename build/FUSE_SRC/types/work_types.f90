@@ -24,7 +24,7 @@ module work_types
  ! dSWE/dParam for each elevation band
 
  type, extends(bands_var) :: bands_var_diff
-   real(sp), allocatable               :: dSWE_dParam(:)
+   real(wp), allocatable               :: dSWE_dParam(:)
  end type bands_var_diff
 
  ! extended bands structure
@@ -50,7 +50,7 @@ module work_types
 
  ! snow structure
  type fuse_snow
-   real(sp)                            :: z_forcing      ! elevation of forcing data (m)
+   real(wp)                            :: z_forcing      ! elevation of forcing data (m)
    type(ebands) , allocatable          :: sbands(:)      ! info/variables for elevation bands (snow model)
  end type fuse_snow
 
@@ -64,15 +64,15 @@ module work_types
 
  ! numerix structure (linear algebra, ...)
  type fuse_numerix
-   real(sp)     , allocatable          :: x0(:)      ! state variables (start of step)
-   real(sp)     , allocatable          :: x1(:)      ! state variables (end of step)
+   real(wp)     , allocatable          :: x0(:)      ! state variables (start of step)
+   real(wp)     , allocatable          :: x1(:)      ! state variables (end of step)
  end type fuse_numerix
 
  ! adjoint structure (differentiable fuse)
  type fuse_adjoint
    type(fluxes), allocatable           :: df_dS(:)       ! derivative in fluxes w.r.t. states
    type(fluxes), allocatable           :: df_dPar(:)     ! derivative in fluxes w.r.t. parameters
-   real(sp),     allocatable           :: dL_dPar(:)     ! derivative in loss function w.r.t. parameters
+   real(wp),     allocatable           :: dL_dPar(:)     ! derivative in loss function w.r.t. parameters
  end type fuse_adjoint
 
  ! chunk buffers (allocate per chunk)

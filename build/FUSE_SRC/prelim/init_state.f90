@@ -19,7 +19,7 @@ USE multistate                                        ! model states
 USE multibands                                        ! model snow bands
 USE multiroute                                        ! routed runoff
 IMPLICIT NONE
-REAL(SP), INTENT(IN)                  :: FRAC         ! fraction of capacity
+REAL(WP), INTENT(IN)                  :: FRAC         ! fraction of capacity
 INTEGER(I4B)                          :: ISNW         ! snow band index
 ! ---------------------------------------------------------------------------------------
 ! (upper layer)
@@ -36,9 +36,9 @@ FSTATE%FREE_2B = DPARAM%MAXFREE_2B * FRAC
 FSTATE%WATR_2  = MPARAM%MAXWATR_2  * FRAC
 ! snow model, assume no snow at start
 DO ISNW=1,N_BANDS
- MBANDS(ISNW)%VAR%SWE = 0.0_sp
+ MBANDS(ISNW)%VAR%SWE = 0.0_wp
 END DO
 ! (routed runoff)
-FUTURE         = 0._sp
+FUTURE         = 0._wp
 ! ---------------------------------------------------------------------------------------
 END SUBROUTINE INIT_STATE

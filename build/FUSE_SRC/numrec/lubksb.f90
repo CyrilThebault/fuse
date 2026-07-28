@@ -1,11 +1,11 @@
   SUBROUTINE lubksb(a,indx,b)
   USE nrtype; USE nrutil, ONLY : assert_eq
   IMPLICIT NONE
-  REAL(SP), DIMENSION(:,:), INTENT(IN) :: a
+  REAL(WP), DIMENSION(:,:), INTENT(IN) :: a
   INTEGER(I4B), DIMENSION(:), INTENT(IN) :: indx
-  REAL(SP), DIMENSION(:), INTENT(INOUT) :: b
+  REAL(WP), DIMENSION(:), INTENT(INOUT) :: b
   INTEGER(I4B) :: i,n,ii,ll
-  REAL(SP) :: summ
+  REAL(WP) :: summ
   n=assert_eq(size(a,1),size(a,2),size(indx),'lubksb')
   ii=0
   do i=1,n

@@ -23,10 +23,10 @@ LOGICAL(LGT), INTENT(IN),OPTIONAL             :: B_IMPOSE    ! FLAG to impose bo
 LOGICAL(LGT), INTENT(IN),OPTIONAL             :: AVG_FLUX    ! FLAG to average fluxes from start & end states
 LOGICAL(LGT), INTENT(IN),OPTIONAL             :: ADD_FLUX    ! FLAG to add accepted fluxes to the total flux
 LOGICAL(LGT), INTENT(IN),OPTIONAL             :: NEWSTATE    ! FLAG to use weighted fluxes to compute end state
-REAL(SP), INTENT(IN), OPTIONAL                :: DT          ! length of the sub-step
-REAL(SP), DIMENSION(:),INTENT(IN), OPTIONAL   :: S0          ! input state vector
-REAL(SP), DIMENSION(:), INTENT(OUT),OPTIONAL  :: S1          ! state vector from the implicit euler solution
-REAL(SP), DIMENSION(:),INTENT(INOUT),OPTIONAL :: DSDT        ! state derivatives
+REAL(WP), INTENT(IN), OPTIONAL                :: DT          ! length of the sub-step
+REAL(WP), DIMENSION(:),INTENT(IN), OPTIONAL   :: S0          ! input state vector
+REAL(WP), DIMENSION(:), INTENT(OUT),OPTIONAL  :: S1          ! state vector from the implicit euler solution
+REAL(WP), DIMENSION(:),INTENT(INOUT),OPTIONAL :: DSDT        ! state derivatives
 LOGICAL(LGT), INTENT(IN),OPTIONAL             :: NEWSTEP     ! FLAG to denote a new model time step
 LOGICAL(LGT), INTENT(OUT),OPTIONAL            :: CONVCHECK   ! FLAG to check for convergence of the implicit scheme
 INTEGER(I4B), INTENT(OUT), OPTIONAL           :: NITER       ! number of iterations
@@ -35,9 +35,9 @@ LOGICAL(LGT), INTENT(OUT),OPTIONAL            :: HBOUND      ! FLAG to denote if
 INTEGER(I4B), INTENT(OUT)                     :: IERR        ! error code
 CHARACTER(LEN=*), INTENT(OUT)                 :: MESSAGE     ! error message
 ! internal variables
-REAL(SP), PARAMETER                           :: XACC=1.E-10 ! accuracy of implicit estimate 
-REAL(SP)                                      :: ERROR_LOSS  ! extrapolation error
-REAL(SP)                                      :: TOTAL_FLUX  ! total fluxes involved in extrapolation
+REAL(WP), PARAMETER                           :: XACC=1.E-10 ! accuracy of implicit estimate 
+REAL(WP)                                      :: ERROR_LOSS  ! extrapolation error
+REAL(WP)                                      :: TOTAL_FLUX  ! total fluxes involved in extrapolation
 ! ---------------------------------------------------------------------------------------
 INTERFACE
  SUBROUTINE IMPL_ERROR(S,F,DF)
@@ -46,9 +46,9 @@ INTERFACE
  !  F = S(try) - (S(n) + dS(try)/dt * delT)
  USE nrtype                                          ! numerical recipes data types
  IMPLICIT NONE
- REAL(SP), INTENT(IN)                :: S            ! storage
- REAL(SP), INTENT(OUT)               :: F            ! function value
- REAL(SP), INTENT(OUT)               :: DF           ! function derivative
+ REAL(WP), INTENT(IN)                :: S            ! storage
+ REAL(WP), INTENT(OUT)               :: F            ! function value
+ REAL(WP), INTENT(OUT)               :: DF           ! function derivative
  END SUBROUTINE IMPL_ERROR
 END INTERFACE
 ! ---------------------------------------------------------------------------------------
@@ -107,8 +107,8 @@ ENDIF
 IF (PRESENT(AVG_FLUX)) THEN
  IF (AVG_FLUX) THEN   ! Case 1: Higher-order solution accepted
   ! average fluxes and derivatives from the start and end of the step
-  M_FLUX%DRAINAGE = (FLUX_0%DRAINAGE + FLUX_1%DRAINAGE)/2._SP
-  MDS_DT%WATR_1   = (DSDT_0%WATR_1 + DSDT_1%WATR_1)/2._SP
+  M_FLUX%DRAINAGE = (FLUX_0%DRAINAGE + FLUX_1%DRAINAGE)/2._WP
+  MDS_DT%WATR_1   = (DSDT_0%WATR_1 + DSDT_1%WATR_1)/2._WP
  ELSE                 ! Case 2: Lower-order solution accepted
   ! check that the solution argument is present
   IF (.NOT.PRESENT(SOLUTION)) THEN

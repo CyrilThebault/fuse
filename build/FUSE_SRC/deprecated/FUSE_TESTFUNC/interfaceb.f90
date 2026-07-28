@@ -4,10 +4,10 @@ INTERFACE
  SUBROUTINE ODE_INT(MODL_SOLVE,STATE_START,STATE_END,DT_SUB,DT_FULL,IERR,MESSAGE)
  USE nrtype                                            ! variable definitions, etc.
  IMPLICIT NONE
- REAL(SP), DIMENSION(:), INTENT(IN)     :: STATE_START ! state vector at the start of the full step
- REAL(SP), DIMENSION(:), INTENT(OUT)    :: STATE_END   ! state vector at the end of the full step
- REAL(SP), INTENT(INOUT)                :: DT_SUB      ! length of the sub-step
- REAL(SP), INTENT(IN)                   :: DT_FULL     ! length of the full step
+ REAL(WP), DIMENSION(:), INTENT(IN)     :: STATE_START ! state vector at the start of the full step
+ REAL(WP), DIMENSION(:), INTENT(OUT)    :: STATE_END   ! state vector at the end of the full step
+ REAL(WP), INTENT(INOUT)                :: DT_SUB      ! length of the sub-step
+ REAL(WP), INTENT(IN)                   :: DT_FULL     ! length of the full step
  INTEGER(I4B), INTENT(OUT)              :: IERR        ! error code
  CHARACTER(LEN=*), INTENT(OUT)          :: MESSAGE     ! error message
  INTERFACE
@@ -22,10 +22,10 @@ INTERFACE
   LOGICAL(LGT), INTENT(IN),OPTIONAL             :: AVG_FLUX    ! FLAG to average fluxes from start & end states 
   LOGICAL(LGT), INTENT(IN),OPTIONAL             :: ADD_FLUX    ! FLAG to add accepted fluxes to the total flux
   LOGICAL(LGT), INTENT(IN),OPTIONAL             :: NEWSTATE    ! FLAG to use weighted fluxes to compute end state
-  REAL(SP), INTENT(IN), OPTIONAL                :: DT          ! length of the sub-step
-  REAL(SP), DIMENSION(:),INTENT(IN), OPTIONAL   :: S0          ! input state vector
-  REAL(SP), DIMENSION(:), INTENT(OUT),OPTIONAL  :: S1          ! state vector from the implicit euler solution
-  REAL(SP), DIMENSION(:),INTENT(INOUT),OPTIONAL :: DSDT        ! state derivatives
+  REAL(WP), INTENT(IN), OPTIONAL                :: DT          ! length of the sub-step
+  REAL(WP), DIMENSION(:),INTENT(IN), OPTIONAL   :: S0          ! input state vector
+  REAL(WP), DIMENSION(:), INTENT(OUT),OPTIONAL  :: S1          ! state vector from the implicit euler solution
+  REAL(WP), DIMENSION(:),INTENT(INOUT),OPTIONAL :: DSDT        ! state derivatives
   LOGICAL(LGT), INTENT(IN),OPTIONAL             :: NEWSTEP     ! FLAG to denote a new model time step
   LOGICAL(LGT), INTENT(IN),OPTIONAL             :: CONVCHECK   ! FLAG to check for convergence of the implicit scheme
   INTEGER(I4B), INTENT(OUT), OPTIONAL           :: NITER       ! number of iterations
@@ -50,10 +50,10 @@ INTERFACE
  LOGICAL(LGT), INTENT(IN),OPTIONAL             :: AVG_FLUX    ! FLAG to average fluxes from start & end states 
  LOGICAL(LGT), INTENT(IN),OPTIONAL             :: ADD_FLUX    ! FLAG to add accepted fluxes to the total flux
  LOGICAL(LGT), INTENT(IN),OPTIONAL             :: NEWSTATE    ! FLAG to use weighted fluxes to compute end state
- REAL(SP), INTENT(IN), OPTIONAL                :: DT          ! length of the sub-step
- REAL(SP), DIMENSION(:),INTENT(IN), OPTIONAL   :: S0          ! input state vector
- REAL(SP), DIMENSION(:), INTENT(OUT),OPTIONAL  :: S1          ! state vector from the implicit euler solution
- REAL(SP), DIMENSION(:),INTENT(INOUT),OPTIONAL :: DSDT        ! state derivatives
+ REAL(WP), INTENT(IN), OPTIONAL                :: DT          ! length of the sub-step
+ REAL(WP), DIMENSION(:),INTENT(IN), OPTIONAL   :: S0          ! input state vector
+ REAL(WP), DIMENSION(:), INTENT(OUT),OPTIONAL  :: S1          ! state vector from the implicit euler solution
+ REAL(WP), DIMENSION(:),INTENT(INOUT),OPTIONAL :: DSDT        ! state derivatives
  LOGICAL(LGT), INTENT(IN),OPTIONAL             :: NEWSTEP     ! FLAG to denote a new model time step
  LOGICAL(LGT), INTENT(IN),OPTIONAL             :: CONVCHECK   ! FLAG to check for convergence of the implicit scheme
  INTEGER(I4B), INTENT(OUT), OPTIONAL           :: NITER       ! number of iterations

@@ -150,7 +150,7 @@ CONTAINS
  SUBROUTINE WRITE_PARINFO(PARAM_META)
  ! define parameter metadata structure
  TYPE(PARATT), INTENT(IN)             :: PARAM_META  ! parameter metadata
- REAL(SP)                             :: PAR_OFFSET  ! used to define "reasonable" parameter range
+ REAL(WP)                             :: PAR_OFFSET  ! used to define "reasonable" parameter range
  ! write 1st block
  WRITE(IUNIT,'(A11, 1X, A9,1X,A)')  '"'//TRIM(PARAM_META%P_NAME)//'"     ', ' ', '! name of parameter'
  WRITE(IUNIT,'(L1,  1X,A19,1X,A)') PARAM_META%PARFIT, ' ', '! fit (T/F) [T=param fitted, F=param fixed at default]'

@@ -24,16 +24,16 @@ MODULE PAREXTRACT_MODULE
   ! Extracts parameter from data structures
   ! ---------------------------------------------------------------------------------------
   USE model_numerix                                     ! model numerix parameters
-  USE globaldata, only: NA_VALUE_SP                     ! missing value
+  USE fuse_globaldata, only: NA_VALUE_SP                     ! missing value
   USE multiparam, only: MPARAM, DPARAM, SOBOL_INDX      ! model parameters
   USE multibands, only: Z_FORCING                       ! scalar variables from elevation bands
   IMPLICIT NONE
   ! input
   CHARACTER(*), INTENT(IN)               :: PARNAME     ! parameter name
   ! internal
-  REAL(SP)                               :: XVAR        ! variable
+  REAL(WP)                               :: XVAR        ! variable
   ! output
-  REAL(SP)                               :: PAREXTRACT  ! FUNCTION name
+  REAL(WP)                               :: PAREXTRACT  ! FUNCTION name
   ! ---------------------------------------------------------------------------------------
   SELECT CASE (TRIM(PARNAME))
    
@@ -94,12 +94,12 @@ MODULE PAREXTRACT_MODULE
    CASE ('Z_FORCING')  ; XVAR = Z_FORCING
    
    ! numerical solution parameters
-   CASE ('SOLUTION')   ; XVAR = REAL(SOLUTION_METHOD, KIND(SP))
-   CASE ('TIMSTEP_TYP'); XVAR = REAL(TEMPORAL_ERROR_CONTROL, KIND(SP))
-   CASE ('INITL_GUESS'); XVAR = REAL(INITIAL_NEWTON, KIND(SP))
-   CASE ('JAC_RECOMPT'); XVAR = REAL(JAC_RECOMPUTE, KIND(SP))
-   CASE ('CK_OVRSHOOT'); XVAR = REAL(CHECK_OVERSHOOT, KIND(SP)) 
-   CASE ('SMALL_ESTEP'); XVAR = REAL(SMALL_ENDSTEP, KIND(SP)) 
+   CASE ('SOLUTION')   ; XVAR = REAL(SOLUTION_METHOD, KIND(WP))
+   CASE ('TIMSTEP_TYP'); XVAR = REAL(TEMPORAL_ERROR_CONTROL, KIND(WP))
+   CASE ('INITL_GUESS'); XVAR = REAL(INITIAL_NEWTON, KIND(WP))
+   CASE ('JAC_RECOMPT'); XVAR = REAL(JAC_RECOMPUTE, KIND(WP))
+   CASE ('CK_OVRSHOOT'); XVAR = REAL(CHECK_OVERSHOOT, KIND(WP)) 
+   CASE ('SMALL_ESTEP'); XVAR = REAL(SMALL_ENDSTEP, KIND(WP)) 
    CASE ('ERRTRUNCABS'); XVAR = ERR_TRUNC_ABS
    CASE ('ERRTRUNCREL'); XVAR = ERR_TRUNC_REL
    CASE ('ERRITERFUNC'); XVAR = ERR_ITER_FUNC
@@ -109,12 +109,12 @@ MODULE PAREXTRACT_MODULE
    CASE ('STEP_SAFETY'); XVAR = SAFETY
    CASE ('RMIN')       ; XVAR = RMIN
    CASE ('RMAX')       ; XVAR = RMAX
-   CASE ('NITER_TOTAL'); XVAR = REAL(NITER_TOTAL, KIND(SP))
+   CASE ('NITER_TOTAL'); XVAR = REAL(NITER_TOTAL, KIND(WP))
    CASE ('MIN_TSTEP')  ; XVAR = MIN_TSTEP
    CASE ('MAX_TSTEP')  ; XVAR = MAX_TSTEP
    
    ! Sobol identifier
-   CASE ('SOBOL_INDX') ; XVAR = REAL(SOBOL_INDX, KIND(SP))
+   CASE ('SOBOL_INDX') ; XVAR = REAL(SOBOL_INDX, KIND(WP))
    
    ! Set to missing if not found
    case default;         XVAR = NA_VALUE_SP

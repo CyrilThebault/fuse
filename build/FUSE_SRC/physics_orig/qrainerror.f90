@@ -22,7 +22,7 @@ IMPLICIT NONE
 ! ---------------------------------------------------------------------------------------
 SELECT CASE(SMODL%iRFERR)
  CASE(iopt_additive_e) ! additive rainfall error
-  M_FLUX%EFF_PPT = MAX(0.0_sp, MFORCE%PPT + MPARAM%RFERR_ADD)
+  M_FLUX%EFF_PPT = MAX(0.0_wp, MFORCE%PPT + MPARAM%RFERR_ADD)
  CASE(iopt_multiplc_e) ! multiplicative rainfall error
   M_FLUX%EFF_PPT = MFORCE%PPT * MPARAM%RFERR_MLT
  CASE DEFAULT       ! check for errors

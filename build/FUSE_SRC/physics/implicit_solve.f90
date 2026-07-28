@@ -11,7 +11,7 @@ module implicit_solve_module
  ! global data
  use model_defn, only: nState            ! number of state variables
  use multiforce, only: dt => deltim      ! time step
- use globaldata, only: isDebug           ! print flag
+ use fuse_globaldata, only: isDebug           ! print flag
 
  use model_numerix, only: NUM_FUNCS      ! number of function calls
  use model_numerix, only: NUM_JACOBIAN   ! number of times Jacobian is calculated
@@ -29,10 +29,10 @@ module implicit_solve_module
  implicit none
  ! input
  type(fuse_work) , intent(inout)            :: fuseStruct  ! fuse work structure
- real(sp)        , intent(in)               :: x_try(:)    ! trial state vector
+ real(wp)        , intent(in)               :: x_try(:)    ! trial state vector
  ! output
- real(sp)        , intent(out)              :: g_x(:)      ! dx/dt=g(x)
- real(sp)        , intent(out)  , optional  :: J_g(:,:)    ! flux Jacobian matrix
+ real(wp)        , intent(out)              :: g_x(:)      ! dx/dt=g(x)
+ real(wp)        , intent(out)  , optional  :: J_g(:,:)    ! flux Jacobian matrix
  ! internal
  logical(lgt)                               :: comp_dflux  ! flag to compute flux derivatives
  ! --------------------------------------------------------------------------------------
@@ -59,17 +59,17 @@ module implicit_solve_module
  IMPLICIT NONE
  ! input-output
  type(fuse_work) , intent(in) :: fuseStruct            ! fuse work structure
- REAL(SP), DIMENSION(:), INTENT(IN) :: g_x, lower, upper
- REAL(SP), DIMENSION(:), INTENT(IN) :: x_try
- REAL(SP), DIMENSION(:,:), INTENT(OUT) :: Jac
+ REAL(WP), DIMENSION(:), INTENT(IN) :: g_x, lower, upper
+ REAL(WP), DIMENSION(:), INTENT(IN) :: x_try
+ REAL(WP), DIMENSION(:,:), INTENT(OUT) :: Jac
  ! locals
  type(fuse_work) :: fuseStruct_local
- real(sp), parameter :: eps_rel = 1e-4_sp
- real(sp), parameter :: eps_abs = 1e-6_sp   ! or smaller, but NOT 1e-9 scale
- real(sp), parameter :: h_min = 1e-8_sp 
+ real(wp), parameter :: eps_rel = 1e-4_wp
+ real(wp), parameter :: eps_abs = 1e-6_wp   ! or smaller, but NOT 1e-9 scale
+ real(wp), parameter :: h_min = 1e-8_wp 
  INTEGER(I4B) :: j,n
- REAL(SP), DIMENSION(size(x_try)) :: x, xsav, g_ph
- real(sp) :: h_try, h_act
+ REAL(WP), DIMENSION(size(x_try)) :: x, xsav, g_ph
+ real(wp) :: h_try, h_act
 
  ! preliminaries
  n = size(x)
@@ -115,8 +115,8 @@ module implicit_solve_module
  implicit none
  ! input-output
  type(fuse_work), intent(inout)        :: fuseStruct ! fuse work structure
- real(sp)       , intent(in)           :: x0(:)      ! state vector at start of step
- real(sp)       , intent(out)          :: x1(:)      ! state vector at end of step
+ real(wp)       , intent(in)           :: x0(:)      ! state vector at start of step
+ real(wp)       , intent(out)          :: x1(:)      ! state vector at end of step
  integer(i4b)   , intent(in)           :: nx         ! number of state variables
  ! error cont   ,ol
  integer(i4b)   , intent(out)          :: ierr       ! error code
@@ -124,55 +124,55 @@ module implicit_solve_module
  logical(lgt)   , intent(in), optional :: isVerbose  ! flag for printing (subroutine argument)
  logical(lgt)                          :: isPrint    ! flag for printing (local flag)
  ! internal: newton iterations       
- real(sp)                           :: x_old(nx)     ! old trial state vector
- real(sp)                           :: x_try(nx)     ! trial state vector
- real(sp)                           :: g_x(nx)       ! dx/dt=g(x)
- real(sp)                           :: res(nx)       ! residual vector
- real(sp)                           :: Ja(nx,nx)     ! Jacobian matrix (flux)
- real(sp)                           :: Jg(nx,nx)     ! Jacobian matrix (flux)
- real(sp)                           :: Jac(nx,nx)    ! Jacobian matrix (full)
- real(sp)                           :: dx(nx)        ! state update
- real(sp)                           :: phi           ! half squared residual norm
- real(sp)                           :: d             ! determinant sign tracker
+ real(wp)                           :: x_old(nx)     ! old trial state vector
+ real(wp)                           :: x_try(nx)     ! trial state vector
+ real(wp)                           :: g_x(nx)       ! dx/dt=g(x)
+ real(wp)                           :: res(nx)       ! residual vector
+ real(wp)                           :: Ja(nx,nx)     ! Jacobian matrix (flux)
+ real(wp)                           :: Jg(nx,nx)     ! Jacobian matrix (flux)
+ real(wp)                           :: Jac(nx,nx)    ! Jacobian matrix (full)
+ real(wp)                           :: dx(nx)        ! state update
+ real(wp)                           :: phi           ! half squared residual norm
+ real(wp)                           :: d             ! determinant sign tracker
  integer(i4b)                       :: indx(nx)      ! LU pivot indices (row-swap bookkeeping)
  integer(i4b)                       :: i             ! index of state
  integer(i4b)                       :: it            ! index of newton iteration
  integer(i4b), parameter            :: maxit=100     ! maximum number of iterations
  logical(lgt)                       :: converged     ! flag for convergence
  ! internal: backtracking line search w/ overshoot reject 
- real(sp)                           :: xnorm         ! norm used in maximum step
- real(sp)                           :: dxnorm        ! norm used to evaluate step size
- real(sp)                           :: stpmax        ! the maximum step
- real(sp)                           :: dxScale       ! used to scale dx if dxnorm > stpmax
- real(sp)                           :: gpsi(nx)      ! function gradient: func = 0.5*sum(res*res)
- real(sp)                           :: slope         ! direction of decrease
- real(sp)                           :: lambda        ! backtrack length multiplier (lambda*dx)
- real(sp)                           :: alamin        ! minimum lambda
- real(sp)                           :: lam_i         ! maximum lambda for the i-th state
- real(sp)                           :: lam_max       ! maximum lambda
- real(sp)                           :: lower(nx)     ! lower bound
- real(sp)                           :: upper(nx)     ! lower bound
- real(sp)                           :: dclamp(nx)    ! derivative in the clamp
- real(sp)                           :: x_trial(nx)   ! state vector for backtrack
- real(sp)                           :: g_trial(nx)   ! dx/dt=g(x) for backtrack
- real(sp)                           :: res_trial(nx) ! residual for backtrack
- real(sp)                           :: phi_new       ! half squared residual norm
+ real(wp)                           :: xnorm         ! norm used in maximum step
+ real(wp)                           :: dxnorm        ! norm used to evaluate step size
+ real(wp)                           :: stpmax        ! the maximum step
+ real(wp)                           :: dxScale       ! used to scale dx if dxnorm > stpmax
+ real(wp)                           :: gpsi(nx)      ! function gradient: func = 0.5*sum(res*res)
+ real(wp)                           :: slope         ! direction of decrease
+ real(wp)                           :: lambda        ! backtrack length multiplier (lambda*dx)
+ real(wp)                           :: alamin        ! minimum lambda
+ real(wp)                           :: lam_i         ! maximum lambda for the i-th state
+ real(wp)                           :: lam_max       ! maximum lambda
+ real(wp)                           :: lower(nx)     ! lower bound
+ real(wp)                           :: upper(nx)     ! lower bound
+ real(wp)                           :: dclamp(nx)    ! derivative in the clamp
+ real(wp)                           :: x_trial(nx)   ! state vector for backtrack
+ real(wp)                           :: g_trial(nx)   ! dx/dt=g(x) for backtrack
+ real(wp)                           :: res_trial(nx) ! residual for backtrack
+ real(wp)                           :: phi_new       ! half squared residual norm
  integer(i4b)                       :: ls_it         ! index of line search iteration
  logical(lgt)                       :: ovshoot       ! flag for overshoot
  logical(lgt)                       :: accepted      ! flag for accepting newton step
- real(sp)                           :: phi_best      ! best function evaluation
- real(sp)                           :: x_best(nx)    ! best state vector
- real(sp)                           :: g_best(nx)    ! dx/dt = g(x_best)
+ real(wp)                           :: phi_best      ! best function evaluation
+ real(wp)                           :: x_best(nx)    ! best state vector
+ real(wp)                           :: g_best(nx)    ! dx/dt = g(x_best)
  logical(lgt)                       :: have_best     ! check if found a state vector
  logical(lgt)                       :: isClamped     ! check if fallback is clamped
  ! algorithmic control parameters (most passed through MODULE model_numerix)
- REAL(SP), PARAMETER                :: TOLMIN=1.0e-10_sp ! check for spurious minima
- REAL(SP), PARAMETER                :: STPMX=100.0_sp    ! maximum step in lnsrch
- real(sp), parameter                :: shrink   = 0.5_sp
- real(sp), parameter                :: dampen   = 0.1_sp
- real(sp), parameter                :: phi_rel_tol = 1e-5_sp  ! 0.001%
- real(sp), parameter                :: phi_abs_tol = 1e-6_sp
- real(sp), parameter                :: epsb = 1.e-10_sp        ! small safety margin
+ REAL(WP), PARAMETER                :: TOLMIN=1.0e-10_wp ! check for spurious minima
+ REAL(WP), PARAMETER                :: STPMX=100.0_wp    ! maximum step in lnsrch
+ real(wp), parameter                :: shrink   = 0.5_wp
+ real(wp), parameter                :: dampen   = 0.1_wp
+ real(wp), parameter                :: phi_rel_tol = 1e-5_wp  ! 0.001%
+ real(wp), parameter                :: phi_abs_tol = 1e-6_wp
+ real(wp), parameter                :: epsb = 1.e-10_wp        ! small safety margin
  integer(i4b), parameter            :: ls_max = 5
  ! ----- procedure starts here --------------------------------------------------------------------
  ! initialize error control
@@ -182,7 +182,7 @@ module implicit_solve_module
  if (nx /= nState) stop "implicit_solve: nx /= nState"
 
  ! initialize check for best function evaluation
- phi_best = huge(1._sp); have_best=.false. 
+ phi_best = huge(1._wp); have_best=.false. 
 
  ! initialize number of calls
  NUM_FUNCS    = 0  ! number of function calls
@@ -201,7 +201,7 @@ module implicit_solve_module
  ! intialize state vector (and soft clamp)
  x_try  = x0
  x_old  = x_try
- dclamp = 1._sp
+ dclamp = 1._wp
  
  ! fix overshoot (only if necessary)
  if(any(x_try < lower) .or. any(x_try > upper)) &
@@ -209,7 +209,7 @@ module implicit_solve_module
 
  ! define maximum step
  xnorm  = sqrt( sum(x_try*x_try) )
- stpmax = STPMX * max( xnorm, real(nx, sp) )
+ stpmax = STPMX * max( xnorm, real(nx, wp) )
 
  ! initialize flags
  accepted  = .false.
@@ -218,7 +218,7 @@ module implicit_solve_module
  ! --- F(x), J(x), and objective phi
  call dx_dt(fuseStruct, x_try, g_x, Jg)  ! compute analytical Jacobian
  res = x_try - (x0 + g_x*dt)
- phi = 0.5_sp * dot_product(res, res)
+ phi = 0.5_wp * dot_product(res, res)
 
  ! iterate
  do it = 1, maxit
@@ -236,11 +236,11 @@ module implicit_solve_module
    !call jac_flux(fuseStruct, x_try, g_x, lower, upper, Jg)
    do i=1,nx
      Jac(:,i) = -dt*Jg(:,i) 
-     Jac(i,i) = Jac(i,i) + 1.0_sp
+     Jac(i,i) = Jac(i,i) + 1.0_wp
    end do
 
    ! --- function gradient: before Jac is modified in ludcmp
-   gpsi  = matmul(transpose(Jac), res) ! assumes func =  0.5_sp * sum(res*res)
+   gpsi  = matmul(transpose(Jac), res) ! assumes func =  0.5_wp * sum(res*res)
 
    ! --- Solve J dx = -F (Newton step)
    dx = -res
@@ -258,21 +258,21 @@ module implicit_solve_module
 
    ! modify dx if Newton step not descending for psi
    slope = dot_product(gpsi, dx)
-   if (slope >= 0._sp) dx = -gpsi ! fallback
+   if (slope >= 0._wp) dx = -gpsi ! fallback
 
    ! implement active-set methods
    do i=1,nx
-     if (x_try(i) <= lower(i)+epsb .and. dx(i) < 0._sp) dx(i)=0._sp
-     if (x_try(i) >= upper(i)-epsb .and. dx(i) > 0._sp) dx(i)=0._sp
+     if (x_try(i) <= lower(i)+epsb .and. dx(i) < 0._wp) dx(i)=0._wp
+     if (x_try(i) >= upper(i)-epsb .and. dx(i) > 0._wp) dx(i)=0._wp
    end do
 
    ! ---- backtracking line search  --------------
 
    ! line search control
    accepted = .false. ! flag to check if line search is accepted
-   alamin   = ERR_ITER_DX / maxval( abs(dx) / max(abs(x_try), 1.0_sp) )
+   alamin   = ERR_ITER_DX / maxval( abs(dx) / max(abs(x_try), 1.0_wp) )
 
-   lambda = 1.0_sp
+   lambda = 1.0_wp
    do ls_it = 1, ls_max
 
      ! update x 
@@ -287,7 +287,7 @@ module implicit_solve_module
      ! compute function and function eval -- no need for the Jacobian here
      call dx_dt(fuseStruct, x_trial, g_trial)
      res_trial  = x_trial - (x0 + dt*g_trial)
-     phi_new    = 0.5_sp * dot_product(res_trial, res_trial)
+     phi_new    = 0.5_wp * dot_product(res_trial, res_trial)
 
      ! save best function evaluation   
      if (phi_new < phi_best) then
@@ -318,7 +318,7 @@ module implicit_solve_module
    x_try  = x_trial
    call dx_dt(fuseStruct, x_try, g_x, Jg)  ! compute analytical Jacobian
    res = x_try - (x0 + g_x*dt)
-   phi = 0.5_sp * dot_product(res, res)
+   phi = 0.5_wp * dot_product(res, res)
 
    ! save best function evaluation   
    if (phi < phi_best) then
@@ -329,7 +329,7 @@ module implicit_solve_module
    endif
 
    ! tiny-step convergence
-   if (maxval( abs(x_try - x_old) / max(abs(x_try), 1._sp)  ) < ERR_ITER_DX) then
+   if (maxval( abs(x_try - x_old) / max(abs(x_try), 1._wp)  ) < ERR_ITER_DX) then
      converged = .true.
      exit ! exit iteration loop
    end if

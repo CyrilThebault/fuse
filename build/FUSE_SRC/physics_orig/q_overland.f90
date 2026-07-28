@@ -27,7 +27,7 @@ USE multiforce, only:  MFORCE                         ! forcing - for debugging 
 IMPLICIT NONE
 INTEGER(I4B)                           :: NTDH        ! maximum number of future time steps
 INTEGER(I4B)                           :: JTIM        ! (loop through future time steps)
-REAL(SP), PARAMETER                    :: SNEG=-1.e-5 ! small negative number, used for checking
+REAL(WP), PARAMETER                    :: SNEG=-1.e-5 ! small negative number, used for checking
 LOGICAL, PARAMETER                     :: USE_NTDH_NEED=.TRUE. ! flag to use NTDH_NEED to reduce array operations (loop length)
 ! ---------------------------------------------------------------------------------------
 ! compute total runoff (sum of surface runoff, overflow, interflow, and baseflow)
@@ -58,7 +58,7 @@ SELECT CASE(SMODL%iQ_TDH)
   DO JTIM=2,MERGE(DPARAM%NTDH_NEED,NTDH,USE_NTDH_NEED) ! update and move array of states within the routing convolution
     FUTURE(JTIM-1) = FUTURE(JTIM) + MROUTE%Q_INSTNT * DPARAM%FRAC_FUTURE(JTIM)
   END DO
-  FUTURE(JTIM-1) = 0._sp  ! last element (just in case) - the rest are never accessed (treated as 0)
+  FUTURE(JTIM-1) = 0._wp  ! last element (just in case) - the rest are never accessed (treated as 0)
  CASE(iopt_no_routing)             ! no routing
   MROUTE%Q_ROUTED   = MROUTE%Q_INSTNT
  CASE DEFAULT                      ! check for errors

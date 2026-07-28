@@ -19,7 +19,7 @@ IMPLICIT NONE
 ! input
 TYPE(STATEV), INTENT(IN)               :: TMPSTR      ! temporary state structure
 ! output
-REAL(SP), DIMENSION(:), INTENT(OUT)    :: X_TRY       ! vector of model states
+REAL(WP), DIMENSION(:), INTENT(OUT)    :: X_TRY       ! vector of model states
 ! internal
 INTEGER(I4B)                           :: ISTT        ! loop through model states
 ! ---------------------------------------------------------------------------------------

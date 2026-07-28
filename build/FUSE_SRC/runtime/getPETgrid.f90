@@ -36,11 +36,11 @@ contains
  integer(i4b),parameter                 :: strLen=1024         ! length of character strings
  character(len=strLen)                  :: cmessage            ! error message of downwind routine
  integer(i4b)                           :: iSpat1,iSpat2       ! indices of spatial dimensions
- real(sp)                               :: csky_rad            ! clear-sky radiation (W m-2)
- real(sp)                               :: relhum              ! relative humidity (-)
- real(sp)                               :: dewpt               ! dewpoint temperature (K)
- real(sp)                               :: vpAir               ! vapor pressure of air (Pa)
- real(sp)                               :: vpSat               ! saturated vapor pressure (Pa)
+ real(wp)                               :: csky_rad            ! clear-sky radiation (W m-2)
+ real(wp)                               :: relhum              ! relative humidity (-)
+ real(wp)                               :: dewpt               ! dewpoint temperature (K)
+ real(wp)                               :: vpAir               ! vapor pressure of air (Pa)
+ real(wp)                               :: vpSat               ! saturated vapor pressure (Pa)
  ! ---------------------------------------------------------------------------------------
  ! initialize error control
  ierr=0; message='getPETgrid/'
@@ -93,40 +93,40 @@ contains
  integer(i4b),intent(in)                :: im                  ! month
  integer(i4b),intent(in)                :: id                  ! day
  integer(i4b),intent(in)                :: ih                  ! hour
- real(sp),intent(in)                    :: dt                  ! time interval (seconds)
- real(sp),intent(in)                    :: xlon                ! longitude (degrees)
- real(sp),intent(in)                    :: ylat                ! latitude (degrees)
+ real(wp),intent(in)                    :: dt                  ! time interval (seconds)
+ real(wp),intent(in)                    :: xlon                ! longitude (degrees)
+ real(wp),intent(in)                    :: ylat                ! latitude (degrees)
  ! output
- real(sp),intent(out)                   :: crad                ! clear-sky radiation (W m-2)
+ real(wp),intent(out)                   :: crad                ! clear-sky radiation (W m-2)
  integer(i4b), intent(out)              :: ierr                ! error code
  character(*), intent(out)              :: message             ! error message
  ! internal: physical constants
- real(sp),parameter                     :: solarConst=1365._sp ! solar constant (W m-2)
+ real(wp),parameter                     :: solarConst=1365._wp ! solar constant (W m-2)
  ! internal: general
- real(sp),parameter                     :: secprhour=3600._sp  ! number of seconds per hour
- real(sp),parameter                     :: hourprday=24._sp    ! number of hours per day
+ real(wp),parameter                     :: secprhour=3600._wp  ! number of seconds per hour
+ real(wp),parameter                     :: hourprday=24._wp    ! number of hours per day
  integer(i4b),parameter                 :: strLen=1024         ! length of character strings
  character(len=strLen)                  :: cmessage            ! error message of downwind routine
  ! internal: compute time
- real(sp)                               :: tShift              ! time shift from Grenwich (in seconds)
- real(sp)                               :: lHour               ! local hour
- real(sp)                               :: dHour               ! time step (in hours)
+ real(wp)                               :: tShift              ! time shift from Grenwich (in seconds)
+ real(wp)                               :: lHour               ! local hour
+ real(wp)                               :: dHour               ! time step (in hours)
  ! internal: compute theoretical clear-sky radiation
- real(sp),parameter                     :: slope=0._sp         ! slope of ground surface (degrees)
- real(sp),parameter                     :: azi=0._dp           ! aspect (azimuth) of ground surface in degrees
- real(sp)                               :: hri                 ! hourly radiation index
- real(sp)                               :: coszen              ! cosize of the solar zenith angle
+ real(wp),parameter                     :: slope=0._wp         ! slope of ground surface (degrees)
+ real(wp),parameter                     :: azi=0._wp           ! aspect (azimuth) of ground surface in degrees
+ real(wp)                               :: hri                 ! hourly radiation index
+ real(wp)                               :: coszen              ! cosize of the solar zenith angle
  ! initialize error control
  ierr=0; message='csky_solar/'
  ! get time shift from Grenwich (in seconds)
  call utc_offset(xlon,tShift,ierr,cmessage)
  if(ierr/=0)then; message=trim(message)//trim(cmessage); return; endif
  ! get local hour
- lHour = real(ih, kind(sp)) !+ tShift/secprhour
- if(lHour < 24._dp) lHour = lHour+24._sp
- if(lHour > 24._dp) lHour = lHour-24._sp
+ lHour = real(ih, kind(wp)) !+ tShift/secprhour
+ if(lHour < 24._wp) lHour = lHour+24._wp
+ if(lHour > 24._wp) lHour = lHour-24._wp
  ! get the time step in hours
- dhour = real(dt, kind(sp))*hourprday
+ dhour = real(dt, kind(wp))*hourprday
  ! compute theoretical shortwave radiation
  call clrsky_rad(im,id,lHour,dHour,slope,azi,ylat,&  ! input
                  hri,coszen)                                       ! output
@@ -151,47 +151,47 @@ contains
  ! ---------------------------------------------------------------------------------------
  IMPLICIT NONE
  ! input
- real(sp),intent(in)                    :: swdown              ! downward sw radiation (W m-2)
- real(sp),intent(in)                    :: cskyRad             ! clear sky radiation (W m-2)
- real(sp),intent(in)                    :: airtemp             ! air temperature (K)
- real(sp),intent(in)                    :: vpAir               ! vapor pressure (Pa)
+ real(wp),intent(in)                    :: swdown              ! downward sw radiation (W m-2)
+ real(wp),intent(in)                    :: cskyRad             ! clear sky radiation (W m-2)
+ real(wp),intent(in)                    :: airtemp             ! air temperature (K)
+ real(wp),intent(in)                    :: vpAir               ! vapor pressure (Pa)
  ! output
- real(sp),intent(out)                   :: netRadi             ! net radiation (W m-2)
+ real(wp),intent(out)                   :: netRadi             ! net radiation (W m-2)
  integer(i4b), intent(out)              :: ierr                ! error code
  character(*), intent(out)              :: message             ! error message
  ! physical constants
- real(sp),parameter                     :: SBconst   = 5.6705e-8_sp  ! Stefan Boltzman W m-2 K-4
+ real(wp),parameter                     :: SBconst   = 5.6705e-8_wp  ! Stefan Boltzman W m-2 K-4
  ! empirical radiation parameters
- real(sp),parameter                     :: sAlbedo=0.3_sp      ! surface albedo
- real(sp),parameter                     :: maxatau=0.8_sp      ! Maximum atmospheric transmissivity
- real(sp),parameter                     :: acloudf=1.0_sp      ! Constant for cloud fraction -humid
- real(sp),parameter                     :: bcloudf=0.0_sp      ! Constant for cloud fraction -humid
- real(sp),parameter                     :: mult_ae=-0.14_sp    ! Multiplier in atmos. emmissivity eqn
- real(sp),parameter                     :: constae=0.34_sp     ! Constant in atmos. emmissivity eqn
+ real(wp),parameter                     :: sAlbedo=0.3_wp      ! surface albedo
+ real(wp),parameter                     :: maxatau=0.8_wp      ! Maximum atmospheric transmissivity
+ real(wp),parameter                     :: acloudf=1.0_wp      ! Constant for cloud fraction -humid
+ real(wp),parameter                     :: bcloudf=0.0_wp      ! Constant for cloud fraction -humid
+ real(wp),parameter                     :: mult_ae=-0.14_wp    ! Multiplier in atmos. emmissivity eqn
+ real(wp),parameter                     :: constae=0.34_wp     ! Constant in atmos. emmissivity eqn
  ! internal
- real(sp)                               :: atmTran             ! atmospheric transmissivity (-)
- real(sp)                               :: cldFrac             ! cloud fraction (-)
- real(sp)                               :: netEmis             ! net emissivity (-) 
- real(sp)                               :: netLwRd             ! net longwave radiation (W m-2)
- real(sp),parameter                     :: noRad=1._dp         ! threshold for no radiation
+ real(wp)                               :: atmTran             ! atmospheric transmissivity (-)
+ real(wp)                               :: cldFrac             ! cloud fraction (-)
+ real(wp)                               :: netEmis             ! net emissivity (-) 
+ real(wp)                               :: netLwRd             ! net longwave radiation (W m-2)
+ real(wp),parameter                     :: noRad=1._wp         ! threshold for no radiation
  ! initialize error control
  ierr=0; message='calcNetRad/'
  ! ----------------------------------------------------------------------------------------
 
  ! calculate atmospheric transmissivity
  if(cskyRad < noRad)then
-  atmTran = 1._dp
+  atmTran = 1._wp
  else
-  atmTran = max(swdown/cskyRad, 1._sp)
+  atmTran = max(swdown/cskyRad, 1._wp)
  endif
  ! compute the cloud fraction
  cldFrac = acloudf*(atmTran/maxatau) + bcloudf
  ! compute net emissivity (dimensionless) - assumes pressure is in kPa, so divide by 1000
- netEmis = mult_ae*sqrt(vpAir/1000._sp) + constae
+ netEmis = mult_ae*sqrt(vpAir/1000._wp) + constae
  ! compute net longwave radiation (W m-2)
- netLwRd = -cldFrac*netEmis*SBconst*airtemp**4._sp
+ netLwRd = -cldFrac*netEmis*SBconst*airtemp**4._wp
  ! compute net radiation
- netRadi = (1._sp - sAlbedo)*swdown + netLwRd
+ netRadi = (1._wp - sAlbedo)*swdown + netLwRd
  end SUBROUTINE calcNetRad 
 
 
@@ -215,29 +215,29 @@ contains
  USE conv_funcs_module,only:dewpt2vpair ! convert dewpoint to vapor pressure
  IMPLICIT NONE
  ! input
- real(sp),intent(in)                    :: airtemp            ! air temperature (K)
- real(sp),intent(in)                    :: airpres            ! air pressure (Pa)
- real(sp),intent(in)                    :: netRadi            ! Net Radiation (W m-2)
+ real(wp),intent(in)                    :: airtemp            ! air temperature (K)
+ real(wp),intent(in)                    :: airpres            ! air pressure (Pa)
+ real(wp),intent(in)                    :: netRadi            ! Net Radiation (W m-2)
  ! output
- real(sp),intent(out)                   :: pet_force          ! potential ET (mm/day)
+ real(wp),intent(out)                   :: pet_force          ! potential ET (mm/day)
  integer(i4b), intent(out)              :: ierr               ! error code
  character(*), intent(out)              :: message            ! error message
  ! internal: general parameters
- real(sp),parameter                     :: secprday=86400._sp ! number of seconds per day
+ real(wp),parameter                     :: secprday=86400._wp ! number of seconds per day
  ! internal: physical constants
- real(sp),parameter                     :: TFREEZE   = 273.16_sp ! freezing point of pure water (K)
+ real(wp),parameter                     :: TFREEZE   = 273.16_wp ! freezing point of pure water (K)
  ! internal: radiation parameters
- real(sp),parameter                     :: PT_alpha  = 1.26_sp   ! Priestly/Taylor "alpha" multiplier (humid)
- real(sp),parameter                     :: PT_beta   = 0.00_sp   ! Priestly/Taylor "beta" offset
+ real(wp),parameter                     :: PT_alpha  = 1.26_wp   ! Priestly/Taylor "alpha" multiplier (humid)
+ real(wp),parameter                     :: PT_beta   = 0.00_wp   ! Priestly/Taylor "beta" offset
  ! internal
- real(sp)                               :: SAT_VP             ! sat vapor pressure       (Pa)
- real(sp)                               :: TEMP_C             ! temperature              (oC)
- real(sp)                               :: LH_VAP             ! latent heat vaporizn   (J/kg)
- real(sp)                               :: DVP_DT             ! d vap press / d Temp (kPa/oC)
- real(sp)                               :: PSYCON             ! psychometric const   (kPa/oC)
- real(sp)                               :: R_MULT             ! radiation multiplier      (-)
- real(sp)                               :: pet_nrg            ! PET energy units (W m-2, or J m-2 s-1)
- real(sp)                               :: pet_liq            ! PET liquid units (kg m-2 s-1)
+ real(wp)                               :: SAT_VP             ! sat vapor pressure       (Pa)
+ real(wp)                               :: TEMP_C             ! temperature              (oC)
+ real(wp)                               :: LH_VAP             ! latent heat vaporizn   (J/kg)
+ real(wp)                               :: DVP_DT             ! d vap press / d Temp (kPa/oC)
+ real(wp)                               :: PSYCON             ! psychometric const   (kPa/oC)
+ real(wp)                               :: R_MULT             ! radiation multiplier      (-)
+ real(wp)                               :: pet_nrg            ! PET energy units (W m-2, or J m-2 s-1)
+ real(wp)                               :: pet_liq            ! PET liquid units (kg m-2 s-1)
  ! ---------------------------------------------------------------------------------------
  ! initialize error control
  ierr=0; message='computePET/'
@@ -250,15 +250,15 @@ contains
  !     inconsistent with the rest of the model.  However, the multiplier in the PET
  !     equation is dimensionless.  Still ugly, and needs attention.
  TEMP_C = airtemp-TFREEZE                                          ! air temperature          (oC)
- LH_VAP = (2501._sp - 2.361_sp*TEMP_C) * 1000._sp                  ! latent heat vaporizn   (J/kg)
- DVP_DT = 4098._sp * (SAT_VP/1000._sp) / (237.3_sp+TEMP_C)**2._sp  ! d vap press / d Temp (kPa/oC)
- PSYCON = 1.6286_sp * ((airpres/1000._sp)/(LH_VAP/1000._sp))       ! psychometric const   (kPa/oC)
+ LH_VAP = (2501._wp - 2.361_wp*TEMP_C) * 1000._wp                  ! latent heat vaporizn   (J/kg)
+ DVP_DT = 4098._wp * (SAT_VP/1000._wp) / (237.3_wp+TEMP_C)**2._wp  ! d vap press / d Temp (kPa/oC)
+ PSYCON = 1.6286_wp * ((airpres/1000._wp)/(LH_VAP/1000._wp))       ! psychometric const   (kPa/oC)
  R_MULT = DVP_DT/(DVP_DT + PSYCON)                                 ! radiation multiplier      (-)
  ! *** (end of inconstencies and hard-coded constants) ***
  ! ---------------------------------------------------------------------------------------- 
  ! estimate potential ET
  pet_nrg   = PT_alpha*(R_MULT*netRadi) + PT_beta                   ! PET energy units (W m-2, or J m-2 s-1)
- pet_liq   = max(pet_nrg/LH_VAP, 0._sp)                            ! PET liquid units (kg m-2 s-1)
+ pet_liq   = max(pet_nrg/LH_VAP, 0._wp)                            ! PET liquid units (kg m-2 s-1)
  ! put the PET in the structure
  pet_force = pet_liq*secprday                                      ! convert to mm/day
  end subroutine computePET
@@ -280,22 +280,22 @@ contains
  ! ---------------------------------------------------------------------------------------
  implicit none
  ! input
- real(sp),intent(in)           :: xlon                ! longitude (degrees)
+ real(wp),intent(in)           :: xlon                ! longitude (degrees)
  ! output
- real(sp),intent(out)          :: tShift              ! time shift (in seconds) from UTC
+ real(wp),intent(out)          :: tShift              ! time shift (in seconds) from UTC
  integer(i4b), intent(out)     :: ierr                ! error code
  character(*), intent(out)     :: message             ! error message
  ! internal
- real(sp),parameter            :: secprday=86400._sp  ! number of seconds per day
+ real(wp),parameter            :: secprday=86400._wp  ! number of seconds per day
  ! initialize error control
  ierr=0; message='utc_offset/'
  ! check if longitude is in range
- if(xlon > 180._sp .or. xlon < -180._sp)then
+ if(xlon > 180._wp .or. xlon < -180._wp)then
   message=trim(message)//'values for longitude only allowed to be in the interval [-180, 180]'
   ierr=20; return
  endif
  ! compute offset in seconds
- tShift = (xlon/360._sp)*secprday
+ tShift = (xlon/360._wp)*secprday
  end subroutine utc_offset
 
 

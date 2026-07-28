@@ -11,7 +11,7 @@ MODULE model_defn
  USE nrtype
  USE model_defn_types, only: DESC, UMODEL, SNAMES, FNAMES
 
- USE globaldata, only: FUSE_VERSION 
+ USE fuse_globaldata, only: FUSE_VERSION 
  
  implicit none
  private

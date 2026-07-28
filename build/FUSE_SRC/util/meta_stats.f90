@@ -21,10 +21,6 @@ CONTAINS
 ! ---------------------------------------------------------------------------------------
 SUBROUTINE SUMDESCRIBE()
 I=0  ! initialize counter
-! DMSL diagnostix
-I=I+1; XNAME(I)='var_residul'; XDESC(I)='variance of the model residuals, used in MCMC      '; XUNIT(I)='mm**2        '
-I=I+1; XNAME(I)='logp_simuln'; XDESC(I)='log density of the simulation                      '; XUNIT(I)='problem_depnt'
-I=I+1; XNAME(I)='jump_taken '; XDESC(I)='MCMC jump diagnostix; 0 = no jump; 1 = jumping     '; XUNIT(I)='-            '
 ! comparisons between model output and observations
 I=I+1; XNAME(I)='qobs_mean  '; XDESC(I)='mean observed runoff                               '; XUNIT(I)='mm/day       '
 I=I+1; XNAME(I)='qsim_mean  '; XDESC(I)='mean simulated runoff                              '; XUNIT(I)='mm/day       '

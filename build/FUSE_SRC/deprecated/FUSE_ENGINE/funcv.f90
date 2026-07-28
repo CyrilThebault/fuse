@@ -31,8 +31,8 @@ USE multistate, ONLY:TSTATE,MSTATE,DY_DT,HSTATE       ! model states
 USE xtry_2_str_module                                 ! puts state vector into structure in multistate
 IMPLICIT NONE
 ! input/output
-REAL(SP), DIMENSION(:), INTENT(IN)     :: X_TRY       ! vector of model states
-REAL(SP), DIMENSION(SIZE(X_TRY))       :: FUNCV       ! function evaluations
+REAL(WP), DIMENSION(:), INTENT(IN)     :: X_TRY       ! vector of model states
+REAL(WP), DIMENSION(SIZE(X_TRY))       :: FUNCV       ! function evaluations
 ! internal
 INTEGER(I4B)                           :: ISTT        ! loop through model states
 ! ---------------------------------------------------------------------------------------

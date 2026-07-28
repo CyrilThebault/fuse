@@ -1,17 +1,17 @@
   SUBROUTINE ludcmp(a,indx,d)
   USE nrtype; USE nrutil, ONLY : assert_eq,imaxloc,nrerror,outerprod,swap
   IMPLICIT NONE
-  REAL(SP), DIMENSION(:,:), INTENT(INOUT) :: a
+  REAL(WP), DIMENSION(:,:), INTENT(INOUT) :: a
   INTEGER(I4B), DIMENSION(:), INTENT(OUT) :: indx
-  REAL(SP), INTENT(OUT) :: d
-  REAL(SP), DIMENSION(size(a,1)) :: vv
-  REAL(SP), PARAMETER :: TINY=1.0e-20_sp
+  REAL(WP), INTENT(OUT) :: d
+  REAL(WP), DIMENSION(size(a,1)) :: vv
+  REAL(WP), PARAMETER :: TINY=1.0e-20_wp
   INTEGER(I4B) :: j,n,imax
   n=assert_eq(size(a,1),size(a,2),size(indx),'ludcmp')
   d=1.0
   vv=maxval(abs(a),dim=2)
   if (any(vv == 0.0)) call nrerror('singular matrix in ludcmp')
-  vv=1.0_sp/vv
+  vv=1.0_wp/vv
   do j=1,n
     imax=(j-1)+imaxloc(vv(j:n)*abs(a(j:n,j)))
     if (j /= imax) then

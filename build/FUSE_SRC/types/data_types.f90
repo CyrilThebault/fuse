@@ -19,12 +19,12 @@ module data_types
     logical(lgt) :: is_point_list  = .false.   ! true if nx=1 and lat/lon are 1D over ny
    
     ! 2D rectilinear OR point-list
-    real(sp), allocatable :: lon_1d(:)   ! nx or ny depending on layout
-    real(sp), allocatable :: lat_1d(:)
+    real(wp), allocatable :: lon_1d(:)   ! nx or ny depending on layout
+    real(wp), allocatable :: lat_1d(:)
    
     ! 2D curvilinear
-    real(sp), allocatable :: lon_2d(:,:) ! (nx_local, ny_local)
-    real(sp), allocatable :: lat_2d(:,:)
+    real(wp), allocatable :: lon_2d(:,:) ! (nx_local, ny_local)
+    real(wp), allocatable :: lat_2d(:,:)
    
     ! optional IDs (int is usually safest)
     integer(i4b), allocatable :: cell_id(:,:)  ! always stored locally as (nx_local, ny_local)
@@ -55,7 +55,7 @@ module data_types
 
     ! 2D elevation information
     logical(lgt), allocatable     :: elev_mask(:,:)     ! elev_mask (nx_local, ny_local)
-    real(sp),     allocatable     :: z_forcing(:,:)     ! Z_FORCING_grid (nx_local, ny_local)
+    real(wp),     allocatable     :: z_forcing(:,:)     ! Z_FORCING_grid (nx_local, ny_local)
 
     ! 3D snow-band information
     type(BANDS_INFO), allocatable :: bands_info(:,:,:)  ! MBANDS_INFO_3d (nx_local, ny_local, n_bands)

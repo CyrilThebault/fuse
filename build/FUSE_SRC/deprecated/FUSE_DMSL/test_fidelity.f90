@@ -56,8 +56,8 @@ INTEGER(I4B)                           :: IERR            ! error code for I/O
 INTEGER(I4B)                           :: IPARSET         ! parameter set index
 CHARACTER(LEN=4)                       :: CPARSET         ! convert parameter set index to a string
 ! Parameter vectors
-REAL(SP),DIMENSION(:),ALLOCATABLE      :: XDF             ! default parameter vector
-REAL(SP)                               :: FPAR            ! function value for parameter set
+REAL(WP),DIMENSION(:),ALLOCATABLE      :: XDF             ! default parameter vector
+REAL(WP)                               :: FPAR            ! function value for parameter set
 ! Loop through different time steps
 INTEGER(I4B)                           :: IDEL            ! loop through different time steps
 ! ---------------------------------------------------------------------------------------
@@ -97,7 +97,7 @@ SOLUTION_METHOD, TEMPORAL_ERROR_CONTROL, ERR_TRUNC_ABS, ERR_TRUNC_REL
 ! (1) GET MODEL SETUP -- MODEL DEFINITION, AND PARAMETER AND VARIABLE INFO FOR ALL MODELS
 ! ---------------------------------------------------------------------------------------
 ! Just assign data
-INFERN_START=1; NTIM=1; NUMTIM=NTIM; DELTIM=1._SP
+INFERN_START=1; NTIM=1; NUMTIM=NTIM; DELTIM=1._WP
 ALLOCATE(AFORCE(NTIM),AROUTE(NTIM))  ! (shared in module multiroute)
 AFORCE(INFERN_START:NTIM)%PPT   = (/50./)
 AFORCE(INFERN_START:NTIM)%PET   = (/ 5./)
@@ -145,7 +145,7 @@ DO
  IF (OUTPUT_FLAG) CALL DEF_OUTPUT(NTIM)    ! define model time series (REDEF)
  CALL DEF_SSTATS()        ! define summary statistics (REDEF)
  DO IDEL=1,100
-  DELTIM = REAL(IDEL,KIND(SP))/100._SP
+  DELTIM = REAL(IDEL,KIND(WP))/100._WP
   ! run model with example parameter sets
   CALL FUSE_METRIC(XDF,FPAR,OUTPUT_FLAG)
  END DO

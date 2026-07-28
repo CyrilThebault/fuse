@@ -4,7 +4,7 @@ module setup_domain_module
   USE info_types, only: cli_options
   USE info_types, only: fuse_info
   USE data_types, only: domain_data
-  USE globaldata, only: isPrint
+  USE fuse_globaldata, only: isPrint
 
   implicit none
 

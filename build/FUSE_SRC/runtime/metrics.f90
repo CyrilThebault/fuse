@@ -19,9 +19,9 @@ contains
   ! Compute transformation on streamflow
   subroutine apply_transformation(obs, sim, transfo)
   
-    real(SP), intent(inout)      :: obs(:), sim(:)     ! observed and simulated streamflow time series
+    real(wp), intent(inout)      :: obs(:), sim(:)     ! observed and simulated streamflow time series
     character(len=*), intent(in) :: transfo            ! transformation applied to streamflow time series
-    real(SP)                     :: eps, transfo_val   ! epsilon value to avoid infinite number, power transformation as float
+    real(wp)                     :: eps, transfo_val   ! epsilon value to avoid infinite number, power transformation as float
     integer                      :: i                  ! loop index
   
     ! log transformation
@@ -80,11 +80,11 @@ contains
   ! Compute KGE
   function get_KGE(obs, sim, transfo) result(kge)
   
-    real(SP), intent(in)                   :: obs(:), sim(:)                                    ! observed and simulated streamflow time series
+    real(wp), intent(in)                   :: obs(:), sim(:)                                    ! observed and simulated streamflow time series
     character(len=*), intent(in), optional :: transfo                                           ! transformation applied to streamflow time series
-    real(SP)                               :: kge                                               ! KGE
-    real(SP), allocatable                  :: obs_t(:), sim_t(:)                                      ! transformed time series without NA values
-    real(SP)                               :: sd_sim, sd_obs, m_sim, m_obs, r, alpha, beta      ! KGE variables
+    real(wp)                               :: kge                                               ! KGE
+    real(wp), allocatable                  :: obs_t(:), sim_t(:)                                      ! transformed time series without NA values
+    real(wp)                               :: sd_sim, sd_obs, m_sim, m_obs, r, alpha, beta      ! KGE variables
     integer                                :: n  
     
     n = count(.not. (isnan(obs) .or. isnan(sim)))
@@ -122,11 +122,11 @@ contains
   ! Compute KGEp
   function get_KGEp(obs, sim, transfo) result(kgep)
   
-    real(SP), intent(in)                   :: obs(:), sim(:)                                    ! observed and simulated streamflow time series
+    real(wp), intent(in)                   :: obs(:), sim(:)                                    ! observed and simulated streamflow time series
     character(len=*), intent(in), optional :: transfo                                           ! transformation applied to streamflow time series
-    real(SP)                               :: kgep                                              ! Kling-Gupta Efficiency' (Kling et al. in 2012)
-    real(SP), allocatable                  :: obs_t(:), sim_t(:)                                      ! transformed time series without NA values
-    real(SP)                               :: sd_sim, sd_obs, m_sim, m_obs, r, alphap, beta     ! KGE' variables
+    real(wp)                               :: kgep                                              ! Kling-Gupta Efficiency' (Kling et al. in 2012)
+    real(wp), allocatable                  :: obs_t(:), sim_t(:)                                      ! transformed time series without NA values
+    real(wp)                               :: sd_sim, sd_obs, m_sim, m_obs, r, alphap, beta     ! KGE' variables
     integer                                :: n                                                 ! length of the time series without NA values
     
     n = count(.not. (isnan(obs) .or. isnan(sim)))
@@ -164,10 +164,10 @@ contains
   ! Compute NSE
   function get_NSE(obs, sim, transfo) result(nse)
   
-    real(SP), intent(in)                   :: obs(:), sim(:)      ! observed and simulated streamflow time series
+    real(wp), intent(in)                   :: obs(:), sim(:)      ! observed and simulated streamflow time series
     character(len=*), intent(in), optional :: transfo             ! transformation applied to streamflow time series
-    real(SP)                               :: nse                 ! Nash-Sutcliff score
-    real(SP), allocatable                  :: obs_t(:), sim_t(:)  ! transformed time series without NA values
+    real(wp)                               :: nse                 ! Nash-Sutcliff score
+    real(wp), allocatable                  :: obs_t(:), sim_t(:)  ! transformed time series without NA values
     integer                                :: n                   ! length of the time series without NA values
     
     n = count(.not. (isnan(obs) .or. isnan(sim)))
@@ -191,10 +191,10 @@ contains
   ! Compute MAE
   function get_MAE(obs, sim, transfo) result(mae)
   
-    real(SP), intent(in)                   :: obs(:), sim(:)      ! observed and simulated streamflow time series
+    real(wp), intent(in)                   :: obs(:), sim(:)      ! observed and simulated streamflow time series
     character(len=*), intent(in), optional :: transfo             ! transformation applied to streamflow time series
-    real(SP)                               :: mae                 ! mean absolute error
-    real(SP), allocatable                  :: obs_t(:), sim_t(:)  ! transformed time series without NA values
+    real(wp)                               :: mae                 ! mean absolute error
+    real(wp), allocatable                  :: obs_t(:), sim_t(:)  ! transformed time series without NA values
     integer                                :: n                   ! length of the time series without NA values
 
         
@@ -219,10 +219,10 @@ contains
   ! Compute RMSE
   function get_RMSE(obs, sim, transfo) result(rmse)
   
-    real(SP), intent(in)                   :: obs(:), sim(:)      ! observed and simulated streamflow time series
+    real(wp), intent(in)                   :: obs(:), sim(:)      ! observed and simulated streamflow time series
     character(len=*), intent(in), optional :: transfo             ! transformation applied to streamflow time series
-    real(SP)                               :: rmse                ! root mean square error
-    real(SP), allocatable                  :: obs_t(:), sim_t(:)  ! transformed time series without NA values
+    real(wp)                               :: rmse                ! root mean square error
+    real(wp), allocatable                  :: obs_t(:), sim_t(:)  ! transformed time series without NA values
     integer                                :: n                   ! length of the time series without NA values
     
     n = count(.not. (isnan(obs) .or. isnan(sim)))
@@ -257,7 +257,7 @@ contains
   function char_to_float(char_val) result(float_val)
   
     character(len=*), intent(in) :: char_val
-    real(SP)                     :: float_val
+    real(wp)                     :: float_val
     integer                      :: io_stat
 
     read(char_val, *, iostat=io_stat) float_val
@@ -270,9 +270,9 @@ contains
 
   ! Function to compute standard deviation
   function standard_deviation(x) result(sd)
-    real(SP), intent(in) :: x(:)
-    real(SP)             :: sd
-    real(SP)             :: mean_x
+    real(wp), intent(in) :: x(:)
+    real(wp)             :: sd
+    real(wp)             :: mean_x
     integer              :: n
     
     n = size(x)
@@ -282,9 +282,9 @@ contains
 
   ! Function to compute correlation
   function correlation(x, y) result(r)
-    real(SP), intent(in) :: x(:), y(:)
-    real(SP)             :: r
-    real(SP)             :: mean_x, mean_y, sd_x, sd_y
+    real(wp), intent(in) :: x(:), y(:)
+    real(wp)             :: r
+    real(wp)             :: mean_x, mean_y, sd_x, sd_y
     integer              :: n, i
     
     n = size(x)
@@ -297,7 +297,7 @@ contains
   end function correlation
 
   elemental function isnan(x) result(is_nan)
-    real(SP), intent(in) :: x
+    real(wp), intent(in) :: x
     logical              :: is_nan
   
     is_nan = (x /= x)

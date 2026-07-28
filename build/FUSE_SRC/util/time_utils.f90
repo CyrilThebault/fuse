@@ -73,7 +73,7 @@ module time_utils
     ! input
     integer(i4b),intent(in)        :: iy,im,id,ih          ! year, month, day, hour
     ! output
-    real(sp),intent(out)           :: juldayFrac           ! julian day (fraction of days)
+    real(wp),intent(out)           :: juldayFrac           ! julian day (fraction of days)
     integer(i4b), intent(out)      :: ierr                 ! error code
     character(*), intent(out)      :: message              ! error message
     ! internal
@@ -100,7 +100,7 @@ module time_utils
      julday=julday+2-ja+int(0.25*ja)
     endif
     juldayFrac = real(julday, KIND(sp) ) &
-               + real(ih,  KIND(sp) )/24._sp
+               + real(ih,  KIND(sp) )/24._wp
     end SUBROUTINE juldayss
 
     SUBROUTINE caldatss(juliandd,iyyy,im,id,ih,imin,asec)
@@ -117,15 +117,15 @@ module time_utils
     !-----------------------------------------------------------------------
     IMPLICIT NONE
     ! input
-    real(sp),intent(in)       :: juliandd   ! julian day in days since the beginning of time
+    real(wp),intent(in)       :: juliandd   ! julian day in days since the beginning of time
     ! output
     integer(i4b),intent(out)  :: iyyy,im,id ! day of the year
     integer(i4b),intent(out)  :: ih,imin    ! time of day
-    real(sp),intent(out)      :: asec       ! second
+    real(wp),intent(out)      :: asec       ! second
     ! internal
     integer(i4b)              :: julian     ! julian day
     integer(i4b),parameter    :: IGREG=2299161
-    real(sp)                  :: hours, minutes
+    real(wp)                  :: hours, minutes
     integer(i4b)              :: ja,jalpha,jb,jc,jd,je
     ! get the julian day
     julian = int(juliandd)

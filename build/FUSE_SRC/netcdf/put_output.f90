@@ -40,7 +40,7 @@ contains
   use fuse_filemanager, only: q_only
 
   ! global
-  use globaldata,    only: ncid_out
+  use fuse_globaldata,    only: ncid_out
 
   implicit none
 

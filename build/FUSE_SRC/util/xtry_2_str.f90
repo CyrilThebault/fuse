@@ -22,12 +22,12 @@ USE multistate, ONLY: STATEV                          ! model states
 USE multiparam, ONLY: DPARAM                          ! model parameters
 IMPLICIT NONE
 ! input
-REAL(SP), DIMENSION(:), INTENT(IN)     :: X_TRY       ! vector of model states
+REAL(WP), DIMENSION(:), INTENT(IN)     :: X_TRY       ! vector of model states
 ! output
 TYPE(STATEV), INTENT(OUT)              :: TMPSTR      ! temporary state structure
 ! internal
 INTEGER(I4B)                           :: ISTT        ! loop through model states
-REAL(SP),PARAMETER::missingValue=-9999._sp
+REAL(WP),PARAMETER::missingValue=-9999._wp
 ! ---------------------------------------------------------------------------------------
 ! (A) POPULATE THE TEMPORARY STATE STRUCTURE WITH VALUES OF XSTATE
 ! ---------------------------------------------------------------------------------------
@@ -52,7 +52,7 @@ SELECT CASE(SMODL%iARCH1)  ! (upper layer architecture)
   TMPSTR%TENS_1A = missingValue                              ! 1st tension store (undefined)
   TMPSTR%TENS_1B = missingValue                              ! 2nd tension store (undefined)
   TMPSTR%TENS_1  = MIN(TMPSTR%WATR_1, DPARAM%MAXTENS_1)      ! tension storage
-  TMPSTR%FREE_1  = MAX(0._sp, TMPSTR%WATR_1 - DPARAM%MAXTENS_1) ! free storage
+  TMPSTR%FREE_1  = MAX(0._wp, TMPSTR%WATR_1 - DPARAM%MAXTENS_1) ! free storage
  CASE(iopt_tension1_1) ! upper layer broken up into tension and free storage
   TMPSTR%TENS_1A = missingValue                              ! 1st tension store (undefined)
   TMPSTR%TENS_1B = missingValue                              ! 2nd tension store (undefined)
@@ -71,7 +71,7 @@ SELECT CASE(SMODL%iARCH2)  ! (lower layer architecture)
   TMPSTR%WATR_2  = TMPSTR%TENS_2  + TMPSTR%FREE_2            ! total storage
  CASE(iopt_unlimfrc_2,iopt_unlimpow_2,iopt_topmdexp_2,iopt_fixedsiz_2) ! single baseflow reservoir
   TMPSTR%TENS_2  = MIN(TMPSTR%WATR_2, DPARAM%MAXTENS_2)      ! tension storage
-  TMPSTR%FREE_2  = MAX(0._sp, TMPSTR%WATR_2 - DPARAM%MAXTENS_2) ! free storage
+  TMPSTR%FREE_2  = MAX(0._wp, TMPSTR%WATR_2 - DPARAM%MAXTENS_2) ! free storage
   TMPSTR%FREE_2A = missingValue                              ! primary reservoir (undefined) 
   TMPSTR%FREE_2A = missingValue                              ! secondary reservoir (undefined) 
  CASE DEFAULT       ! (error check)

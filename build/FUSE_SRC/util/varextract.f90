@@ -3,7 +3,7 @@ module varextract_module
   use nrtype
   use iso_fortran_env, only: real32
   use work_types, only: fuse_chunk
-  use globaldata, only: NA_VALUE_SP
+  use fuse_globaldata, only: NA_VALUE_SP
 
   implicit none
   private

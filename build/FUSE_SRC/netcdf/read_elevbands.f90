@@ -22,7 +22,7 @@ contains
 
   subroutine read_elevbands(info, domain, ierr, message)
 
-    use globaldata,   only: NA_VALUE_SP
+    use fuse_globaldata,   only: NA_VALUE_SP
 
     implicit none
 
@@ -38,9 +38,9 @@ contains
     integer(i4b) :: vid_af, vid_me
     integer(i4b) :: nd_af, nd_me
     integer(i4b) :: i, j, ib
-    real(sp) :: afsum
-    real(sp) :: af(info%space%nx_local, info%space%ny_local, info%snow%n_bands)
-    real(sp) :: zmid(info%space%nx_local, info%space%ny_local, info%snow%n_bands)
+    real(wp) :: afsum
+    real(wp) :: af(info%space%nx_local, info%space%ny_local, info%snow%n_bands)
+    real(wp) :: zmid(info%space%nx_local, info%space%ny_local, info%snow%n_bands)
     character(len=1024) :: cmessage
 
     ierr = 0
@@ -119,7 +119,7 @@ contains
           end do
 
           afsum = sum(af(i,j,:))
-          if (abs(afsum - 1.0_sp) > 1.0e-2_sp) then
+          if (abs(afsum - 1.0_wp) > 1.0e-2_wp) then
             write(message,'(a,2(i0,1x),a,f10.6)') trim(message)// &
               "AF sum != 1 at (i,j)= ", i, j, " sum=", afsum
             ierr=20; return
@@ -161,16 +161,16 @@ contains
   type(space_info), intent(in) :: space
   integer(i4b), intent(in) :: n_bands
 
-  real(sp), intent(out) :: af(space%nx_local, space%ny_local, n_bands)
-  real(sp), intent(out) :: zmid(space%nx_local, space%ny_local, n_bands)
+  real(wp), intent(out) :: af(space%nx_local, space%ny_local, n_bands)
+  real(wp), intent(out) :: zmid(space%nx_local, space%ny_local, n_bands)
 
   integer(i4b), intent(out) :: ierr
   character(*), intent(out) :: message
 
   integer(i4b) :: start3(3), count3(3)
   integer(i4b) :: start2(2), count2(2)
-  real(sp)     :: tmp2_af(space%ny_local, n_bands)
-  real(sp)     :: tmp2_me(space%ny_local, n_bands)
+  real(wp)     :: tmp2_af(space%ny_local, n_bands)
+  real(wp)     :: tmp2_me(space%ny_local, n_bands)
 
   ierr = 0
   message = "read_elev_vars_to_canonical/"

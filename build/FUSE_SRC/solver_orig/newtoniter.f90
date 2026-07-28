@@ -15,28 +15,28 @@ CONTAINS
   ! Programmers: Dmitri Kavetski and Martyn Clark
   IMPLICIT NONE
   ! dummies
-  REAL(SP), DIMENSION(:), INTENT(INOUT)    :: x         ! state vector
+  REAL(WP), DIMENSION(:), INTENT(INOUT)    :: x         ! state vector
   LOGICAL(LGT), INTENT(IN)                 :: newJacIn  ! .TRUE. if new Jacobian required
   LOGICAL(LGT), INTENT(OUT)                :: check     ! .TRUE. if spurious minimum
   INTEGER(I4B), INTENT(OUT)                :: niter     ! number of iterations
   ! algorithmic control parameters (most passed through MODULE model_numerix)
-  REAL(SP), PARAMETER                      :: TOLMIN=1.0e-10_sp ! check for spurious minima
-  REAL(SP), PARAMETER                      :: STPMX=100.0_sp    ! maximum step in lnsrch
+  REAL(WP), PARAMETER                      :: TOLMIN=1.0e-10_wp ! check for spurious minima
+  REAL(WP), PARAMETER                      :: STPMX=100.0_wp    ! maximum step in lnsrch
   ! locals
   INTEGER(I4B)                             :: i,j,k     ! looping (test)
   INTEGER(I4B)                             :: its       ! iteration counter
   INTEGER(I4B), DIMENSION(size(x))         :: indx      ! used in ludcmp
-  REAL(SP)                                 :: d         ! used in ludcmp
-  REAL(SP)                                 :: f,fold    ! function values
-  REAL(SP)                                 :: absf_old  ! absolute value of the residual vector (last iter)
-  REAL(SP)                                 :: absf_new  ! absolute value of the residual vector (current iter)
-  REAL(SP)                                 :: stpmax    ! step size for lnsrch
-  REAL(SP), DIMENSION(size(x))             :: g         ! gradient used in lnsrch
-  REAL(SP), DIMENSION(size(x))             :: p,dx      ! p = newton step, dx = actual step
-  REAL(SP), DIMENSION(size(x))             :: xold      ! old state vector
-  REAL(SP), DIMENSION(size(x)), TARGET     :: dsdt      ! model derivatives 
-  REAL(SP), DIMENSION(size(x)), TARGET     :: fvec      ! model residuals
-  REAL(SP), DIMENSION(size(x),size(x))     :: jac_ode,fjac,fjacSave ! Jacobian matrices
+  REAL(WP)                                 :: d         ! used in ludcmp
+  REAL(WP)                                 :: f,fold    ! function values
+  REAL(WP)                                 :: absf_old  ! absolute value of the residual vector (last iter)
+  REAL(WP)                                 :: absf_new  ! absolute value of the residual vector (current iter)
+  REAL(WP)                                 :: stpmax    ! step size for lnsrch
+  REAL(WP), DIMENSION(size(x))             :: g         ! gradient used in lnsrch
+  REAL(WP), DIMENSION(size(x))             :: p,dx      ! p = newton step, dx = actual step
+  REAL(WP), DIMENSION(size(x))             :: xold      ! old state vector
+  REAL(WP), DIMENSION(size(x)), TARGET     :: dsdt      ! model derivatives 
+  REAL(WP), DIMENSION(size(x)), TARGET     :: fvec      ! model residuals
+  REAL(WP), DIMENSION(size(x),size(x))     :: jac_ode,fjac,fjacSave ! Jacobian matrices
   LOGICAL(LGT)                             :: newjac    ! .TRUE. if calculate a new Jacobian matrix
 
   ! ---------------------------------------------------------------------------------------
@@ -54,7 +54,7 @@ CONTAINS
   F=FMIN(X)                  ! compute function evaluation (populates vectors DSDT and FVEC)
   !write(*,'(10(f20.10,1x))') x
   ABSF_OLD=MAXVAL(ABS(FVEC)) ! initial norm of the residual vector
-  IF (ABSF_OLD < 0.01_SP*ERR_ITER_DX) THEN
+  IF (ABSF_OLD < 0.01_WP*ERR_ITER_DX) THEN
    CHECK=.FALSE.
    RETURN
   ENDIF
@@ -63,7 +63,7 @@ CONTAINS
   ! (2) ITERATE TO EITHER NITER_TOTAL OR CONVERGENCE
   ! ---------------------------------------------------------------------------------------
   ! compute maximum step size used in line searches
-  IF (CHECK_OVERSHOOT.EQ.LINE_SEARCH) STPMAX = STPMX*MAX(VABS(X),REAL(SIZE(X),SP))
+  IF (CHECK_OVERSHOOT.EQ.LINE_SEARCH) STPMAX = STPMX*MAX(VABS(X),REAL(SIZE(X), WP))
   DO ITS=1,NITER_TOTAL
    NITER = ITS
 
@@ -111,7 +111,7 @@ CONTAINS
      CASE(IMPLICIT_HEUN);  FJAC=-fmin_dt2p*JAC_ODE   ! working towards (I - DT2 dg/dS), identity matrix added later
      CASE DEFAULT; STOP ' solution method muct be either implicit_euler or implicit heun '
     END SELECT
-    CALL DIAGADD(FJAC,1._SP)  ! add identify matrix
+    CALL DIAGADD(FJAC,1._WP)  ! add identify matrix
     !print *, 'fjac = '; DO I=1,SIZE(X); WRITE(*,'(10(E12.5,1X))') FJAC(:,I); END DO
     !print *, 'fvec = ';  WRITE(*,'(10(E12.5,1X))') FVEC(:)
     IF (CHECK_OVERSHOOT==LINE_SEARCH) fjacSave=FJAC  ! need because FJAC overwritten in LUDCMP
@@ -155,8 +155,8 @@ CONTAINS
      EXIT
     ENDIF
     IF (CHECK) THEN  ! test for a gradient of f zero (i.e., spurious convergence)
-     CHECK=(MAXVAL( ABS(G)*MAX(ABS(X),1.0_SP) / MAX(F,0.5_SP*SIZE(X)) ) < TOLMIN)
-     !print *, 'in check ', MAXVAL( ABS(G)*MAX(ABS(X),1.0_SP) / MAX(F,0.5_SP*SIZE(X)) ), check
+     CHECK=(MAXVAL( ABS(G)*MAX(ABS(X),1.0_WP) / MAX(F,0.5_WP*SIZE(X)) ) < TOLMIN)
+     !print *, 'in check ', MAXVAL( ABS(G)*MAX(ABS(X),1.0_WP) / MAX(F,0.5_WP*SIZE(X)) ), check
      EXIT
     ENDIF
     DX = X-XOLD  ! done to account for constraints in LIMIT_XTRY (i.e., dx ne newton step)
@@ -186,7 +186,7 @@ CONTAINS
    ! (2D) CHECK FOR CONVERGENCE
    ! ---------------------------------------------------------------------------------------
    ! check for convergence on dx
-   IF (MAXVAL( ABS(DX) / MAX(ABS(X),1.0_SP) ) < ERR_ITER_DX) THEN
+   IF (MAXVAL( ABS(DX) / MAX(ABS(X),1.0_WP) ) < ERR_ITER_DX) THEN
     CHECK=.FALSE.
     EXIT
    ENDIF

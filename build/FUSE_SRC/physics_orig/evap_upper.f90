@@ -47,12 +47,12 @@ SELECT CASE(SMODL%iARCH1)  ! upper layer architecture
   ! -----------------------------------------------------
   SELECT CASE(SMODL%iESOIL)
    CASE(iopt_sequential)
-    M_FLUX%EVAP_1A = 0._sp
-    M_FLUX%EVAP_1B = 0._sp
+    M_FLUX%EVAP_1A = 0._wp
+    M_FLUX%EVAP_1B = 0._wp
     M_FLUX%EVAP_1  = MFORCE%PET * TSTATE%TENS_1/DPARAM%MAXTENS_1
    CASE(iopt_rootweight)
-    M_FLUX%EVAP_1A = 0._sp
-    M_FLUX%EVAP_1B = 0._sp
+    M_FLUX%EVAP_1A = 0._wp
+    M_FLUX%EVAP_1B = 0._wp
     M_FLUX%EVAP_1  = MFORCE%PET * MPARAM%RTFRAC1 * TSTATE%TENS_1/DPARAM%MAXTENS_1
    CASE DEFAULT
     print *, "SMODL%iESOIL must be either iopt_sequential or iopt_rootweight"

@@ -45,18 +45,18 @@ INTEGER(I4B)                           :: JPAR    ! looping variable
 INTEGER(I4B)                           :: IPARSET ! looping variable
 INTEGER(I4B)                           :: NCUT    ! number of parameter values in the "cut"
 TYPE(PARATT)                           :: PARAM_META ! parameter metadata (model parameters)
-REAL(SP)                               :: XDEF    ! default parameter value
-REAL(SP)                               :: XLOW    ! lower parameter bound
-REAL(SP)                               :: XUPP    ! upper parameter bound
-REAL(SP), DIMENSION(:), ALLOCATABLE    :: BL      ! vector of lower parameter bounds
-REAL(SP), DIMENSION(:), ALLOCATABLE    :: BU      ! vector of upper parameter bounds
-REAL(SP), DIMENSION(:), ALLOCATABLE    :: APAR    ! model parameter set
+REAL(WP)                               :: XDEF    ! default parameter value
+REAL(WP)                               :: XLOW    ! lower parameter bound
+REAL(WP)                               :: XUPP    ! upper parameter bound
+REAL(WP), DIMENSION(:), ALLOCATABLE    :: BL      ! vector of lower parameter bounds
+REAL(WP), DIMENSION(:), ALLOCATABLE    :: BU      ! vector of upper parameter bounds
+REAL(WP), DIMENSION(:), ALLOCATABLE    :: APAR    ! model parameter set
 INTEGER(KIND=4)                        :: ISEED   ! seed for the random sequence
 REAL(KIND=4),DIMENSION(:), ALLOCATABLE :: URAND   ! vector of quasi-random numbers U[0,1]
-REAL(SP)                               :: XFRC    ! fractional range for the parameter cut
-REAL(SP)                               :: XRNG    ! range for the parameter cut
-REAL(SP)                               :: XINC    ! parameter increment
-REAL(SP)                               :: XPAR    ! parameter value
+REAL(WP)                               :: XFRC    ! fractional range for the parameter cut
+REAL(WP)                               :: XRNG    ! range for the parameter cut
+REAL(WP)                               :: XINC    ! parameter increment
+REAL(WP)                               :: XPAR    ! parameter value
 ! loop through different parameter sets
 INTEGER(I4B)                           :: ITRY    ! (looping)
 INTEGER(I4B)                           :: JTRY    ! (looping)
@@ -167,20 +167,20 @@ SELECT CASE(TRIM(NUM_EXPERIMENT))
     DO ORDER_ACCEPT=1,1
      ! evaluate different parameters for step-size control
      DO ITRY=0,4  ! play with different ERR_TRUNC_ABS parameters
-      ERR_TRUNC_ABS = 1. * 10.**-REAL(ITRY, KIND(SP))
+      ERR_TRUNC_ABS = 1. * 10.**-REAL(ITRY, KIND(WP))
       DO JTRY=0,4    ! play with different ERR_TRUNC_REL parameters
-       ERR_TRUNC_REL = 1. * 10.**-REAL(JTRY, KIND(SP))
+       ERR_TRUNC_REL = 1. * 10.**-REAL(JTRY, KIND(WP))
        ! evaluate different error parameters for connvergence of implicit solution
        DO MTRY=0,9,2    !  play with different ERR_ITER_FUNC parameters
-        ERR_ITER_FUNC = 1. * 10.**-REAL(MTRY, KIND(SP))
+        ERR_ITER_FUNC = 1. * 10.**-REAL(MTRY, KIND(WP))
         DO NTRY=0,9,2    ! play with different ERR_ITER_DX parameters
-         ERR_ITER_DX = 1. * 10.**-REAL(NTRY, KIND(SP))
+         ERR_ITER_DX = 1. * 10.**-REAL(NTRY, KIND(WP))
          ! get NCUT increments
          XRNG = (XUPP-XLOW)*XFRC
-         XINC = XRNG/REAL(NCUT,KIND(SP))
+         XINC = XRNG/REAL(NCUT,KIND(WP))
          DO IPAR=0,NCUT
           ! modify parameter value
-          XPAR = (XDEF - XRNG/2._SP) + REAL(IPAR,KIND(SP))*XINC
+          XPAR = (XDEF - XRNG/2._WP) + REAL(IPAR,KIND(WP))*XINC
           IF (XPAR.LT.XLOW) XPAR=XLOW
           IF (XPAR.GT.XUPP) XPAR=XUPP
           CALL PAR_INSERT(XPAR,PARNAM)
@@ -212,9 +212,9 @@ SELECT CASE(TRIM(NUM_EXPERIMENT))
    DO ORDER_ACCEPT=0,1
     ! evaluate different parameters for step-size control
     DO ITRY=0,4  ! play with different ERR_TRUNC_ABS parameters
-     ERR_TRUNC_ABS = 1. * 10.**-REAL(ITRY, KIND(SP))
+     ERR_TRUNC_ABS = 1. * 10.**-REAL(ITRY, KIND(WP))
      DO JTRY=0,4    ! play with different ERR_TRUNC_REL parameters
-      ERR_TRUNC_REL = 1. * 10.**-REAL(JTRY, KIND(SP))
+      ERR_TRUNC_REL = 1. * 10.**-REAL(JTRY, KIND(WP))
       DO KTRY=0,2
        JAC_RECOMPUTE=KTRY
        IF (JAC_RECOMPUTE.EQ.CONSTFULLSTEP) &
@@ -222,9 +222,9 @@ SELECT CASE(TRIM(NUM_EXPERIMENT))
                  fjacINDX(nstateFUSE) )
        ! evaluate different error parameters for connvergence of implicit solution
        DO MTRY=0,9,2    !  play with different ERR_ITER_FUNC parameters
-        ERR_ITER_FUNC = 1. * 10.**-REAL(MTRY, KIND(SP))
+        ERR_ITER_FUNC = 1. * 10.**-REAL(MTRY, KIND(WP))
         DO NTRY=0,9,2    ! play with different ERR_ITER_DX parameters
-         ERR_ITER_DX = 1. * 10.**-REAL(NTRY, KIND(SP))
+         ERR_ITER_DX = 1. * 10.**-REAL(NTRY, KIND(WP))
          write(*,'(7(I2,1X))') TRUNCATION_ERROR, ORDER_ACCEPT, ITRY, JTRY, KTRY, MTRY, NTRY
          CALL NMODEL_RUN(OUTPUT_FLAG,SSTATS_FLAG)
         END DO  ! ntry
@@ -247,14 +247,14 @@ SELECT CASE(TRIM(NUM_EXPERIMENT))
    DO ORDER_ACCEPT=0,1
     ! evaluate different parameters for step-size control
     DO ITRY=0,9,2    ! play with different ERR_TRUNC_ABS parameters
-     ERR_TRUNC_ABS = 1. * 10.**-REAL(ITRY, KIND(SP))
+     ERR_TRUNC_ABS = 1. * 10.**-REAL(ITRY, KIND(WP))
      DO JTRY=0,9,2    ! play with different ERR_TRUNC_REL parameters
-      ERR_TRUNC_REL = 1. * 10.**-REAL(JTRY, KIND(SP))
+      ERR_TRUNC_REL = 1. * 10.**-REAL(JTRY, KIND(WP))
       ! evaluate different error parameters for connvergence of implicit solution
       DO MTRY=0,9,2    !  play with different ERR_ITER_FUNC parameters
-       ERR_ITER_FUNC = 1. * 10.**-REAL(MTRY, KIND(SP))
+       ERR_ITER_FUNC = 1. * 10.**-REAL(MTRY, KIND(WP))
        DO NTRY=0,9,2    ! play with different ERR_ITER_DX parameters
-        ERR_ITER_DX = 1. * 10.**-REAL(NTRY, KIND(SP))
+        ERR_ITER_DX = 1. * 10.**-REAL(NTRY, KIND(WP))
         ! run zee model
         CALL NMODEL_RUN(OUTPUT_FLAG,SSTATS_FLAG)
         print *, TRUNCATION_ERROR, ORDER_ACCEPT, ITRY, JTRY, MTRY, NTRY
@@ -275,13 +275,13 @@ SELECT CASE(TRIM(NUM_EXPERIMENT))
    DO ORDER_ACCEPT=0,1
     ! evaluate different parameters for step-size control
     DO ITRY=0,9,2    ! play with different ERR_TRUNC_ABS parameters
-     ERR_TRUNC_ABS = 1. * 10.**-REAL(ITRY, KIND(SP))
+     ERR_TRUNC_ABS = 1. * 10.**-REAL(ITRY, KIND(WP))
      DO JTRY=0,9,2    ! play with different ERR_TRUNC_REL parameters
-      ERR_TRUNC_REL = 1. * 10.**-REAL(JTRY, KIND(SP))
+      ERR_TRUNC_REL = 1. * 10.**-REAL(JTRY, KIND(WP))
       DO KTRY=0,1
        ! modify minimum step-size multiplier
-       IF (KTRY.EQ.0) RMIN = 0.1_sp
-       IF (KTRY.EQ.1) RMIN = 0.5_sp
+       IF (KTRY.EQ.0) RMIN = 0.1_wp
+       IF (KTRY.EQ.1) RMIN = 0.5_wp
        ! loop through different number of iterations
        DO NITER_TOTAL=1,10      
         ! run zee model
@@ -346,9 +346,9 @@ SELECT CASE(TRIM(NUM_EXPERIMENT))
   DO SOLUTION_METHOD=0,1
    ! evaluate different parameters for step-size control
    DO ITRY=3,9,3    ! play with different ERR_TRUNC_ABS parameters
-    ERR_TRUNC_ABS = 1. * 10.**-REAL(ITRY, KIND(SP))
+    ERR_TRUNC_ABS = 1. * 10.**-REAL(ITRY, KIND(WP))
     DO JTRY=1,9      ! play with different ERR_TRUNC_REL parameters
-     ERR_TRUNC_REL = 1. * 10.**-REAL(JTRY, KIND(SP))
+     ERR_TRUNC_REL = 1. * 10.**-REAL(JTRY, KIND(WP))
      ! run zee model
      CALL NMODEL_RUN(OUTPUT_FLAG,SSTATS_FLAG)
      WRITE(*,'(I4,1X,F9.4,1X,5(I1,1X))') &
@@ -392,10 +392,10 @@ ERR_TRUNC_REL          = 1.e-9                 ! relative temporal truncation er
 ERR_ITER_FUNC          = 1.e-9                 ! iteration convergence tolerance for function values
 ERR_ITER_DX            = 1.e-9                 ! iteration convergence tolerance for dx
 FRACSTATE_MIN          = 1.e-9                 ! fractional minimum value of state (for non-zero derivatives)
-SAFETY                 = 0.9_sp                ! safety factor in step-size equation
-RMIN                   = 0.1_sp                ! minimum step size multiplier
-RMAX                   = 4.0_sp                ! maximum step size multiplier
+SAFETY                 = 0.9_wp                ! safety factor in step-size equation
+RMIN                   = 0.1_wp                ! minimum step size multiplier
+RMAX                   = 4.0_wp                ! maximum step size multiplier
 NITER_TOTAL            = 100                   ! total number of iterations used in the implicit scheme
-MIN_TSTEP              = 0.01_sp/60._sp/24._sp ! minimum time step length (minutes --> days)
-MAX_TSTEP              = 60.0_sp/60._sp/24._sp ! maximum time step length (minutes --> days)
+MIN_TSTEP              = 0.01_wp/60._wp/24._wp ! minimum time step length (minutes --> days)
+MAX_TSTEP              = 60.0_wp/60._wp/24._wp ! maximum time step length (minutes --> days)
 END SUBROUTINE DEFAULT_NUMERIX

@@ -25,10 +25,10 @@ USE multistate, ONLY: MSTATE,TSTATE                   ! model states
 USE multi_flux, ONLY: M_FLUX,CURRENT_DT               ! model fluxes
 USE model_numerix                                     ! access model numerix decisions
 IMPLICIT NONE
-REAL(SP)                               :: LOGISMOOTH  ! FUNCTION logistic smoothing
-REAL(SP), PARAMETER                    :: PSMOOTH=0.01_SP ! smoothing parameter
-REAL(SP)                               :: W_FUNC      ! result from LOGISMOOTH
-REAL(SP)                               :: DT          ! current time step
+REAL(WP)                               :: LOGISMOOTH  ! FUNCTION logistic smoothing
+REAL(WP), PARAMETER                    :: PSMOOTH=0.01_WP ! smoothing parameter
+REAL(WP)                               :: W_FUNC      ! result from LOGISMOOTH
+REAL(WP)                               :: DT          ! current time step
 INTEGER(I4B), PARAMETER                :: POP_CASE=9 ! just a temporary fix so the case statement is populated
 ! ---------------------------------------------------------------------------------------
 SELECT CASE(SOLUTION_METHOD)
@@ -49,7 +49,7 @@ SELECT CASE(SOLUTION_METHOD)
    M_FLUX%OFLOW_1     = W_FUNC * M_FLUX%TENS2FREE_1
   CASE(iopt_tension1_1) ! upper layer broken up into tension and free storage
    ! no separate recharge zone (flux should never be used)
-   M_FLUX%RCHR2EXCS   = 0._SP
+   M_FLUX%RCHR2EXCS   = 0._WP
    ! compute flow from tension storage to free storage (mm s-1)
    W_FUNC = LOGISMOOTH(TSTATE%TENS_1,DPARAM%MAXTENS_1,PSMOOTH)
    M_FLUX%TENS2FREE_1 = W_FUNC * (M_FLUX%EFF_PPT - M_FLUX%QSURF)
@@ -58,8 +58,8 @@ SELECT CASE(SOLUTION_METHOD)
    M_FLUX%OFLOW_1     = W_FUNC * M_FLUX%TENS2FREE_1
   CASE(iopt_onestate_1) ! upper layer defined by a single state variable
    ! no tension stores
-   M_FLUX%RCHR2EXCS   = 0._SP
-   M_FLUX%TENS2FREE_1 = 0._SP
+   M_FLUX%RCHR2EXCS   = 0._WP
+   M_FLUX%TENS2FREE_1 = 0._WP
    ! compute over-flow of free water
    W_FUNC = LOGISMOOTH(TSTATE%WATR_1,MPARAM%MAXWATR_1,PSMOOTH)
    M_FLUX%OFLOW_1     = W_FUNC * (M_FLUX%EFF_PPT - M_FLUX%QSURF)
@@ -72,28 +72,28 @@ SELECT CASE(SOLUTION_METHOD)
   CASE(iopt_tens2pll_2) ! tension reservoir plus two parallel tanks
    ! compute flow from tension storage to free storage (mm s-1)
    W_FUNC = LOGISMOOTH(TSTATE%TENS_2,DPARAM%MAXTENS_2,PSMOOTH)
-   M_FLUX%TENS2FREE_2 = W_FUNC * M_FLUX%QPERC_12*(1._SP-MPARAM%PERCFRAC)
+   M_FLUX%TENS2FREE_2 = W_FUNC * M_FLUX%QPERC_12*(1._WP-MPARAM%PERCFRAC)
    ! compute over-flow of free water in the primary reservoir
    W_FUNC = LOGISMOOTH(TSTATE%FREE_2A,DPARAM%MAXFREE_2A,PSMOOTH)
-   M_FLUX%OFLOW_2A    = W_FUNC * (M_FLUX%QPERC_12*(MPARAM%PERCFRAC/2._SP) + M_FLUX%TENS2FREE_2/2._SP)
+   M_FLUX%OFLOW_2A    = W_FUNC * (M_FLUX%QPERC_12*(MPARAM%PERCFRAC/2._WP) + M_FLUX%TENS2FREE_2/2._WP)
    ! compute over-flow of free water in the secondary reservoir
    W_FUNC = LOGISMOOTH(TSTATE%FREE_2B,DPARAM%MAXFREE_2B,PSMOOTH)
-   M_FLUX%OFLOW_2B    = W_FUNC * (M_FLUX%QPERC_12*(MPARAM%PERCFRAC/2._SP) + M_FLUX%TENS2FREE_2/2._SP)
+   M_FLUX%OFLOW_2B    = W_FUNC * (M_FLUX%QPERC_12*(MPARAM%PERCFRAC/2._WP) + M_FLUX%TENS2FREE_2/2._WP)
    ! compute total overflow
    M_FLUX%OFLOW_2     = M_FLUX%OFLOW_2A + M_FLUX%OFLOW_2B
   CASE(iopt_fixedsiz_2)
    ! no tension store
-   M_FLUX%TENS2FREE_2 = 0._SP
-   M_FLUX%OFLOW_2A    = 0._SP
-   M_FLUX%OFLOW_2B    = 0._SP
+   M_FLUX%TENS2FREE_2 = 0._WP
+   M_FLUX%OFLOW_2A    = 0._WP
+   M_FLUX%OFLOW_2B    = 0._WP
    ! compute over-flow of free water
    W_FUNC = LOGISMOOTH(TSTATE%WATR_2,MPARAM%MAXWATR_2,PSMOOTH)
    M_FLUX%OFLOW_2     = W_FUNC * M_FLUX%QPERC_12
   CASE(iopt_unlimfrc_2,iopt_unlimpow_2,iopt_topmdexp_2) ! unlimited size
-   M_FLUX%TENS2FREE_2 = 0._SP
-   M_FLUX%OFLOW_2     = 0._SP
-   M_FLUX%OFLOW_2A    = 0._SP
-   M_FLUX%OFLOW_2B    = 0._SP
+   M_FLUX%TENS2FREE_2 = 0._WP
+   M_FLUX%OFLOW_2     = 0._WP
+   M_FLUX%OFLOW_2A    = 0._WP
+   M_FLUX%OFLOW_2B    = 0._WP
   CASE DEFAULT
    print *, "SMODL%iARCH2 must be iopt_tens2pll_2, iopt_unlimfrc_2, iopt_unlimpow_2"
    print *, "  iopt_topmdexp_2, or iopt_fixedsiz_2"
@@ -109,24 +109,24 @@ SELECT CASE(SOLUTION_METHOD)
  SELECT CASE(SMODL%iARCH1)
   CASE(iopt_tension2_1) ! tension storage sub-divided into recharge and excess
    ! compute flow from recharge to excess (mm s-1)
-   M_FLUX%RCHR2EXCS   = MAX(0._SP, (M_FLUX%EFF_PPT - M_FLUX%QSURF) - (DPARAM%MAXTENS_1A - MSTATE%TENS_1A)/DT)
+   M_FLUX%RCHR2EXCS   = MAX(0._WP, (M_FLUX%EFF_PPT - M_FLUX%QSURF) - (DPARAM%MAXTENS_1A - MSTATE%TENS_1A)/DT)
    ! compute flow from tension storage to free storage (mm s-1)
-   M_FLUX%TENS2FREE_1 = MAX(0._SP,  M_FLUX%RCHR2EXCS               - (DPARAM%MAXTENS_1B - MSTATE%TENS_1B)/DT)
+   M_FLUX%TENS2FREE_1 = MAX(0._WP,  M_FLUX%RCHR2EXCS               - (DPARAM%MAXTENS_1B - MSTATE%TENS_1B)/DT)
    ! compute over-flow of free water
-   M_FLUX%OFLOW_1     = MAX(0._SP,  M_FLUX%TENS2FREE_1             - (DPARAM%MAXFREE_1  - MSTATE%FREE_1) /DT)
+   M_FLUX%OFLOW_1     = MAX(0._WP,  M_FLUX%TENS2FREE_1             - (DPARAM%MAXFREE_1  - MSTATE%FREE_1) /DT)
   CASE(iopt_tension1_1) ! upper layer broken up into tension and free storage
    ! no separate recharge zone (flux should never be used)
-   M_FLUX%RCHR2EXCS   = 0._SP
+   M_FLUX%RCHR2EXCS   = 0._WP
    ! compute flow from tension storage to free storage (mm s-1)
-   M_FLUX%TENS2FREE_1 = MAX(0._SP, (M_FLUX%EFF_PPT - M_FLUX%QSURF) - (DPARAM%MAXTENS_1 - MSTATE%TENS_1)/DT)
+   M_FLUX%TENS2FREE_1 = MAX(0._WP, (M_FLUX%EFF_PPT - M_FLUX%QSURF) - (DPARAM%MAXTENS_1 - MSTATE%TENS_1)/DT)
    ! compute over-flow of free water
-   M_FLUX%OFLOW_1     = MAX(0._SP,  M_FLUX%TENS2FREE_1             - (DPARAM%MAXFREE_1 - MSTATE%FREE_1)/DT)
+   M_FLUX%OFLOW_1     = MAX(0._WP,  M_FLUX%TENS2FREE_1             - (DPARAM%MAXFREE_1 - MSTATE%FREE_1)/DT)
   CASE(iopt_onestate_1) ! upper layer defined by a single state variable
    ! no tension stores
-   M_FLUX%RCHR2EXCS   = 0._SP
-   M_FLUX%TENS2FREE_1 = 0._SP
+   M_FLUX%RCHR2EXCS   = 0._WP
+   M_FLUX%TENS2FREE_1 = 0._WP
    ! compute over-flow of free water
-   M_FLUX%OFLOW_1     = MAX(0._SP, (M_FLUX%EFF_PPT - M_FLUX%QSURF) - (MPARAM%MAXWATR_1 - MSTATE%WATR_1)/DT)
+   M_FLUX%OFLOW_1     = MAX(0._WP, (M_FLUX%EFF_PPT - M_FLUX%QSURF) - (MPARAM%MAXWATR_1 - MSTATE%WATR_1)/DT)
   CASE DEFAULT
    print *, "SMODL%iARCH1 must be iopt_tension2_1, iopt_tension1_1, or iopt_onestate_1"
    STOP
@@ -135,27 +135,27 @@ SELECT CASE(SOLUTION_METHOD)
  SELECT CASE(SMODL%iARCH2)
   CASE(iopt_tens2pll_2) ! tension reservoir plus two parallel tanks
    ! compute flow from tension storage to free storage (mm s-1)
-   M_FLUX%TENS2FREE_2 = MAX(0._SP, M_FLUX%QPERC_12*(1._SP-MPARAM%PERCFRAC) - (DPARAM%MAXTENS_2  - MSTATE%TENS_2 )/DT)
+   M_FLUX%TENS2FREE_2 = MAX(0._WP, M_FLUX%QPERC_12*(1._WP-MPARAM%PERCFRAC) - (DPARAM%MAXTENS_2  - MSTATE%TENS_2 )/DT)
    ! compute over-flow of free water in the primary reservoir
-   M_FLUX%OFLOW_2A    = MAX(0._SP, (M_FLUX%QPERC_12*(MPARAM%PERCFRAC/2._SP) + M_FLUX%TENS2FREE_2/2._SP) &
+   M_FLUX%OFLOW_2A    = MAX(0._WP, (M_FLUX%QPERC_12*(MPARAM%PERCFRAC/2._WP) + M_FLUX%TENS2FREE_2/2._WP) &
                                        - (DPARAM%MAXFREE_2A - MSTATE%FREE_2A)/DT)
    ! compute over-flow of free water in the secondary reservoir
-   M_FLUX%OFLOW_2B    = MAX(0._SP, (M_FLUX%QPERC_12*(MPARAM%PERCFRAC/2._SP) + M_FLUX%TENS2FREE_2/2._SP) & 
+   M_FLUX%OFLOW_2B    = MAX(0._WP, (M_FLUX%QPERC_12*(MPARAM%PERCFRAC/2._WP) + M_FLUX%TENS2FREE_2/2._WP) & 
                                        - (DPARAM%MAXFREE_2B - MSTATE%FREE_2B)/DT)
    ! compute total overflow
    M_FLUX%OFLOW_2     = M_FLUX%OFLOW_2A + M_FLUX%OFLOW_2B
   CASE(iopt_fixedsiz_2)
    ! no tension store
-   M_FLUX%TENS2FREE_2 = 0._SP
-   M_FLUX%OFLOW_2A    = 0._SP
-   M_FLUX%OFLOW_2B    = 0._SP
+   M_FLUX%TENS2FREE_2 = 0._WP
+   M_FLUX%OFLOW_2A    = 0._WP
+   M_FLUX%OFLOW_2B    = 0._WP
    ! compute over-flow of free water
-   M_FLUX%OFLOW_2     = MAX(0._SP, M_FLUX%QPERC_12 - (MPARAM%MAXWATR_2 - MSTATE%WATR_2)/DT)
+   M_FLUX%OFLOW_2     = MAX(0._WP, M_FLUX%QPERC_12 - (MPARAM%MAXWATR_2 - MSTATE%WATR_2)/DT)
   CASE(iopt_unlimfrc_2,iopt_unlimpow_2,iopt_topmdexp_2) ! unlimited size
-   M_FLUX%TENS2FREE_2 = 0._SP
-   M_FLUX%OFLOW_2     = 0._SP
-   M_FLUX%OFLOW_2A    = 0._SP
-   M_FLUX%OFLOW_2B    = 0._SP
+   M_FLUX%TENS2FREE_2 = 0._WP
+   M_FLUX%OFLOW_2     = 0._WP
+   M_FLUX%OFLOW_2A    = 0._WP
+   M_FLUX%OFLOW_2B    = 0._WP
   CASE DEFAULT
    print *, "SMODL%iARCH2 must be iopt_tens2pll_2, iopt_unlimfrc_2, iopt_unlimpow_2"
    print *, "  iopt_topmdexp_2, or iopt_fixedsiz_2"

@@ -35,8 +35,8 @@ contains
   ! input
   type(fuse_work) , intent(inout)            :: fuseStruct  ! fuse work structure
   ! output
-  real(sp)        , intent(out)              :: g_x(:)      ! dx/dt=g(x)
-  real(sp)        , intent(out)  , optional  :: J_g(:,:)    ! flux Jacobian matrix
+  real(wp)        , intent(out)              :: g_x(:)      ! dx/dt=g(x)
+  real(wp)        , intent(out)  , optional  :: J_g(:,:)    ! flux Jacobian matrix
   ! internal
   logical(lgt)                               :: comp_dflux  ! flag to compute flux derivatives
   ! --------------------------------------------------------------------------------------

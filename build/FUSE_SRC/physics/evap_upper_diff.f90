@@ -30,15 +30,15 @@ contains
   ! local variables
   logical(lgt)                           :: comp_dflux  ! flag to compute flux derivatives
   integer(i4b)                           :: iState      ! state index
-  real(sp)                               :: phi         ! smoothed fraction of total tension storage (0,1]
-  real(sp)                               :: phi_1a      ! smoothed fraction of primary tension storage (0,1]
-  real(sp)                               :: phi_1b      ! smoothed fraction of secondary tension storage (0,1]
-  real(sp)                               :: maxRate     ! maximum forcing
-  real(sp)                               :: maxRate_1a  ! maximum forcing for the primary tension tank
-  real(sp)                               :: maxRate_1b  ! maximum forcing for the secondary tension tank
-  real(sp)                               :: dphi_dx     ! derivative in fraction w.r.t. storage
-  real(sp)                               :: devap_dx    ! derivative in evaporation w.r.t. storage
-  real(sp), parameter                    :: ms=1.e-4_sp ! smoothing in sfrac(smax) function
+  real(wp)                               :: phi         ! smoothed fraction of total tension storage (0,1]
+  real(wp)                               :: phi_1a      ! smoothed fraction of primary tension storage (0,1]
+  real(wp)                               :: phi_1b      ! smoothed fraction of secondary tension storage (0,1]
+  real(wp)                               :: maxRate     ! maximum forcing
+  real(wp)                               :: maxRate_1a  ! maximum forcing for the primary tension tank
+  real(wp)                               :: maxRate_1b  ! maximum forcing for the secondary tension tank
+  real(wp)                               :: dphi_dx     ! derivative in fraction w.r.t. storage
+  real(wp)                               :: devap_dx    ! derivative in evaporation w.r.t. storage
+  real(wp), parameter                    :: ms=1.e-4_wp ! smoothing in sfrac(smax) function
   ! -------------------------------------------------------------------------------------------------
   ! associate variables with elements of data structure
   associate(&
@@ -89,8 +89,8 @@ contains
    ! --------------------------------------------------------------------------------------
  
     ! zero fluxes not used
-    M_FLUX%EVAP_1A = 0._sp
-    M_FLUX%EVAP_1B = 0._sp
+    M_FLUX%EVAP_1A = 0._wp
+    M_FLUX%EVAP_1B = 0._wp
 
     select case(SMODL%iARCH1)
      case(iopt_tension1_1); phi = sfrac(TSTATE%TENS_1, DPARAM%MAXTENS_1, ms)

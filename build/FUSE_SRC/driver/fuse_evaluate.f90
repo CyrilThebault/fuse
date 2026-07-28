@@ -30,7 +30,7 @@ MODULE fuse_evaluate_module
     ! ---------------------------------------------------------------------------------------
 
     use nrtype
-    use globaldata,only: NPAR_SNOW, isPrint, nFUSE_eval
+    use fuse_globaldata,only: NPAR_SNOW, isPrint, nFUSE_eval
     use model_defn,only: NSTATE
     use multiparam,only: NUMPAR
     use multiforce,only: nspat1, nspat2, numtim_sub
@@ -41,21 +41,21 @@ MODULE fuse_evaluate_module
     IMPLICIT NONE
 
     ! input
-    REAL(SP),DIMENSION(:) , intent(in)     :: XPAR           ! model parameter set
+    REAL(WP),DIMENSION(:) , intent(in)     :: XPAR           ! model parameter set
     type(fuse_info)       , intent(in)     :: info           ! info structures (runtime settings etc.)
     type(fuse_work)       , intent(inout)  :: work           ! work structures that depend on npar/nState
     type(domain_data)     , intent(inout)  :: domain         ! the fuse domain structure that stores data arrays
     LOGICAL(LGT)          , intent(in)     :: OUTPUT_FLAG    ! .TRUE. if desire time series output
 
     ! output
-    REAL(SP),INTENT(OUT)                   :: METRIC_VAL     ! metric 
+    REAL(WP),INTENT(OUT)                   :: METRIC_VAL     ! metric 
 
     ! error control
     integer(i4b)                           :: err, ierr
     character(len=1024)                    :: message
 
     ! timing
-    real(sp)                               :: t1, t2
+    real(wp)                               :: t1, t2
 
     ! ---------------------------------------------------------------------------------------
 
@@ -108,7 +108,7 @@ MODULE fuse_evaluate_module
 
   subroutine initialize_run(xpar, work, err, message)
   
-  use globaldata,  only: isPrint, fracstate0
+  use fuse_globaldata,  only: isPrint, fracstate0
   use model_defn,  only: SMODL
   use model_defnames
   
@@ -125,7 +125,7 @@ MODULE fuse_evaluate_module
   use put_params_module, only: put_params
   implicit none
 
-  real(sp), dimension(:) , intent(in)      :: xpar
+  real(wp), dimension(:) , intent(in)      :: xpar
   type(fuse_work)        , intent(inout)   :: work
 
   integer(i4b)           , intent(out)     :: err
@@ -176,10 +176,10 @@ MODULE fuse_evaluate_module
   if (SMODL%iSNOWM == iopt_temp_index) then
 
     ! initialize template once
-    work%snow%sbands(:)%var%SWE         = 0._sp
-    work%snow%sbands(:)%var%SNOWACCMLTN = 0._sp
-    work%snow%sbands(:)%var%SNOWMELT    = 0._sp
-    work%snow%sbands(:)%var%DSWE_DT     = 0._sp
+    work%snow%sbands(:)%var%SWE         = 0._wp
+    work%snow%sbands(:)%var%SNOWACCMLTN = 0._wp
+    work%snow%sbands(:)%var%SNOWMELT    = 0._wp
+    work%snow%sbands(:)%var%DSWE_DT     = 0._wp
 
     ! copy to every grid cell (legacy staging)
     do iSpat2 = 1, nSpat2
@@ -207,7 +207,7 @@ MODULE fuse_evaluate_module
 
   subroutine run_time_loop(info, work, output_flag, ierr, message)
 
-  use globaldata, only: isPrint
+  use fuse_globaldata, only: isPrint
   use multiforce, only: timDat  ! NOTE: used in legacy cides
   use multiforce, only: nspat1, nspat2, DELTIM, sim_beg, sim_end, numtim_sub
   use multistate, only: gState_3d
@@ -237,7 +237,7 @@ MODULE fuse_evaluate_module
 
   ! locals
   logical(lgt), parameter :: computePET = .false.
-  real(sp)     :: dt_sub, dt_full
+  real(wp)     :: dt_sub, dt_full
   integer(i4b) :: iSpat1, iSpat2, iBands
 
   ierr = 0
@@ -367,7 +367,7 @@ MODULE fuse_evaluate_module
   subroutine advance_one_cell(work, sub_idx, iSpat1, iSpat2, dt_sub, dt_full, err, message)
 
   ! switches / options
-  use globaldata,   only: NA_VALUE_SP
+  use fuse_globaldata,   only: NA_VALUE_SP
   use model_defn,   only: SMODL, NSTATE
   use model_defnames
   use multiforce,   only: DELTIM, gForce_3d, aForce, MFORCE, nspat1, nspat2
@@ -397,7 +397,7 @@ MODULE fuse_evaluate_module
 
   type(fuse_work)       , intent(inout) :: work           ! work structures that depend on npar/nState
   integer(i4b)          , intent(in)    :: sub_idx, iSpat1, iSpat2
-  real(sp)              , intent(inout) :: dt_sub, dt_full
+  real(wp)              , intent(inout) :: dt_sub, dt_full
   integer(i4b)          , intent(out)   :: err
   character(len=*)      , intent(out)   :: message
 
@@ -420,22 +420,22 @@ MODULE fuse_evaluate_module
     MFORCE = gForce_3d(iSpat1,iSpat2,sub_idx)
 
     ! forcing sanity checks (keep behavior; convert STOP -> error return)
-    if (MFORCE%PPT < 0.0_sp) then
+    if (MFORCE%PPT < 0.0_wp) then
       err=1; message='Negative precipitation in input file'; return
     end if
-    if (MFORCE%PPT > 5000.0_sp) then
+    if (MFORCE%PPT > 5000.0_wp) then
       err=1; message='Precipitation greater than 5000 in input file'; return
     end if
-    if (MFORCE%PET < 0.0_sp) then
+    if (MFORCE%PET < 0.0_wp) then
       err=1; message='Negative PET in input file'; return
     end if
-    if (MFORCE%PET > 100.0_sp) then
+    if (MFORCE%PET > 100.0_wp) then
       err=1; message='PET greater than 100 in input file'; return
     end if
-    if (MFORCE%TEMP < -100.0_sp) then
+    if (MFORCE%TEMP < -100.0_wp) then
       err=1; message='Temperature lower than -100 in input file'; return
     end if
-    if (MFORCE%TEMP > 100.0_sp) then
+    if (MFORCE%TEMP > 100.0_wp) then
       err=1; message='Temperature greater than 100 in input file'; return
     end if
 
@@ -511,10 +511,10 @@ MODULE fuse_evaluate_module
 
     ! routing
     call Q_OVERLAND()
-    if (MROUTE%Q_ROUTED < 0._sp) then
+    if (MROUTE%Q_ROUTED < 0._wp) then
       err=1; message='Q_ROUTED is less than zero'; return
     end if
-    if (MROUTE%Q_ROUTED > 1000._sp) then
+    if (MROUTE%Q_ROUTED > 1000._wp) then
       err=1; message='Q_ROUTED is enormous'; return
     end if
 
@@ -538,8 +538,8 @@ MODULE fuse_evaluate_module
     end if
 
     ! forcing diagnostics
-    aForce(sub_idx)%ppt = sum(gForce_3d(:,:,sub_idx)%ppt) / real(size(gForce_3d(:,:,sub_idx)), kind=sp)
-    aForce(sub_idx)%pet = sum(gForce_3d(:,:,sub_idx)%pet) / real(size(gForce_3d(:,:,sub_idx)), kind=sp)
+    aForce(sub_idx)%ppt = sum(gForce_3d(:,:,sub_idx)%ppt) / real(size(gForce_3d(:,:,sub_idx)), kind=wp)
+    aForce(sub_idx)%pet = sum(gForce_3d(:,:,sub_idx)%pet) / real(size(gForce_3d(:,:,sub_idx)), kind=wp)
 
     ! stats
     call COMP_STATS()

@@ -17,7 +17,7 @@ USE multiforce, ONLY: DELTIM                          ! model forcing data
 USE multi_flux                                        ! model fluxes
 USE multistate, ONLY: HSTATE                          ! model states (use time step)
 IMPLICIT NONE
-REAL(SP)                                :: WEIGHT     ! weight (sub-step / full-step)
+REAL(WP)                                :: WEIGHT     ! weight (sub-step / full-step)
 ! ---------------------------------------------------------------------------------------
 ! determine the contribution of the sub-step to the full step
 WEIGHT = HSTATE%STEP/DELTIM

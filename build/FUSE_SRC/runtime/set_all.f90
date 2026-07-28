@@ -21,7 +21,7 @@ contains
     USE multistate                                        ! model states
     USE multibands                                        ! model snow bands
     IMPLICIT NONE
-    REAL(SP), INTENT(IN)                  :: VAL          ! value
+    REAL(WP), INTENT(IN)                  :: VAL          ! value
     INTEGER(I4B)                          :: ISNW         ! snow band index
     ! ---------------------------------------------------------------------------------------
     ! upper layer
@@ -64,7 +64,7 @@ contains
     USE multi_flux                                        ! model fluxes
     USE multibands                                        ! model snow bands
     IMPLICIT NONE
-    REAL(SP), INTENT(IN)                  :: VAL          ! value
+    REAL(WP), INTENT(IN)                  :: VAL          ! value
     INTEGER(I4B)                          :: ISNW         ! index for looping though SWE
     ! ---------------------------------------------------------------------------------------
     M_FLUX%EFF_PPT     = VAL; W_FLUX%EFF_PPT     = VAL
@@ -122,7 +122,7 @@ contains
     USE multiroute                                        ! routed runoff
 
     IMPLICIT NONE
-    REAL(SP), INTENT(IN)                  :: VAL          ! value
+    REAL(WP), INTENT(IN)                  :: VAL          ! value
     ! ---------------------------------------------------------------------------------------
     MROUTE%Q_INSTNT = VAL     ! instantaneous runoff
     MROUTE%Q_ROUTED = VAL     ! routed runoff
@@ -148,7 +148,7 @@ contains
     USE multibands                                        ! elevation bands for snow modeling
 
     IMPLICIT NONE
-    REAL(SP), INTENT(IN)                  :: VAL          ! value
+    REAL(WP), INTENT(IN)                  :: VAL          ! value
     INTEGER(I4B)                          :: IBANDS       ! snow band index
 
     ! ---------------------------------------------------------------------------------------

@@ -58,9 +58,6 @@ MODULE multiforce
 
  SAVE
  
- ! general
- INTEGER(I4B),PARAMETER                :: STRLEN=256        ! length of the character string
- 
  ! time data structures
  TYPE(tData)                           :: timDat            ! model time structure
  
@@ -103,8 +100,8 @@ MODULE multiforce
  INTEGER(i4b)                          :: eval_end = -1               ! index for the end of the inference period
 
  INTEGER(i4b)                          :: istart = -1                 ! index for start of inference period (in reduced array)
- REAL(sp)                              :: jdayRef                     ! reference time (days)
- REAL(sp)                              :: deltim = -1._dp             ! length of time step (days)
+ REAL(WP)                              :: jdayRef                     ! reference time (days)
+ REAL(WP)                              :: deltim = -1._wp             ! length of time step (days)
 
  LOGICAL(LGT)                          :: SUB_PERIODS_FLAG            ! .true. if subperiods are used to run FUSE
  LOGICAL(LGT)                          :: GRID_FLAG                   ! spatial flag .true. if grid
@@ -114,16 +111,16 @@ MODULE multiforce
  INTEGER(i4b)                          :: startSpat2 = -1             ! number of points in 1st spatial dimension
  INTEGER(i4b)                          :: nSpat1 = -1                 ! number of points in 1st spatial dimension
  INTEGER(i4b)                          :: nSpat2 = -1                 ! number of points in 2nd spatial dimension
- REAL(sp)                              :: xlon                        ! longitude (degrees) for PET computation
- REAL(sp)                              :: ylat                        ! latitude (degrees) for PET computation
- REAL(sp),dimension(:),allocatable     :: latitude                    ! latitude (degrees)
- REAL(sp),dimension(:),allocatable     :: longitude                   ! longitude (degrees)
+ REAL(WP)                              :: xlon                        ! longitude (degrees) for PET computation
+ REAL(WP)                              :: ylat                        ! latitude (degrees) for PET computation
+ REAL(WP),dimension(:),allocatable     :: latitude                    ! latitude (degrees)
+ REAL(WP),dimension(:),allocatable     :: longitude                   ! longitude (degrees)
  CHARACTER(len=strLen)                 :: latUnits                    ! units string for latitude
  CHARACTER(len=strLen)                 :: lonUnits                    ! units string for longitude
  CHARACTER(len=strLen)                 :: timeUnits                   ! units string for time
 
- REAL(sp),dimension(:),allocatable     :: time_steps                  ! time steps (days)
- REAL(sp),dimension(:),allocatable     :: julian_day_input            ! time steps (julian days)
+ REAL(WP),dimension(:),allocatable     :: time_steps                  ! time steps (days)
+ REAL(WP),dimension(:),allocatable     :: julian_day_input            ! time steps (julian days)
 
  INTEGER(I4B)                          :: NUMPSET                     ! number of parameter sets
  CHARACTER(len=strLen),dimension(:),allocatable   :: name_psets       ! name of parameter sets
@@ -170,12 +167,12 @@ MODULE multiforce
  INTEGER(i4b)                          :: ivarid_q    = -1   ! variable ID for runoff
 
   ! multipliers for variables to convert fluxes to mm/day
- REAL(sp)                              :: amult_ppt = -1._dp ! convert precipitation to mm/day
- REAL(sp)                              :: amult_pet = -1._dp ! convert potential ET to mm/day
- REAL(sp)                              :: amult_q   = -1._dp ! convert runoff to mm/day
+ REAL(WP)                              :: amult_ppt = -1._wp ! convert precipitation to mm/day
+ REAL(WP)                              :: amult_pet = -1._wp ! convert potential ET to mm/day
+ REAL(WP)                              :: amult_q   = -1._wp ! convert runoff to mm/day
 
  ! missing values
  INTEGER(I4B),PARAMETER                :: NA_VALUE    = -9999     ! integer designating missing values - TODO: retrieve from NetCDF file
- REAL(SP),PARAMETER                    :: NA_VALUE_SP = -9999._sp ! integer designating missing values - TODO: retrieve from NetCDF file
+ REAL(WP),PARAMETER                    :: NA_VALUE_SP = -9999._wp ! integer designating missing values - TODO: retrieve from NetCDF file
 
 END MODULE multiforce
