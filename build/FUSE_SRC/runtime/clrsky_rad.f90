@@ -15,7 +15,7 @@ SUBROUTINE CLRSKY_RAD(MONTH,DAY,HOUR,DT,SLOPE,AZI,LAT,HRI,COSZEN)
 !  
 ! ----------------------------------------------------------------------------------------
 USE nrtype, only: i4b, wp
-USE nrtype, only: PI => PI_SP
+USE multiconst, only: PI
 IMPLICIT NONE
 ! Input variables
 INTEGER(I4B), INTENT(IN)                  :: MONTH   ! month as mm integer

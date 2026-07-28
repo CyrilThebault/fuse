@@ -181,9 +181,13 @@ FUSE_HOOKUP += kinds_dmsl_kit_FUSE.f90
 FUSE_HOOKUP += utilities_dmsl_kit_FUSE.f90
 HOOKUP = $(patsubst %, $(HOOKUP_DIR)/%, $(FUSE_HOOKUP))
 
+# data kinds and constants
+INIT =
+INIT += $(FUSE_SOURCE_DIR)numrec/nrtype.f90
+INIT += $(FUSE_SOURCE_DIR)share/multiconst.f90
+
 # Numerical Recipes utilities
 FUSE_NRUTIL =
-FUSE_NRUTIL += nrtype.f90
 FUSE_NRUTIL += nr.f90 nrutil.f90
 NRUTIL = $(patsubst %, $(NUMREC_DIR)/%, $(FUSE_NRUTIL))
 
@@ -362,6 +366,7 @@ SCE = sce_16plus.o
 # ... and stitch it all together...
 FUSE_ALL = 
 FUSE_ALL += $(HOOKUP)
+FUSE_ALL += $(INIT)
 FUSE_ALL += $(NRUTIL)
 FUSE_ALL += $(DATAMS)
 FUSE_ALL += $(UTILMS)

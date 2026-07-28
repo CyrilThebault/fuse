@@ -1,7 +1,7 @@
 module update_swe_DIFF_MODULE
 
   USE nrtype, only: i4b, sp                             ! variable types, etc.
-  USE nrtype, only: PI => PI_SP                         ! PI=3.14159265...
+  USE multiconst, only: PI                              ! PI=3.14159265...
   
   USE model_defn
   USE model_defnames                                    ! integer model definitions

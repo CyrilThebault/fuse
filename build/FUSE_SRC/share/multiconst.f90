@@ -1,6 +1,12 @@
 MODULE multiconst
  USE nrtype
- ! define physical constants
+ ! math constants
+ REAL(WP), PARAMETER :: PI=3.141592653589793238462643383279502884197_wp
+ REAL(WP), PARAMETER :: PIO2=1.57079632679489661923132169163975144209858_wp
+ REAL(WP), PARAMETER :: TWOPI=6.283185307179586476925286766559005768394_wp
+ REAL(WP), PARAMETER :: SQRT2=1.41421356237309504880168872420969807856967_wp
+ REAL(WP), PARAMETER :: EULER=0.5772156649015328606065120900824024310422_wp
+ ! physical constants
  REAL(WP), PARAMETER         :: ave_slp      =  101325.0_wp      ! mean sea level pressure              (Pa)
  REAL(WP), PARAMETER         :: vkc          =       0.4_wp      ! von Karman constant                  (-)
  REAL(WP), PARAMETER         :: satvpfrz     =     610.8_wp      ! sat vapour pressure at 273.16K       (Pa)
