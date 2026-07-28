@@ -26,16 +26,4 @@ MODULE nrtype
   integer(i4b), parameter :: FileStrLen = 300
   integer(i4b), parameter :: gageStrLen = 30
 
-  TYPE sprs2_wp
-    INTEGER(I4B) :: n,len
-    REAL(WP), DIMENSION(:), POINTER :: val
-    INTEGER(I4B), DIMENSION(:), POINTER :: irow
-    INTEGER(I4B), DIMENSION(:), POINTER :: jcol
-  END TYPE sprs2_wp
-!   TYPE sprs2_wp
-!     INTEGER(I4B) :: n,len
-!     REAL(WP), DIMENSION(:), POINTER :: val
-!     INTEGER(I4B), DIMENSION(:), POINTER :: irow
-!     INTEGER(I4B), DIMENSION(:), POINTER :: jcol
-!   END TYPE sprs2_wp
 END MODULE nrtype
