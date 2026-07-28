@@ -148,7 +148,6 @@ MIZU_BASE += $(MIZU_DIR)/var_lookup.f90
 
 # Define directories
 NUMREC_DIR  = $(FUSE_SOURCE_DIR)numrec
-HOOKUP_DIR  = $(FUSE_SOURCE_DIR)hookup
 DRIVER_DIR  = $(FUSE_SOURCE_DIR)driver
 NETCDF_DIR  = $(FUSE_SOURCE_DIR)netcdf
 SHARE_DIR   = $(FUSE_SOURCE_DIR)share
@@ -174,12 +173,6 @@ FUSE_DRIVER += fuse_evaluate.f90 functn.f90
 FUSE_DRIVER += sce_driver.f90
 FUSE_DRIVER += fuse_driver.f90
 DRIVER = $(patsubst %, $(DRIVER_DIR)/%, $(FUSE_DRIVER))
-
-# Manager modules
-FUSE_HOOKUP =
-FUSE_HOOKUP += kinds_dmsl_kit_FUSE.f90
-FUSE_HOOKUP += utilities_dmsl_kit_FUSE.f90
-HOOKUP = $(patsubst %, $(HOOKUP_DIR)/%, $(FUSE_HOOKUP))
 
 # data kinds and constants
 INIT =
@@ -365,7 +358,6 @@ SCE = sce_16plus.o
 
 # ... and stitch it all together...
 FUSE_ALL = 
-FUSE_ALL += $(HOOKUP)
 FUSE_ALL += $(INIT)
 FUSE_ALL += $(NRUTIL)
 FUSE_ALL += $(DATAMS)

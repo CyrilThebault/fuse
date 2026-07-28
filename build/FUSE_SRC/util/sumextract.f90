@@ -26,10 +26,6 @@ REAL(WP)                               :: SUMEXTRACT  ! FUNCTION name
 ! ---------------------------------------------------------------------------------------
 ! initialize XVAR
 XVAR=-9999._wp
-! DMSL diagnostix
-IF (TRIM(STATNAME).EQ.'var_residul') XVAR = MSTATS%VAR_RESIDUL
-IF (TRIM(STATNAME).EQ.'logp_simuln') XVAR = MSTATS%LOGP_SIMULN
-IF (TRIM(STATNAME).EQ.'jump_taken')  XVAR = MSTATS%JUMP_TAKEN
 ! extract summary statistics
 IF (TRIM(STATNAME).EQ.'qobs_mean')   XVAR = MSTATS%QOBS_MEAN
 IF (TRIM(STATNAME).EQ.'qsim_mean')   XVAR = MSTATS%QSIM_MEAN 

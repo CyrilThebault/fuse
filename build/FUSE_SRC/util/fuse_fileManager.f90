@@ -4,7 +4,6 @@
 MODULE fuse_filemanager
 
   use nrtype
-  use kinds_dmsl_kit_FUSE,only:mik,mlk
   use info_types, only: cli_options
   use info_types, only: fuse_info
 

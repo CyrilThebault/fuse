@@ -11,11 +11,6 @@ MODULE multistats_types
 
  TYPE SUMMARY
 
-   ! DMSL diagnostix
-  REAL(WP)                             :: VAR_RESIDUL   ! variance of the model residuals
-  REAL(WP)                             :: LOGP_SIMULN   ! log density of the model simulation
-  REAL(WP)                             :: JUMP_TAKEN    ! defines a jump in the MCMC production run
- 
   ! comparisons between model output and observations
   REAL(WP)                             :: QOBS_MEAN     ! mean observed runoff (mm day-1)
   REAL(WP)                             :: QSIM_MEAN     ! mean simulated runoff (mm day-1)

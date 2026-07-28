@@ -13,7 +13,6 @@ SUBROUTINE GETNUMERIX(err, message)
 ! MODULE model_numerix -- model parameters stored in MODULE multiparam
 ! ---------------------------------------------------------------------------------------
 USE nrtype, ONLY: I4B, LGT, WP                        ! variable types, etc.
-use utilities_dmsl_kit_FUSE,only:getSpareUnit
 USE fuse_fileManager,only:SETNGS_PATH,MOD_NUMERIX     ! defines data directory
 USE model_numerix,only:SOLUTION_METHOD,&              ! defines numerix decisions
   TEMPORAL_ERROR_CONTROL,INITIAL_NEWTON,JAC_RECOMPUTE,CHECK_OVERSHOOT,SMALL_ENDSTEP,&
@@ -24,7 +23,9 @@ IMPLICIT NONE
 integer(I4B),intent(out)               :: err
 character(*),intent(out)               :: message
 ! locals
-INTEGER(I4B)                           :: IUNIT       ! file unit
+integer                                :: iunit       ! file unit
+integer                                :: ios         ! I/O error code
+character(len=256)                     :: iomsg       ! I/O error message
 integer(i4b),parameter::lenPath=1024 !DK/2008/10/21: allows longer file paths
 CHARACTER(LEN=lenPath)                 :: CFILE       ! name of constraints file
 LOGICAL(LGT)                           :: LEXIST      ! .TRUE. if file exists
@@ -40,13 +41,23 @@ ELSE
   PRINT *, 'Reading numeric decisions from', trim(CFILE)
 ENDIF
 
-! open up model numerix file
-CALL getSpareUnit(IUNIT,err,message) ! make sure IUNIT is actually available
-IF (err/=0) THEN
- message="f-GETNUMERIX/weird/&"//message
- err=100; return
-ENDIF
-OPEN(IUNIT,FILE=CFILE,STATUS='old')
+! open model numerix file
+open( &
+    newunit = iunit, &
+    file    = cfile, &
+    status  = 'old', &
+    action  = 'read', &
+    iostat  = ios, &
+    iomsg   = iomsg )
+
+! check errors
+if (ios /= 0) then
+    err = 100
+    message = 'f-GETNUMERIX: ' // trim(iomsg)
+    return
+end if
+
+! read numerix decisions
 READ(IUNIT,*) SOLUTION_METHOD         ! Method used to solve state equations (explicit vs implicit)
 READ(IUNIT,*) TEMPORAL_ERROR_CONTROL  ! Method used for temporal error control (adaptive time steps)
 READ(IUNIT,*) INITIAL_NEWTON          ! Method used to estimate the initial conditions for the Newton scheme
