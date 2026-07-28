@@ -47,10 +47,10 @@ END SELECT  ! (upper layer architechure)
 ! ---------------------------------------------------------------------------------------
 SELECT CASE(SMODL%iARCH2)
  CASE(iopt_tens2pll_2) ! tension reservoir plus two parallel tanks
-  DY_DT%TENS_2  = M_FLUX%QPERC_12*(1._SP-MPARAM%PERCFRAC) - M_FLUX%EVAP_2 - M_FLUX%TENS2FREE_2
-  DY_DT%FREE_2A = M_FLUX%QPERC_12*(MPARAM%PERCFRAC/2._SP) + M_FLUX%TENS2FREE_2/2._SP - M_FLUX%QBASE_2A &
+  DY_DT%TENS_2  = M_FLUX%QPERC_12*(1._WP-MPARAM%PERCFRAC) - M_FLUX%EVAP_2 - M_FLUX%TENS2FREE_2
+  DY_DT%FREE_2A = M_FLUX%QPERC_12*(MPARAM%PERCFRAC/2._WP) + M_FLUX%TENS2FREE_2/2._WP - M_FLUX%QBASE_2A &
                   - M_FLUX%OFLOW_2A
-  DY_DT%FREE_2B = M_FLUX%QPERC_12*(MPARAM%PERCFRAC/2._SP) + M_FLUX%TENS2FREE_2/2._SP - M_FLUX%QBASE_2B &
+  DY_DT%FREE_2B = M_FLUX%QPERC_12*(MPARAM%PERCFRAC/2._WP) + M_FLUX%TENS2FREE_2/2._WP - M_FLUX%QBASE_2B &
                   - M_FLUX%OFLOW_2B
   !print *, 'in mstate_eqn, layer2 ', M_FLUX%QPERC_12, M_FLUX%EVAP_2, M_FLUX%TENS2FREE_2, M_FLUX%QBASE_2A, M_FLUX%QBASE_2B
  CASE(iopt_unlimfrc_2,iopt_unlimpow_2,iopt_topmdexp_2,iopt_fixedsiz_2) ! single state

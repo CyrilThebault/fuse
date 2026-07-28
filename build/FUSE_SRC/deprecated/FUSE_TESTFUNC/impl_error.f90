@@ -8,16 +8,16 @@ USE test_modvar, ONLY: MSTATE,MDS_DT,DT_SUB         ! model variables
 USE test_deriv__module                              ! provide access to model derivatives function
 IMPLICIT NONE
 ! input/output
-REAL(SP), INTENT(IN)                :: S            ! storage
-REAL(SP), INTENT(OUT)               :: F            ! function value
-REAL(SP), INTENT(OUT)               :: DF           ! function derivative
+REAL(WP), INTENT(IN)                :: S            ! storage
+REAL(WP), INTENT(OUT)               :: F            ! function value
+REAL(WP), INTENT(OUT)               :: DF           ! function derivative
 ! internal
-REAL(SP)                            :: S0           ! state at the start of the sub-step
-REAL(SP), PARAMETER                 :: RH=1.e-4_sp  ! relative step size for finite difference
-REAL(SP)                            :: H            ! step size for finite difference
-REAL(SP)                            :: SPH          ! perturbed state
-REAL(SP), DIMENSION(1)              :: DSDT         ! state derivative (NOTE, pass as vector)
-REAL(SP)                            :: FTRY         ! perturbed function value
+REAL(WP)                            :: S0           ! state at the start of the sub-step
+REAL(WP), PARAMETER                 :: RH=1.e-4_wp  ! relative step size for finite difference
+REAL(WP)                            :: H            ! step size for finite difference
+REAL(WP)                            :: SPH          ! perturbed state
+REAL(WP), DIMENSION(1)              :: DSDT         ! state derivative (NOTE, pass as vector)
+REAL(WP)                            :: FTRY         ! perturbed function value
 ! keep track of the number of times calculate the derivative
 NUM_JACOBIAN = NUM_JACOBIAN + 1
 ! extract state at the start of the time step

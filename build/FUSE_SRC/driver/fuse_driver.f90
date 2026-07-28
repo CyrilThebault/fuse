@@ -57,12 +57,12 @@ character(len=1024)                    :: message          ! error message
 type(cli_options)                      :: cli_opts         ! command line argument options
 
 ! parameter set; parameter bounds
-REAL(SP), DIMENSION(:), ALLOCATABLE    :: BL      ! vector of lower parameter bounds
-REAL(SP), DIMENSION(:), ALLOCATABLE    :: BU      ! vector of upper parameter bounds
-REAL(SP), DIMENSION(:), ALLOCATABLE    :: APAR    ! model parameter set
+REAL(WP), DIMENSION(:), ALLOCATABLE    :: BL      ! vector of lower parameter bounds
+REAL(WP), DIMENSION(:), ALLOCATABLE    :: BU      ! vector of upper parameter bounds
+REAL(WP), DIMENSION(:), ALLOCATABLE    :: APAR    ! model parameter set
 
 ! function  evaluation
-REAL(SP)                               :: METRIC_VAL      ! sim-obs differences
+REAL(WP)                               :: METRIC_VAL      ! sim-obs differences
 
 ! model output
 LOGICAL(LGT)                           :: OUTPUT_FLAG     ! .TRUE. = write time series output

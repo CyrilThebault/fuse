@@ -25,10 +25,10 @@ LOGICAL(LGT), INTENT(IN)               :: SSTATS_FLAG ! .TRUE. if desire time se
 ! internal
 INTEGER(I4B)                           :: ITIM        ! loop through time series
 INTEGER(I4B)                           :: ONEMOD=1     ! index for model (1 = just one model)
-REAL(SP)                               :: DT_SUB       ! length of sub-step
-REAL(SP)                               :: DT_FULL      ! length of time step
-REAL(SP), DIMENSION(:), ALLOCATABLE    :: STATE0       ! vector of model states at the start of the time step
-REAL(SP), DIMENSION(:), ALLOCATABLE    :: STATE1       ! vector of model states at the end of the time step
+REAL(WP)                               :: DT_SUB       ! length of sub-step
+REAL(WP)                               :: DT_FULL      ! length of time step
+REAL(WP), DIMENSION(:), ALLOCATABLE    :: STATE0       ! vector of model states at the start of the time step
+REAL(WP), DIMENSION(:), ALLOCATABLE    :: STATE1       ! vector of model states at the end of the time step
 INTEGER(I4B)                           :: IERR         ! error code
 INTEGER(I4B), PARAMETER                :: CLEN=1024    ! length of character string
 CHARACTER(LEN=CLEN)                    :: MESSAGE      ! error message

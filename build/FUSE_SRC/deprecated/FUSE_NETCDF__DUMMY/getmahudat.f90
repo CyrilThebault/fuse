@@ -39,22 +39,22 @@ INTEGER(I4B)                           :: IDIMID      ! NetCDF dimension ID
 INTEGER(I4B)                           :: IVARID      ! NetCDF variable ID
 INTEGER(I4B)                           :: NTIM        ! number of data intervals
 INTEGER(I4B)                           :: NSTN        ! number of stations
-REAL(DP),DIMENSION(:),ALLOCATABLE      :: ATIME       ! time vector
+REAL(WP),DIMENSION(:),ALLOCATABLE      :: ATIME       ! time vector
 REAL(MSP),DIMENSION(:,:),ALLOCATABLE   :: TDATA       ! space-time data array
-REAL(SP)                               :: TAVE        ! average of temporary data for one time interval
+REAL(WP)                               :: TAVE        ! average of temporary data for one time interval
 CHARACTER(LEN=256)                     :: TUNITS      ! time units
-REAL(DP)                               :: REF_ZERO    ! ref date in sec since year dot
-REAL(DP)                               :: JULDAYSS    ! FUNCTION NAME, used to compute REF_ZERO
-REAL(DP)                               :: JUL_TIME    ! time stamp -- date in sec since year dot
+REAL(WP)                               :: REF_ZERO    ! ref date in sec since year dot
+REAL(WP)                               :: JULDAYSS    ! FUNCTION NAME, used to compute REF_ZERO
+REAL(WP)                               :: JUL_TIME    ! time stamp -- date in sec since year dot
 INTEGER(I4B)                           :: ITIM        ! loop through time
 INTEGER(I4B)                           :: JTIM        ! time index in output array
 INTEGER(I4B)                           :: IY,IM,ID,IH ! reference time
 INTEGER(I4B)                           :: JY,JM,JD,JH ! time for a given time step
 INTEGER(I4B)                           :: JMIN        ! minute (NOT USED -- returned by caldatss.f)
-REAL(DP)                               :: JSEC        ! second (NOT USED -- returned by caldatss.f)
+REAL(WP)                               :: JSEC        ! second (NOT USED -- returned by caldatss.f)
 INTEGER(I4B)                           :: ISTA        ! index of station desired
-REAL(DP)                               :: AREA_K2     ! catchment area (km^2)
-REAL(DP)                               :: AREA_M2     ! catchment area (m^2)
+REAL(WP)                               :: AREA_K2     ! catchment area (km^2)
+REAL(WP)                               :: AREA_M2     ! catchment area (m^2)
 ! output
 INTEGER(I4B), INTENT(OUT)              :: NFORCE      ! number of time steps
 include 'netcdf.inc'                                  ! use netCDF libraries
@@ -67,8 +67,8 @@ ALLOCATE(AFORCE(NFORCE),STAT=IERR); IF(IERR.NE.0) STOP ' problem allocating spac
 ALLOCATE(AROUTE(NFORCE),STAT=IERR); IF(IERR.NE.0) STOP ' problem allocating space for AROUTE '
 ! define catchment attributes
 ISTA    = 1                     ! station #1 is Mahurangi at College
-AREA_K2 = 46.650_dp             ! Mahurangi catchment area (km^2)
-AREA_M2 = AREA_K2 * 1000000._dp ! Mahurangi catchment area (m^2)
+AREA_K2 = 46.650_wp             ! Mahurangi catchment area (km^2)
+AREA_M2 = AREA_K2 * 1000000._wp ! Mahurangi catchment area (m^2)
 ! loop through variables (1=rain, 2=pet, 3=flow)
 DO IVAR=1,3
  ! define variable names
@@ -117,7 +117,7 @@ DO IVAR=1,3
   JUL_TIME = REF_ZERO+ATIME(ITIM)                ! get the julian time (double precision)
   IF (IVAR.EQ.1) THEN
    ! get the year/month/day/hour/minute/second (+0.1 sec to avoid min=59 sec=60)
-   CALL CALDATSS(JUL_TIME+0.1_sp,JY,JM,JD,JH,JMIN,JSEC); JSEC = ANINT(JSEC)                                
+   CALL CALDATSS(JUL_TIME+0.1_wp,JY,JM,JD,JH,JMIN,JSEC); JSEC = ANINT(JSEC)                                
    AFORCE(JTIM)%IY = JY; AFORCE(JTIM)%IM = JM; AFORCE(JTIM)%ID = JD; AFORCE(JTIM)%IH = JH
    AFORCE(JTIM)%IMIN = JMIN; AFORCE(JTIM)%DSEC = JSEC; AFORCE(JTIM)%DTIME = JUL_TIME
   ! check that the time matches
@@ -152,7 +152,7 @@ CALL FLUSH(6)
 ! save the number of time steps
 NUMTIM = NFORCE    ! (NUMTIM is stored in module multiforce)
 ! save the time step (DELTIM is stored in module multiforce) 
-DELTIM = (AFORCE(2)%DTIME - AFORCE(1)%DTIME) / 86400._sp
+DELTIM = (AFORCE(2)%DTIME - AFORCE(1)%DTIME) / 86400._wp
 !pause
 ! ---------------------------------------------------------------------------------------
 END SUBROUTINE GETMAHUDAT

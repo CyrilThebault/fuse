@@ -4,7 +4,7 @@ program read_para_file
 
 	character(length=100), intent(in)	:: fileName			! name of the input file
 	integer(kind=4), intent(in)			:: numParam			! number of parameters
-	real(dp), intent(out)				:: paramValues		! array for the parameters
+	real(wp), intent(out)				:: paramValues		! array for the parameters
 	integer(kind=4)						:: fileId=93		! id for the input file
 
 	include

@@ -2,12 +2,12 @@ MODULE test_modvar
  USE nrtype
  ! define model fluxes
  TYPE FLUXES
-  REAL(SP)                             :: DRAINAGE    ! drainage rate (mm day-1)
-  REAL(SP)                             :: CHECKTIM    ! time (day)
+  REAL(WP)                             :: DRAINAGE    ! drainage rate (mm day-1)
+  REAL(WP)                             :: CHECKTIM    ! time (day)
  END TYPE FLUXES
  ! define model states
  TYPE STATES
-  REAL(SP)                             :: WATR_1      ! total storage in layer1
+  REAL(WP)                             :: WATR_1      ! total storage in layer1
  END TYPE STATES
  ! define state names
  TYPE SNAMES
@@ -27,6 +27,6 @@ MODULE test_modvar
  TYPE(STATES)                          :: MS_MIN      ! minimum values for model states
  TYPE(STATES)                          :: MS_MAX      ! maximum values for model states
  TYPE(SNAMES),DIMENSION(1)             :: CSTATE      ! state names
- REAL(SP)                              :: DT_SUB      ! length of sub-step
- REAL(SP)                              :: DT_FULL     ! length of full step
+ REAL(WP)                              :: DT_SUB      ! length of sub-step
+ REAL(WP)                              :: DT_FULL     ! length of full step
 END MODULE test_modvar 

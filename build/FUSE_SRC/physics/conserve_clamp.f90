@@ -30,13 +30,13 @@ module conserve_clamp_module
   IMPLICIT NONE
   ! input/output
   type(fuse_work) , intent(inout)        :: fuseStruct  ! fuse work structure
-  REAL(SP), INTENT(IN)                   :: DT          ! time step
+  REAL(WP), INTENT(IN)                   :: DT          ! time step
   LOGICAL(LGT), INTENT(OUT)              :: ERROR_FLAG  ! .TRUE. if extrapolation error
   ! internal
-  REAL(SP)                               :: XMIN        ! very small number
+  REAL(WP)                               :: XMIN        ! very small number
   INTEGER(I4B)                           :: ISTT        ! loop through model states
-  REAL(SP)                               :: ERROR_LOSS  ! error (L/T)
-  REAL(SP)                               :: TOTAL_LOSS  ! total loss (L/T)
+  REAL(WP)                               :: ERROR_LOSS  ! error (L/T)
+  REAL(WP)                               :: TOTAL_LOSS  ! total loss (L/T)
   ! ---------------------------------------------------------------------------------------
   ! associate variables with elements of data structure
   associate(&
@@ -52,8 +52,8 @@ module conserve_clamp_module
   XMIN = FRACSTATE_MIN ! used to avoid zero derivatives
   ! ---------------------------------------------------------------------------------------
   DO ISTT=1,NSTATE
-   if (M_FLUX%QSURF.LT.0._sp) print *, 'start ', desc_int2str(cstate(istt)%isname), M_FLUX%QSURF
-   ERROR_LOSS = 0._SP ! initialize state error
+   if (M_FLUX%QSURF.LT.0._wp) print *, 'start ', desc_int2str(cstate(istt)%isname), M_FLUX%QSURF
+   ERROR_LOSS = 0._WP ! initialize state error
    SELECT CASE(CSTATE(ISTT)%iSNAME)
     ! ---------------------------------------------------------------------------------------
     ! (1) FIX STATES IN THE UPPER LAYER
@@ -125,26 +125,26 @@ module conserve_clamp_module
       SELECT CASE(SMODL%iARCH2)
        CASE(iopt_tens2pll_2) ! tension reservoir plus two parallel tanks
         ! fix overflow fluxes
-        M_FLUX%TENS2FREE_2 = MAX(0._SP, M_FLUX%QPERC_12*(1._SP-MPARAM%PERCFRAC) - (DPARAM%MAXTENS_2  - BSTATE%TENS_2 )/DT)
-        M_FLUX%OFLOW_2A    = MAX(0._SP, (M_FLUX%QPERC_12*(MPARAM%PERCFRAC/2._SP) + M_FLUX%TENS2FREE_2/2._SP) &
+        M_FLUX%TENS2FREE_2 = MAX(0._WP, M_FLUX%QPERC_12*(1._WP-MPARAM%PERCFRAC) - (DPARAM%MAXTENS_2  - BSTATE%TENS_2 )/DT)
+        M_FLUX%OFLOW_2A    = MAX(0._WP, (M_FLUX%QPERC_12*(MPARAM%PERCFRAC/2._WP) + M_FLUX%TENS2FREE_2/2._WP) &
                                             - (DPARAM%MAXFREE_2A - BSTATE%FREE_2A)/DT)  
-        M_FLUX%OFLOW_2B    = MAX(0._SP, (M_FLUX%QPERC_12*(MPARAM%PERCFRAC/2._SP) + M_FLUX%TENS2FREE_2/2._SP) &
+        M_FLUX%OFLOW_2B    = MAX(0._WP, (M_FLUX%QPERC_12*(MPARAM%PERCFRAC/2._WP) + M_FLUX%TENS2FREE_2/2._WP) &
                                             - (DPARAM%MAXFREE_2B - BSTATE%FREE_2B)/DT)
         M_FLUX%OFLOW_2     = M_FLUX%OFLOW_2A + M_FLUX%OFLOW_2B
         ! fix states
         ESTATE%TENS_2    = BSTATE%TENS_2 + &
-                           (M_FLUX%QPERC_12*(1._SP-MPARAM%PERCFRAC) - M_FLUX%EVAP_2 - M_FLUX%TENS2FREE_2)*DT
+                           (M_FLUX%QPERC_12*(1._WP-MPARAM%PERCFRAC) - M_FLUX%EVAP_2 - M_FLUX%TENS2FREE_2)*DT
         ESTATE%FREE_2A   = BSTATE%FREE_2A + &
-                           (M_FLUX%QPERC_12*(MPARAM%PERCFRAC/2._SP) + M_FLUX%TENS2FREE_2/2._SP - M_FLUX%QBASE_2A &
+                           (M_FLUX%QPERC_12*(MPARAM%PERCFRAC/2._WP) + M_FLUX%TENS2FREE_2/2._WP - M_FLUX%QBASE_2A &
                                - M_FLUX%OFLOW_2A)*DT
         ESTATE%FREE_2B   = BSTATE%FREE_2B + &
-                           (M_FLUX%QPERC_12*(MPARAM%PERCFRAC/2._SP) + M_FLUX%TENS2FREE_2/2._SP - M_FLUX%QBASE_2B &
+                           (M_FLUX%QPERC_12*(MPARAM%PERCFRAC/2._WP) + M_FLUX%TENS2FREE_2/2._WP - M_FLUX%QBASE_2B &
                                - M_FLUX%OFLOW_2B)*DT
        CASE(iopt_unlimfrc_2,iopt_unlimpow_2,iopt_fixedsiz_2) ! single state
         ! NOTE: M_FLUX%OFLOW_2 and M_FLUX%EVAP_2 only calculated for 'fixedsiz_2'
         ! fix overflow
         IF (SMODL%iARCH2.EQ.iopt_fixedsiz_2) &
-         M_FLUX%OFLOW_2     = MAX(0._SP, M_FLUX%QPERC_12 - (MPARAM%MAXWATR_2 - BSTATE%WATR_2)/DT)
+         M_FLUX%OFLOW_2     = MAX(0._WP, M_FLUX%QPERC_12 - (MPARAM%MAXWATR_2 - BSTATE%WATR_2)/DT)
         ! fix states
         ESTATE%WATR_2    = BSTATE%WATR_2 + &
                            (M_FLUX%QPERC_12 - M_FLUX%EVAP_2 - M_FLUX%QBASE_2 - M_FLUX%OFLOW_2)*DT  
@@ -174,26 +174,26 @@ module conserve_clamp_module
       SELECT CASE(SMODL%iARCH2)
        CASE(iopt_tens2pll_2) ! tension reservoir plus two parallel tanks
         ! fix overflow fluxes
-        M_FLUX%TENS2FREE_2 = MAX(0._SP, M_FLUX%QPERC_12*(1._SP-MPARAM%PERCFRAC) - (DPARAM%MAXTENS_2  - BSTATE%TENS_2 )/DT)
-        M_FLUX%OFLOW_2A    = MAX(0._SP, (M_FLUX%QPERC_12*(MPARAM%PERCFRAC/2._SP) + M_FLUX%TENS2FREE_2/2._SP) &
+        M_FLUX%TENS2FREE_2 = MAX(0._WP, M_FLUX%QPERC_12*(1._WP-MPARAM%PERCFRAC) - (DPARAM%MAXTENS_2  - BSTATE%TENS_2 )/DT)
+        M_FLUX%OFLOW_2A    = MAX(0._WP, (M_FLUX%QPERC_12*(MPARAM%PERCFRAC/2._WP) + M_FLUX%TENS2FREE_2/2._WP) &
                                             - (DPARAM%MAXFREE_2A - BSTATE%FREE_2A)/DT)  
-        M_FLUX%OFLOW_2B    = MAX(0._SP, (M_FLUX%QPERC_12*(MPARAM%PERCFRAC/2._SP) + M_FLUX%TENS2FREE_2/2._SP) &
+        M_FLUX%OFLOW_2B    = MAX(0._WP, (M_FLUX%QPERC_12*(MPARAM%PERCFRAC/2._WP) + M_FLUX%TENS2FREE_2/2._WP) &
                                             - (DPARAM%MAXFREE_2B - BSTATE%FREE_2B)/DT)
         M_FLUX%OFLOW_2     = M_FLUX%OFLOW_2A + M_FLUX%OFLOW_2B
         ! fix states
         ESTATE%TENS_2    = BSTATE%TENS_2 + &
-                           (M_FLUX%QPERC_12*(1._SP-MPARAM%PERCFRAC) - M_FLUX%EVAP_2 - M_FLUX%TENS2FREE_2)*DT
+                           (M_FLUX%QPERC_12*(1._WP-MPARAM%PERCFRAC) - M_FLUX%EVAP_2 - M_FLUX%TENS2FREE_2)*DT
         ESTATE%FREE_2A   = BSTATE%FREE_2A + &
-                           (M_FLUX%QPERC_12*(MPARAM%PERCFRAC/2._SP) + M_FLUX%TENS2FREE_2/2._SP - M_FLUX%QBASE_2A &
+                           (M_FLUX%QPERC_12*(MPARAM%PERCFRAC/2._WP) + M_FLUX%TENS2FREE_2/2._WP - M_FLUX%QBASE_2A &
                                - M_FLUX%OFLOW_2A)*DT
         ESTATE%FREE_2B   = BSTATE%FREE_2B + &
-                           (M_FLUX%QPERC_12*(MPARAM%PERCFRAC/2._SP) + M_FLUX%TENS2FREE_2/2._SP - M_FLUX%QBASE_2B &
+                           (M_FLUX%QPERC_12*(MPARAM%PERCFRAC/2._WP) + M_FLUX%TENS2FREE_2/2._WP - M_FLUX%QBASE_2B &
                                - M_FLUX%OFLOW_2B)*DT
        CASE(iopt_unlimfrc_2,iopt_unlimpow_2,iopt_fixedsiz_2) ! single state
         ! NOTE: M_FLUX%OFLOW_2 and M_FLUX%EVAP_2 only calculated for 'fixedsiz_2'
         ! fix overflow
         IF (SMODL%iARCH2.EQ.iopt_fixedsiz_2) &
-         M_FLUX%OFLOW_2     = MAX(0._SP, M_FLUX%QPERC_12 - (MPARAM%MAXWATR_2 - BSTATE%WATR_2)/DT)
+         M_FLUX%OFLOW_2     = MAX(0._WP, M_FLUX%QPERC_12 - (MPARAM%MAXWATR_2 - BSTATE%WATR_2)/DT)
         ! fix states
         ESTATE%WATR_2    = BSTATE%WATR_2 + &
                            (M_FLUX%QPERC_12 - M_FLUX%EVAP_2 - M_FLUX%QBASE_2 - M_FLUX%OFLOW_2)*DT
@@ -224,17 +224,17 @@ module conserve_clamp_module
       ESTATE%TENS_2      = DPARAM%MAXTENS_2         ! (correct state)
       ! ** correct subsequent states (NOTE: 2 parallel tanks always coupled with a tension store)
       ! fix overflow fluxes 
-      M_FLUX%OFLOW_2A    = MAX(0._SP, (M_FLUX%QPERC_12*(MPARAM%PERCFRAC/2._SP) + M_FLUX%TENS2FREE_2/2._SP) &
+      M_FLUX%OFLOW_2A    = MAX(0._WP, (M_FLUX%QPERC_12*(MPARAM%PERCFRAC/2._WP) + M_FLUX%TENS2FREE_2/2._WP) &
                                           - (DPARAM%MAXFREE_2A - BSTATE%FREE_2A)/DT)  
-      M_FLUX%OFLOW_2B    = MAX(0._SP, (M_FLUX%QPERC_12*(MPARAM%PERCFRAC/2._SP) + M_FLUX%TENS2FREE_2/2._SP) &
+      M_FLUX%OFLOW_2B    = MAX(0._WP, (M_FLUX%QPERC_12*(MPARAM%PERCFRAC/2._WP) + M_FLUX%TENS2FREE_2/2._WP) &
                                           - (DPARAM%MAXFREE_2B - BSTATE%FREE_2B)/DT)
       M_FLUX%OFLOW_2     = M_FLUX%OFLOW_2A + M_FLUX%OFLOW_2B
       ! fix states
       ESTATE%FREE_2A     = BSTATE%FREE_2A + &
-                           (M_FLUX%QPERC_12*(MPARAM%PERCFRAC/2._SP) + M_FLUX%TENS2FREE_2/2._SP &
+                           (M_FLUX%QPERC_12*(MPARAM%PERCFRAC/2._WP) + M_FLUX%TENS2FREE_2/2._WP &
                                - M_FLUX%QBASE_2A - M_FLUX%OFLOW_2A)*DT
       ESTATE%FREE_2B     = BSTATE%FREE_2B + &
-                           (M_FLUX%QPERC_12*(MPARAM%PERCFRAC/2._SP) + M_FLUX%TENS2FREE_2/2._SP &
+                           (M_FLUX%QPERC_12*(MPARAM%PERCFRAC/2._WP) + M_FLUX%TENS2FREE_2/2._WP &
                                - M_FLUX%QBASE_2B - M_FLUX%OFLOW_2B)*DT
       ERROR_FLAG         = .TRUE.
      ENDIF
@@ -288,7 +288,7 @@ module conserve_clamp_module
      M_FLUX%ERR_WATR_2 = ERROR_LOSS
     CASE DEFAULT; STOP ' cannot find state in fix_states() '
    END SELECT  ! select state variable for processing
-   if (M_FLUX%QSURF.LT.0._sp) print *, 'end ', desc_int2str(cstate(istt)%isname), M_FLUX%QSURF
+   if (M_FLUX%QSURF.LT.0._wp) print *, 'end ', desc_int2str(cstate(istt)%isname), M_FLUX%QSURF
   END DO     ! loop through state variables
   ! ---------------------------------------------------------------------------------------
   ! compute derived fluxes, if necessary

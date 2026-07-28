@@ -107,8 +107,8 @@ contains
    ierr=20; return
   endif
   ! check found the columns for the time variables
-  if(deltim < 1._sp        .and. ivarid_ih < 0)then; ierr=30; message=trim(message)//'cannot find variable "'//trim(vname_ih)//'"'; return; endif
-  if(deltim < 1._sp/24._dp .and. ivarid_im < 0)then; ierr=40; message=trim(message)//'cannot find variable "'//trim(vname_im)//'"'; return; endif
+  if(deltim < 1._wp        .and. ivarid_ih < 0)then; ierr=30; message=trim(message)//'cannot find variable "'//trim(vname_ih)//'"'; return; endif
+  if(deltim < 1._wp/24._wp .and. ivarid_im < 0)then; ierr=40; message=trim(message)//'cannot find variable "'//trim(vname_im)//'"'; return; endif
   ! check found the columns for data variables
   if(ivarid_ppt < 0 .or. ivarid_pet < 0 .or. ivarid_q < 0)then
    message=trim(message)//'cannot find variables [vnames = ('//trim(vname_aprecip)//', '//trim(vname_potevap)//', '//trim(vname_q)//'); cLine = '//trim(cLine)

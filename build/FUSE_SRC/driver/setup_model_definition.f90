@@ -43,8 +43,8 @@ contains
   type(domain_data)   , intent(in)                  :: domain          ! the fuse domain structure that stores data arrays
   
   ! output
-  real(sp)            , intent(out) , allocatable   :: aPar(:)         ! parameter vector
-  real(sp)            , intent(out) , allocatable   :: BL(:), BU(:)    ! parameter bounds
+  real(wp)            , intent(out) , allocatable   :: aPar(:)         ! parameter vector
+  real(wp)            , intent(out) , allocatable   :: BL(:), BU(:)    ! parameter bounds
   integer(i4b)        , intent(out)                 :: err             ! error code
   character(len=1024) , intent(out)                 :: message         ! error message
   
@@ -96,7 +96,7 @@ contains
     case('def', 'idx', 'opt'); NUMPSET = 1
 
     ! use NUMPSET =1.2MAXN since final number of parameter sets produced by SCE is unknown
-    case('sce');               NUMPSET = int(1.2_sp * real(MAXN, sp)) 
+    case('sce');               NUMPSET = int(1.2_wp * real(MAXN, wp)) 
       
     ! check
     case default

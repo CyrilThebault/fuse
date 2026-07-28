@@ -30,8 +30,8 @@ INTEGER(I4B)                           :: IPAR        ! loop through model param
 REAL(MSP)                              :: OF_VAL      ! objective function value (single precision)
 REAL(MSP)                              :: APAR        ! parameter value (single precision)
 ! output
-REAL(SP), INTENT(OUT)                  :: OF          ! objective function value (whatever precision SP is)
-REAL(SP), DIMENSION(:), INTENT(OUT)    :: XOPT        ! optimal parameter set
+REAL(WP), INTENT(OUT)                  :: OF          ! objective function value (working precision)
+REAL(WP), DIMENSION(:), INTENT(OUT)    :: XOPT        ! optimal parameter set
 include 'netcdf.inc'                                  ! use netCDF libraries
 ! ---------------------------------------------------------------------------------------
 ! check that the file exists
@@ -46,7 +46,7 @@ IERR = NF_OPEN(TRIM(NETCDF_FILE),NF_NOWRITE,NCID); CALL HANDLE_ERR(IERR)
  ! read objective function value
  IERR = NF_INQ_VARID(NCID,TRIM(OF_NAME),IVARID); CALL HANDLE_ERR(IERR)
  IERR = NF_GET_VAR1_REAL(NCID,IVARID,(/IMOD,IPARSET/),OF_VAL); CALL HANDLE_ERR(IERR)
- OF = OF_VAL  ! return objective function value IN whatever precision SP is
+ OF = OF_VAL  ! return objective function value in working precision
  ! loop through parameters
  DO IPAR=1,NUMPAR
   ! get parameter value

@@ -21,7 +21,7 @@ contains
   character(len=:)    , allocatable   :: a, v          ! command line arguments
   character(len=:)    , allocatable   :: cIndex        ! character index
   character(len=:)    , allocatable   :: kv, pname, pval_str  ! parameter strings
-  real(sp)                            :: pval          ! parameter value
+  real(wp)                            :: pval          ! parameter value
   integer(i4b)                        :: nArg          ! number of command line arguments
   character(len=:)    , allocatable   :: argname
   character(len=:)    , allocatable   :: cmessage
@@ -337,7 +337,7 @@ contains
 
   subroutine parse_real_sp(s, x, err, message)
     character(len=*), intent(in) :: s
-    real(sp), intent(out) :: x
+    real(wp), intent(out) :: x
     integer, intent(out) :: err
     character(len=:), allocatable, intent(out) :: message
     integer(i4b) :: ios
@@ -381,12 +381,12 @@ contains
     use nrtype
     implicit none
     character(len=:), allocatable, intent(inout) :: pnames(:)
-    real(sp), allocatable, intent(inout)         :: pvals(:)
+    real(wp), allocatable, intent(inout)         :: pvals(:)
     character(len=*), intent(in)                 :: name
-    real(sp), intent(in)                         :: val
+    real(wp), intent(in)                         :: val
    
     character(len=:), allocatable :: new_names(:)
-    real(sp), allocatable         :: new_vals(:)
+    real(wp), allocatable         :: new_vals(:)
     integer :: n
    
     n = 0

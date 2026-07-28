@@ -26,14 +26,14 @@ USE multi_flux, ONLY: FLUX_0,M_FLUX,FDFLUX            ! model fluxes
 USE multiparam, ONLY: MPARAM                          ! model parameters
 IMPLICIT NONE
 ! input/output
-REAL(SP), DIMENSION(:), INTENT(IN)     :: DELS        ! difference in state vector
+REAL(WP), DIMENSION(:), INTENT(IN)     :: DELS        ! difference in state vector
 LOGICAL(LGT), INTENT(OUT)              :: EFLAG       ! error flag for unusual flux
 ! internal
 INTEGER(I4B)                           :: IFLUX       ! loop thru fluxes
 INTEGER(I4B)                           :: ISTT        ! loop through states
-REAL(SP), PARAMETER                    :: ZERO=0._SP  ! zero
-REAL(SP)                               :: IN_FLUX     ! influx to a given bucket
-REAL(SP)                               :: TOTEVAP     ! total evaporation
+REAL(WP), PARAMETER                    :: ZERO=0._WP  ! zero
+REAL(WP)                               :: IN_FLUX     ! influx to a given bucket
+REAL(WP)                               :: TOTEVAP     ! total evaporation
 ! ---------------------------------------------------------------------------------------
 ! make sure that the finite-difference flux structure is allocated
 IF (.NOT.ASSOCIATED(FDFLUX)) CALL NRERROR('disaggflux: fdflux is not allocated')
@@ -114,11 +114,11 @@ DO ISTT=1,NSTATE
                    IF (M_FLUX%OFLOW_1    .GT.IN_FLUX) THEN; M_FLUX%OFLOW_1    =IN_FLUX; EFLAG=.TRUE.; ENDIF
   CASE (iopt_WATR_1); IN_FLUX = M_FLUX%EFF_PPT - M_FLUX%QSURF
                    IF (M_FLUX%OFLOW_1    .GT.IN_FLUX) THEN; M_FLUX%OFLOW_1    =IN_FLUX; EFLAG=.TRUE.; ENDIF
-  CASE (iopt_TENS_2); IN_FLUX = M_FLUX%QPERC_12*(1._SP-MPARAM%PERCFRAC)
+  CASE (iopt_TENS_2); IN_FLUX = M_FLUX%QPERC_12*(1._WP-MPARAM%PERCFRAC)
                    IF (M_FLUX%TENS2FREE_2.GT.IN_FLUX) THEN; M_FLUX%TENS2FREE_2=IN_FLUX; EFLAG=.TRUE.; ENDIF
-  CASE (iopt_FREE2A); IN_FLUX = M_FLUX%QPERC_12*(MPARAM%PERCFRAC/2._SP)
+  CASE (iopt_FREE2A); IN_FLUX = M_FLUX%QPERC_12*(MPARAM%PERCFRAC/2._WP)
                    IF (M_FLUX%OFLOW_2A   .GT.IN_FLUX) THEN; M_FLUX%OFLOW_2A   =IN_FLUX; EFLAG=.TRUE.; ENDIF
-  CASE (iopt_FREE2B); IN_FLUX = M_FLUX%QPERC_12*(MPARAM%PERCFRAC/2._SP)
+  CASE (iopt_FREE2B); IN_FLUX = M_FLUX%QPERC_12*(MPARAM%PERCFRAC/2._WP)
                    IF (M_FLUX%OFLOW_2B   .GT.IN_FLUX) THEN; M_FLUX%OFLOW_2B   =IN_FLUX; EFLAG=.TRUE.; ENDIF
   CASE (iopt_WATR_2); IN_FLUX = M_FLUX%QPERC_12
                    IF (M_FLUX%OFLOW_2    .GT.IN_FLUX) THEN; M_FLUX%OFLOW_2    =IN_FLUX; EFLAG=.TRUE.; ENDIF

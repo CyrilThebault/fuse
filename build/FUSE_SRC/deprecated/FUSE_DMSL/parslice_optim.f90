@@ -64,7 +64,7 @@ LOGICAL(LGT)                           :: OUTPUT_FLAG     ! .TRUE. = write time 
 ! Check if there is a need to run the multi-start qNewton method
 LOGICAL(LGT)                           :: QNEW_FLAG       ! .TRUE. means run multi-start qNewton
 CHARACTER(LEN=32)                      :: OF_NAME         ! name of the desired objective function
-REAL(SP), DIMENSION(:), ALLOCATABLE    :: OF_VALS         ! objective function values
+REAL(WP), DIMENSION(:), ALLOCATABLE    :: OF_VALS         ! objective function values
 ! Control of the multi-start method
 INTEGER(I4B)                           :: NMULTI          ! number of multiple re-starts
 INTEGER(I4B)                           :: IBEGIN          ! starting seed in the Sobol sequence
@@ -77,19 +77,19 @@ INTEGER(I4B)                           :: IPAR            ! loop through model p
 INTEGER(KIND=4)                        :: JSEED           ! index in the Sobol sequence
 REAL(KIND=4),DIMENSION(:),ALLOCATABLE  :: URAND           ! vector of uniform random numbers (from the Sobol sequence)
 TYPE(PARATT)                           :: PARAM_META      ! parameter metadata (model parameters)
-REAL(SP),PARAMETER                     :: PSELECT=0.9_SP  ! fraction of parameter space to select initial seed
+REAL(WP),PARAMETER                     :: PSELECT=0.9_WP  ! fraction of parameter space to select initial seed
 INTEGER(I4B)                           :: ONEMOD          ! index of the model used (=1)
 ! Input to qNewton
-REAL(SP),DIMENSION(:),ALLOCATABLE      :: X0I             ! initial estimate of solution
-REAL(SP),DIMENSION(:),ALLOCATABLE      :: XLO             ! lower bound on solution, either none or both bounds must be present
-REAL(SP),DIMENSION(:),ALLOCATABLE      :: XHI             ! upper bound on solution, either none or both bounds must be present
-REAL(SP),DIMENSION(:),ALLOCATABLE      :: XSC             ! typical scale of the parameters
+REAL(WP),DIMENSION(:),ALLOCATABLE      :: X0I             ! initial estimate of solution
+REAL(WP),DIMENSION(:),ALLOCATABLE      :: XLO             ! lower bound on solution, either none or both bounds must be present
+REAL(WP),DIMENSION(:),ALLOCATABLE      :: XHI             ! upper bound on solution, either none or both bounds must be present
+REAL(WP),DIMENSION(:),ALLOCATABLE      :: XSC             ! typical scale of the parameters
 INTEGER(I4B)                           :: FDIGITS         ! number of reliable digits in function evaluation
 !*****                                                    ! (-2=estimate,-1=full machine precision)
 ! Approximate optimal solution
-REAL(SP),DIMENSION(:),ALLOCATABLE      :: XOPT            ! optimum value of "x", for which f(x) takes its minimum value
-REAL(SP)                               :: FOPT            ! function value at optimum
-REAL(SP),DIMENSION(:,:),ALLOCATABLE    :: XPAR            ! parameter sets for all local optima
+REAL(WP),DIMENSION(:),ALLOCATABLE      :: XOPT            ! optimum value of "x", for which f(x) takes its minimum value
+REAL(WP)                               :: FOPT            ! function value at optimum
+REAL(WP),DIMENSION(:,:),ALLOCATABLE    :: XPAR            ! parameter sets for all local optima
 ! Computational cost report
 INTEGER(I4B)                           :: ITER            ! number of steps (iterations)
 INTEGER(I4B)                           :: FCALLS          ! number of function calls
@@ -221,7 +221,7 @@ DO ISEED=IBEGIN,(IBEGIN+NMULTI)-1
    ! get new parameter sets
    JSEED=ISEED; CALL I4_SOBOL(NUMPAR,JSEED,URAND)
    WRITE(*,'(2(I4,1X),20(E10.2,1X))') ISEED, JSEED-1, URAND
-   X0I = XLO + ((1._SP - PSELECT)/2._SP)*(XHI-XLO) + (PSELECT*REAL(URAND,KIND(SP)))*(XHI-XLO)
+   X0I = XLO + ((1._WP - PSELECT)/2._WP)*(XHI-XLO) + (PSELECT*REAL(URAND,KIND(WP)))*(XHI-XLO)
    ! find local optimum in the vicinity of the starting point
    CALL QNEWTON_WRAPPER(X0I,XLO,XHI,XSC,FDIGITS,UOUT_QNEW,XOPT,FOPT,ITER,FCALLS,GCALLS,HCALLS,&
                         ERR,MESSAGE)
@@ -277,7 +277,7 @@ END DO
 ! loop through parameter perturbations
 DO MPAR=1,NGRID
  ! perturb parameters
- !XOPT(IWANT) = XLO(IWANT) + REAL(MPAR-1,KIND(SP))/REAL(NGRID-1,KIND(SP)) * (XHI(IWANT)-XLO(IWANT))
+ !XOPT(IWANT) = XLO(IWANT) + REAL(MPAR-1,KIND(WP))/REAL(NGRID-1,KIND(WP)) * (XHI(IWANT)-XLO(IWANT))
  ! run model (parameters and statistics are written in FUSE_METRIC)
  CALL FUSE_METRIC(XOPT,FOPT,OUTPUT_FLAG)
  STOP

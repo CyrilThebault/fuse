@@ -49,14 +49,14 @@ INTEGER(I4B)                           :: ONEMOD=1        ! just specify one mod
 ! ---------------------------------------------------------------------------------------
 INTEGER(I4B)                           :: IPAR    ! looping variable
 TYPE(PARATT)                           :: PARAM_META ! parameter metadata (model parameters)
-REAL(SP), DIMENSION(:), ALLOCATABLE    :: BL      ! vector of lower parameter bounds
-REAL(SP), DIMENSION(:), ALLOCATABLE    :: BU      ! vector of upper parameter bounds
-REAL(SP), DIMENSION(:), ALLOCATABLE    :: APAR    ! model parameter set
+REAL(WP), DIMENSION(:), ALLOCATABLE    :: BL      ! vector of lower parameter bounds
+REAL(WP), DIMENSION(:), ALLOCATABLE    :: BU      ! vector of upper parameter bounds
+REAL(WP), DIMENSION(:), ALLOCATABLE    :: APAR    ! model parameter set
 INTEGER(KIND=4)                        :: ISEED   ! seed for the random sequence
 REAL(KIND=4),DIMENSION(:), ALLOCATABLE :: URAND   ! vector of quasi-random numbers U[0,1]
 INTEGER(I4B)                           :: ITRY    ! (looping)
 INTEGER(I4B)                           :: JTRY    ! (looping)
-REAL(SP)                               :: METRIC_VAL     ! error from the simulation
+REAL(WP)                               :: METRIC_VAL     ! error from the simulation
 ! ---------------------------------------------------------------------------------------
 ! (0) READ COMMAND LINE ARGUMENTS
 ! ---------------------------------------------------------------------------------------
@@ -128,8 +128,8 @@ APAR = BL + URAND*(BU-BL)
 TEMPORAL_ERROR_CONTROL = TS_ADAPT              ! adaptive time steps
 ERR_TRUNC_ABS          = 1.e-9                 ! absolute temporal truncation error tolerance
 ERR_TRUNC_REL          = 1.e-9                 ! relative temporal truncation error tolerance
-MIN_TSTEP              = 0.01_sp/60._sp/24._sp ! minimum time step length (minutes --> days)
-MAX_TSTEP              = 10.0_sp/60._sp/24._sp ! maximum time step length (minutes --> days)
+MIN_TSTEP              = 0.01_wp/60._wp/24._wp ! minimum time step length (minutes --> days)
+MAX_TSTEP              = 10.0_wp/60._wp/24._wp ! maximum time step length (minutes --> days)
 ! run model (parameters and statistics are written in FUSE_METRIC)
 CALL FUSE_METRIC(APAR,METRIC_VAL,OUTPUT_FLAG)
 ! save solution for subsequent testing
@@ -138,9 +138,9 @@ AROUTE(:)%Q_ACCURATE = AROUTE(:)%Q_ROUTED
 MAX_TSTEP              = DELTIM                ! max step length = data interval
 ! evaluate different parameters for step-size control
 DO ITRY=3,9,3    ! play with different ERR_TRUNC_ABS parameters
- ERR_TRUNC_ABS = 1. * 10.**-REAL(ITRY, KIND(SP))
+ ERR_TRUNC_ABS = 1. * 10.**-REAL(ITRY, KIND(WP))
  DO JTRY=1,9      ! play with different ERR_TRUNC_REL parameters
-  ERR_TRUNC_REL = 1. * 10.**-REAL(JTRY, KIND(SP))
+  ERR_TRUNC_REL = 1. * 10.**-REAL(JTRY, KIND(WP))
   ! run zee model
   write(*,'(2(E15.7,1X))') ERR_TRUNC_ABS, ERR_TRUNC_REL
   CALL FUSE_METRIC(APAR,METRIC_VAL,OUTPUT_FLAG)

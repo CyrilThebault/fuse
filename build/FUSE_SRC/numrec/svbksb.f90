@@ -1,10 +1,10 @@
   SUBROUTINE svbksb_sp(u,w,v,b,x)
   USE nrtype; USE nrutil, ONLY : assert_eq
-  REAL(SP), DIMENSION(:,:), INTENT(IN) :: u,v
-  REAL(SP), DIMENSION(:), INTENT(IN) :: w,b
-  REAL(SP), DIMENSION(:), INTENT(OUT) :: x
+  REAL(WP), DIMENSION(:,:), INTENT(IN) :: u,v
+  REAL(WP), DIMENSION(:), INTENT(IN) :: w,b
+  REAL(WP), DIMENSION(:), INTENT(OUT) :: x
   INTEGER(I4B) :: mdum,ndum
-  REAL(SP), DIMENSION(size(x)) :: tmp
+  REAL(WP), DIMENSION(size(x)) :: tmp
   mdum=assert_eq(size(u,1),size(b),'svbksb_sp: mdum')
   ndum=assert_eq((/size(u,2),size(v,1),size(v,2),size(w),size(x)/),&
     'svbksb_sp: ndum')

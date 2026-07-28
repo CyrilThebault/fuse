@@ -17,6 +17,6 @@ MODULE multi_flux
  TYPE(FLUXES)                          :: W_FLUX      ! weighted sum of model fluxes over a time step
  TYPE(FLUXES), dimension(:,:,:), allocatable  :: W_FLUX_3d   ! weighted sum of model fluxes over a time step for several time steps
  
- REAL(SP)                              :: CURRENT_DT  ! current time step (days)
+ REAL(WP)                              :: CURRENT_DT  ! current time step (days)
 
 END MODULE multi_flux

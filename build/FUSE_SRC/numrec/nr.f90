@@ -945,11 +945,11 @@ MODULE nr
   END INTERFACE
   INTERFACE four1
 !BL
-    SUBROUTINE four1_sp(data,isign)
+    SUBROUTINE four1_wp(data,isign)
     USE nrtype
     COMPLEX(SPC), DIMENSION(:), INTENT(INOUT) :: data
     INTEGER(I4B), INTENT(IN) :: isign
-    END SUBROUTINE four1_sp
+    END SUBROUTINE four1_wp
   END INTERFACE
   INTERFACE
     SUBROUTINE four1_alt(data,isign)
@@ -2764,30 +2764,17 @@ MODULE nr
     END FUNCTION splint
   END INTERFACE
   INTERFACE sprsax
-!     SUBROUTINE sprsax_dp(sa,x,b)
-!     USE nrtype
-!     TYPE(sprs2_dp), INTENT(IN) :: sa
-!     REAL(WP), DIMENSION (:), INTENT(IN) :: x
-!     REAL(WP), DIMENSION (:), INTENT(OUT) :: b
-!     END SUBROUTINE sprsax_dp
-!BL
     SUBROUTINE sprsax_sp(sa,x,b)
     USE nrtype
-    TYPE(sprs2_sp), INTENT(IN) :: sa
+    TYPE(sprs2_wp), INTENT(IN) :: sa
     REAL(WP), DIMENSION (:), INTENT(IN) :: x
     REAL(WP), DIMENSION (:), INTENT(OUT) :: b
     END SUBROUTINE sprsax_sp
   END INTERFACE
   INTERFACE sprsdiag
-!     SUBROUTINE sprsdiag_dp(sa,b)
-!     USE nrtype
-!     TYPE(sprs2_dp), INTENT(IN) :: sa
-!     REAL(WP), DIMENSION(:), INTENT(OUT) :: b
-!     END SUBROUTINE sprsdiag_dp
-!BL
     SUBROUTINE sprsdiag_sp(sa,b)
     USE nrtype
-    TYPE(sprs2_sp), INTENT(IN) :: sa
+    TYPE(sprs2_wp), INTENT(IN) :: sa
     REAL(WP), DIMENSION(:), INTENT(OUT) :: b
     END SUBROUTINE sprsdiag_sp
   END INTERFACE
@@ -2796,33 +2783,19 @@ MODULE nr
     USE nrtype
     REAL(WP), DIMENSION(:,:), INTENT(IN) :: a
     REAL(WP), INTENT(IN) :: thresh
-    TYPE(sprs2_sp), INTENT(OUT) :: sa
+    TYPE(sprs2_wp), INTENT(OUT) :: sa
     END SUBROUTINE sprsin_sp
-!BL
-!     SUBROUTINE sprsin_dp(a,thresh,sa)
-!     USE nrtype
-!     REAL(WP), DIMENSION(:,:), INTENT(IN) :: a
-!     REAL(WP), INTENT(IN) :: thresh
-!     TYPE(sprs2_dp), INTENT(OUT) :: sa
-!     END SUBROUTINE sprsin_dp
   END INTERFACE
   INTERFACE
     SUBROUTINE sprstp(sa)
     USE nrtype
-    TYPE(sprs2_sp), INTENT(INOUT) :: sa
+    TYPE(sprs2_wp), INTENT(INOUT) :: sa
     END SUBROUTINE sprstp
   END INTERFACE
   INTERFACE sprstx
-!     SUBROUTINE sprstx_dp(sa,x,b)
-!     USE nrtype
-!     TYPE(sprs2_dp), INTENT(IN) :: sa
-!     REAL(WP), DIMENSION (:), INTENT(IN) :: x
-!     REAL(WP), DIMENSION (:), INTENT(OUT) :: b
-!     END SUBROUTINE sprstx_dp
-!BL
     SUBROUTINE sprstx_sp(sa,x,b)
     USE nrtype
-    TYPE(sprs2_sp), INTENT(IN) :: sa
+    TYPE(sprs2_wp), INTENT(IN) :: sa
     REAL(WP), DIMENSION (:), INTENT(IN) :: x
     REAL(WP), DIMENSION (:), INTENT(OUT) :: b
     END SUBROUTINE sprstx_sp

@@ -19,11 +19,11 @@ USE model_numerix
 IMPLICIT NONE
 ! ----------------------------------------------------------------------------------------
 ! compute numerical stats
-MSTATS%NUM_FUNCS     = MSTATS%NUM_FUNCS     + REAL(NUM_FUNCS, KIND(SP))     ! number of function calls
-MSTATS%NUM_JACOBIAN  = MSTATS%NUM_JACOBIAN  + REAL(NUM_JACOBIAN, KIND(SP))  ! number of times Jacobian is calculated
-MSTATS%NUMSUB_ACCEPT = MSTATS%NUMSUB_ACCEPT + REAL(NUMSUB_ACCEPT, KIND(SP)) ! number of sub-steps accepted (taken)
-MSTATS%NUMSUB_REJECT = MSTATS%NUMSUB_REJECT + REAL(NUMSUB_REJECT, KIND(SP)) ! number of sub-steps tried but rejected
-MSTATS%NUMSUB_NOCONV = MSTATS%NUMSUB_NOCONV + REAL(NUMSUB_NOCONV, KIND(SP)) ! number of sub-steps tried that did not converge
+MSTATS%NUM_FUNCS     = MSTATS%NUM_FUNCS     + REAL(NUM_FUNCS, KIND(WP))     ! number of function calls
+MSTATS%NUM_JACOBIAN  = MSTATS%NUM_JACOBIAN  + REAL(NUM_JACOBIAN, KIND(WP))  ! number of times Jacobian is calculated
+MSTATS%NUMSUB_ACCEPT = MSTATS%NUMSUB_ACCEPT + REAL(NUMSUB_ACCEPT, KIND(WP)) ! number of sub-steps accepted (taken)
+MSTATS%NUMSUB_REJECT = MSTATS%NUMSUB_REJECT + REAL(NUMSUB_REJECT, KIND(WP)) ! number of sub-steps tried but rejected
+MSTATS%NUMSUB_NOCONV = MSTATS%NUMSUB_NOCONV + REAL(NUMSUB_NOCONV, KIND(WP)) ! number of sub-steps tried that did not converge
 ! compute maximum number of iterations
 IF (MAXNUM_ITERNS > MSTATS%MAXNUM_ITERNS) MSTATS%MAXNUM_ITERNS = MAXNUM_ITERNS
 ! compute probability distributions

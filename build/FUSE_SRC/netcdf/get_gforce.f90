@@ -42,7 +42,7 @@ contains
   integer(i4b) :: nx, ny, ystart
   integer(i4b) :: len_lat, len_lon
   integer(i4b) :: start2(2), count2(2)
-  real(sp), allocatable :: lon_1d(:), lat_1d(:)
+  real(wp), allocatable :: lon_1d(:), lat_1d(:)
 
   ierr = 0
   message = "read_latlon_2d/"
@@ -306,7 +306,7 @@ contains
   
   ! internal
   integer(i4b)                            :: iVar        ! loop through forcing data
-  real(sp),dimension(:,:,:),allocatable   :: gTemp       ! temporary 3d grid
+  real(wp),dimension(:,:,:),allocatable   :: gTemp       ! temporary 3d grid
   integer(i4b)                            :: nx, ny       ! grid dimensions
   integer(i4b)                            :: ystart       ! start index iin input file (for MPI)
   integer(i4b)                            :: start_3d(3)  ! start indices in NetCDF file

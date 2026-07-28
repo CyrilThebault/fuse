@@ -2,13 +2,13 @@
   USE nrtype; USE nrutil, ONLY : assert_eq,nrerror,outerprod
   USE nr, ONLY : pythag
   IMPLICIT NONE
-  REAL(SP), DIMENSION(:,:), INTENT(INOUT) :: a
-  REAL(SP), DIMENSION(:), INTENT(OUT) :: w
-  REAL(SP), DIMENSION(:,:), INTENT(OUT) :: v
+  REAL(WP), DIMENSION(:,:), INTENT(INOUT) :: a
+  REAL(WP), DIMENSION(:), INTENT(OUT) :: w
+  REAL(WP), DIMENSION(:,:), INTENT(OUT) :: v
   INTEGER(I4B) :: i,its,j,k,l,m,n,nm
-  REAL(SP) :: anorm,c,f,g,h,s,scale,x,y,z
-  REAL(SP), DIMENSION(size(a,1)) :: tempm
-  REAL(SP), DIMENSION(size(a,2)) :: rv1,tempn
+  REAL(WP) :: anorm,c,f,g,h,s,scale,x,y,z
+  REAL(WP), DIMENSION(size(a,1)) :: tempm
+  REAL(WP), DIMENSION(size(a,2)) :: rv1,tempn
   INTEGER(I4B), PARAMETER :: MAXITER=100
   m=size(a,1)
   n=assert_eq(size(a,2),size(v,1),size(v,2),size(w),'svdcmp_sp')
@@ -72,14 +72,14 @@
     g=w(i)
     a(i,l:n)=0.0
     if (g /= 0.0) then
-      g=1.0_sp/g
+      g=1.0_wp/g
       tempn(l:n)=(matmul(a(l:m,i),a(l:m,l:n))/a(i,i))*g
       a(i:m,l:n)=a(i:m,l:n)+outerprod(a(i:m,i),tempn(l:n))
       a(i:m,i)=a(i:m,i)*g
     else
       a(i:m,i)=0.0
     end if
-    a(i,i)=a(i,i)+1.0_sp
+    a(i,i)=a(i,i)+1.0_wp
   end do
   do k=n,1,-1
     do its=1,MAXITER
@@ -96,7 +96,7 @@
             g=w(i)
             h=pythag(f,g)
             w(i)=h
-            h=1.0_sp/h
+            h=1.0_wp/h
             c= (g*h)
             s=-(f*h)
             tempm(1:m)=a(1:m,nm)
@@ -120,8 +120,8 @@
       y=w(nm)
       g=rv1(nm)
       h=rv1(k)
-      f=((y-z)*(y+z)+(g-h)*(g+h))/(2.0_sp*h*y)
-      g=pythag(f,1.0_sp)
+      f=((y-z)*(y+z)+(g-h)*(g+h))/(2.0_wp*h*y)
+      g=pythag(f,1.0_wp)
       f=((x-z)*(x+z)+h*((y/(f+sign(g,f)))-h))/x
       c=1.0
       s=1.0
@@ -145,7 +145,7 @@
         z=pythag(f,h)
         w(j)=z
         if (z /= 0.0) then
-          z=1.0_sp/z
+          z=1.0_wp/z
           c=f*z
           s=h*z
         end if

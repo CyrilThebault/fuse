@@ -28,8 +28,8 @@ contains
   ! input-output
   type(fuse_work), intent(inout)            :: fuseStruct  ! fuse work structure
   ! output
-  real(sp)       , intent(out)              :: g_x(:)      ! dx/dt=g(x)
-  real(sp)       , intent(out)  , optional  :: J_g(:,:)    ! flux Jacobian matrix
+  real(wp)       , intent(out)              :: g_x(:)      ! dx/dt=g(x)
+  real(wp)       , intent(out)  , optional  :: J_g(:,:)    ! flux Jacobian matrix
   ! internal
   logical(lgt)                              :: comp_dflux  ! flag to compute flux derivatives
   ! -------------------------------------------------------------------------------------------------
@@ -79,10 +79,10 @@ contains
   ! compute time derivatives
   SELECT CASE(SMODL%iARCH2)
    CASE(iopt_tens2pll_2) ! tension reservoir plus two parallel tanks
-    DX_DT%TENS_2  = M_FLUX%QPERC_12*(1._SP-MPARAM%PERCFRAC) - M_FLUX%EVAP_2 - M_FLUX%TENS2FREE_2
-    DX_DT%FREE_2A = M_FLUX%QPERC_12*(MPARAM%PERCFRAC/2._SP) + M_FLUX%TENS2FREE_2/2._SP - M_FLUX%QBASE_2A &
+    DX_DT%TENS_2  = M_FLUX%QPERC_12*(1._WP-MPARAM%PERCFRAC) - M_FLUX%EVAP_2 - M_FLUX%TENS2FREE_2
+    DX_DT%FREE_2A = M_FLUX%QPERC_12*(MPARAM%PERCFRAC/2._WP) + M_FLUX%TENS2FREE_2/2._WP - M_FLUX%QBASE_2A &
                     - M_FLUX%OFLOW_2A
-    DX_DT%FREE_2B = M_FLUX%QPERC_12*(MPARAM%PERCFRAC/2._SP) + M_FLUX%TENS2FREE_2/2._SP - M_FLUX%QBASE_2B &
+    DX_DT%FREE_2B = M_FLUX%QPERC_12*(MPARAM%PERCFRAC/2._WP) + M_FLUX%TENS2FREE_2/2._WP - M_FLUX%QBASE_2B &
                     - M_FLUX%OFLOW_2B
    CASE(iopt_unlimfrc_2,iopt_unlimpow_2,iopt_topmdexp_2,iopt_fixedsiz_2) ! single state
     ! (NOTE: M_FLUX%OFLOW_2=0 for 'unlimfrc_2','unlimpow_2','topmdexp_2') 

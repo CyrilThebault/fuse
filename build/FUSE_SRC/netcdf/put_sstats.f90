@@ -21,8 +21,8 @@ INTEGER(I4B), INTENT(IN)               :: IPAR        ! parameter set index
 INTEGER(I4B)                           :: IERR,NCID   ! error code; NetCDF ID
 INTEGER(I4B), DIMENSION(1)             :: INDX        ! indices for parameter write
 INTEGER(I4B)                           :: IVAR        ! loop through parameters
-REAL(SP)                               :: XPAR        ! desired parameter (SP may not be SP)
-REAL(MSP)                              :: APAR        ! desired parameter (...but MSP is SP)
+REAL(WP)                               :: XPAR        ! desired parameter (working precision)
+REAL(MSP)                              :: APAR        ! desired parameter (MSP is SP)
 INTEGER(I4B)                           :: IVAR_ID     ! variable ID
 !INTEGER(I4B), DIMENSION(2)             :: iBeg        ! start index
 !INTEGER(I4B), DIMENSION(2)             :: iCnt        ! count

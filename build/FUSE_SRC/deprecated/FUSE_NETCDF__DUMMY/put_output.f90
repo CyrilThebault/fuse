@@ -21,7 +21,7 @@ INTEGER(I4B), INTENT(IN)               :: ITIM        ! time step index
 INTEGER(I4B)                           :: IERR,NCID   ! error code; NetCDF ID
 INTEGER(I4B), DIMENSION(3)             :: INDX        ! indices for time series write
 INTEGER(I4B)                           :: IVAR        ! loop through variables
-REAL(SP)                               :: XVAR        ! desired variable (SP NOT NECESSARILY SP)
+REAL(WP)                               :: XVAR        ! desired variable (working precision) 
 REAL(MSP)                              :: AVAR        ! desired variable (SINGLE PRECISION)
 INTEGER(I4B)                           :: IVAR_ID     ! variable ID
 ! ---------------------------------------------------------------------------------------

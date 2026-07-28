@@ -40,7 +40,7 @@ SELECT CASE(SMODL%iARCH2)  ! lower layer architecture
    END SELECT  ! (evaporation schemes)
    ! ------------------------------------------------------------------------------------
    CASE(iopt_tension2_1)               ! lower-layer evap is zero
-    M_FLUX%EVAP_2 = 0._sp
+    M_FLUX%EVAP_2 = 0._wp
    ! ------------------------------------------------------------------------------------
    CASE DEFAULT
     print *, "SMODL%iARCH1 must be iopt_tension2_1, iopt_tension1_1, or iopt_onestate_1"
@@ -49,7 +49,7 @@ SELECT CASE(SMODL%iARCH2)  ! lower layer architecture
   END SELECT  ! (upper-layer architechure)
  ! --------------------------------------------------------------------------------------
  CASE(iopt_unlimfrc_2,iopt_unlimpow_2,iopt_topmdexp_2)
-  M_FLUX%EVAP_2 = 0._sp
+  M_FLUX%EVAP_2 = 0._wp
  ! --------------------------------------------------------------------------------------
  CASE DEFAULT
   print *, "SMODL%iARCH2 must be iopt_tens2pll_2, iopt_unlimfrc_2, iopt_unlimpow_2"

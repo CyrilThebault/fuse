@@ -23,11 +23,11 @@ MODULE multiparam_types
  TYPE PARATT
   LOGICAL(LGT)                         :: PARFIT      ! flag to determine if parameter is fitted
   INTEGER(I4B)                         :: PARSTK      ! flag (0=deterministic, 1=stochastic)
-  REAL(SP)                             :: PARDEF      ! default parameter set
-  REAL(SP)                             :: PARLOW      ! lower limit of each parameter
-  REAL(SP)                             :: PARUPP      ! upper limit of each parameter
-  REAL(SP)                             :: FRSEED      ! fraction param space for "reasonable" bounds
-  REAL(SP)                             :: PARSCL      ! typical scale of parameter
+  REAL(WP)                             :: PARDEF      ! default parameter set
+  REAL(WP)                             :: PARLOW      ! lower limit of each parameter
+  REAL(WP)                             :: PARUPP      ! upper limit of each parameter
+  REAL(WP)                             :: FRSEED      ! fraction param space for "reasonable" bounds
+  REAL(WP)                             :: PARSCL      ! typical scale of parameter
   INTEGER(I4B)                         :: PARVTN      ! method used for variable transformation
   INTEGER(I4B)                         :: PARDIS      ! parametric form of prob dist used for prior/hyper
   INTEGER(I4B)                         :: PARQTN      ! transformation applied before use of prob dist
@@ -94,51 +94,51 @@ MODULE multiparam_types
  ! --------------------------------------------------------------------------------------
  TYPE PARADJ
   ! rainfall error parameters (adjustable)
-  REAL(SP)                             :: RFERR_ADD   ! additive rainfall error (mm day-1)
-  REAL(SP)                             :: RFERR_MLT   ! multiplicative rainfall error (-)
-  REAL(SP)                             :: RFH1_MEAN   ! hyper parameter1: mean rainfall multiplier (-)
-  REAL(SP)                             :: RFH2_SDEV   ! hyper parameter2: sdev rainfall multiplier (-)
-  REAL(SP)                             :: RH1P_MEAN   ! prior param1 of hyper param1: prior mean of hypermean
-  REAL(SP)                             :: RH1P_SDEV   ! prior param2 of hyper param1: prior sdev of hypermean
-  REAL(SP)                             :: RH2P_MEAN   ! prior param1 of hyper param2: lower bound of hypersdev
-  REAL(SP)                             :: RH2P_SDEV   ! prior param2 of hyper param2: upper bound of hypersdev
+  REAL(WP)                             :: RFERR_ADD   ! additive rainfall error (mm day-1)
+  REAL(WP)                             :: RFERR_MLT   ! multiplicative rainfall error (-)
+  REAL(WP)                             :: RFH1_MEAN   ! hyper parameter1: mean rainfall multiplier (-)
+  REAL(WP)                             :: RFH2_SDEV   ! hyper parameter2: sdev rainfall multiplier (-)
+  REAL(WP)                             :: RH1P_MEAN   ! prior param1 of hyper param1: prior mean of hypermean
+  REAL(WP)                             :: RH1P_SDEV   ! prior param2 of hyper param1: prior sdev of hypermean
+  REAL(WP)                             :: RH2P_MEAN   ! prior param1 of hyper param2: lower bound of hypersdev
+  REAL(WP)                             :: RH2P_SDEV   ! prior param2 of hyper param2: upper bound of hypersdev
   ! bucket sizes (adjustable)
-  REAL(SP)                             :: MAXWATR_1   ! maximum total storage in layer1 (mm)
-  REAL(SP)                             :: MAXWATR_2   ! maximum total storage in layer2 (mm)
-  REAL(SP)                             :: FRACTEN     ! frac total storage as tension storage (-)
-  REAL(SP)                             :: FRCHZNE     ! PRMS: frac tension storage in recharge zone (-)
-  REAL(SP)                             :: FPRIMQB     ! SAC: fraction of baseflow in primary resvr (-)
+  REAL(WP)                             :: MAXWATR_1   ! maximum total storage in layer1 (mm)
+  REAL(WP)                             :: MAXWATR_2   ! maximum total storage in layer2 (mm)
+  REAL(WP)                             :: FRACTEN     ! frac total storage as tension storage (-)
+  REAL(WP)                             :: FRCHZNE     ! PRMS: frac tension storage in recharge zone (-)
+  REAL(WP)                             :: FPRIMQB     ! SAC: fraction of baseflow in primary resvr (-)
   ! evaporation (adjustable)
-  REAL(SP)                             :: RTFRAC1     ! fraction of roots in the upper layer (-)
+  REAL(WP)                             :: RTFRAC1     ! fraction of roots in the upper layer (-)
   ! percolation (adjustable)
-  REAL(SP)                             :: PERCRTE     ! percolation rate (mm day-1)
-  REAL(SP)                             :: PERCEXP     ! percolation exponent (-)
-  REAL(SP)                             :: SACPMLT     ! multiplier in the SAC model for dry lower layer (-)
-  REAL(SP)                             :: SACPEXP     ! exponent in the SAC model for dry lower layer (-)
-  REAL(SP)                             :: PERCFRAC    ! fraction of percolation to tension storage (-)
-  REAL(SP)                             :: FRACLOWZ    ! fraction of soil excess to lower zone (-)
+  REAL(WP)                             :: PERCRTE     ! percolation rate (mm day-1)
+  REAL(WP)                             :: PERCEXP     ! percolation exponent (-)
+  REAL(WP)                             :: SACPMLT     ! multiplier in the SAC model for dry lower layer (-)
+  REAL(WP)                             :: SACPEXP     ! exponent in the SAC model for dry lower layer (-)
+  REAL(WP)                             :: PERCFRAC    ! fraction of percolation to tension storage (-)
+  REAL(WP)                             :: FRACLOWZ    ! fraction of soil excess to lower zone (-)
   ! interflow (adjustable)
-  REAL(SP)                             :: IFLWRTE     ! interflow rate (mm day-1)
+  REAL(WP)                             :: IFLWRTE     ! interflow rate (mm day-1)
   ! baseflow (adjustable)
-  REAL(SP)                             :: BASERTE     ! baseflow rate (mm day-1)
-  REAL(SP)                             :: QB_POWR     ! baseflow exponent (-)
-  REAL(SP)                             :: QB_PRMS     ! baseflow depletion rate (day-1)
-  REAL(SP)                             :: QBRATE_2A   ! baseflow depletion rate for primary resvr (day-1)
-  REAL(SP)                             :: QBRATE_2B   ! baseflow depletion rate for secondary resvr (day-1)
+  REAL(WP)                             :: BASERTE     ! baseflow rate (mm day-1)
+  REAL(WP)                             :: QB_POWR     ! baseflow exponent (-)
+  REAL(WP)                             :: QB_PRMS     ! baseflow depletion rate (day-1)
+  REAL(WP)                             :: QBRATE_2A   ! baseflow depletion rate for primary resvr (day-1)
+  REAL(WP)                             :: QBRATE_2B   ! baseflow depletion rate for secondary resvr (day-1)
   ! surface runoff (adjustable)
-  REAL(SP)                             :: SAREAMAX    ! maximum saturated area
-  REAL(SP)                             :: AXV_BEXP    ! ARNO/VIC "b" exponent
-  REAL(SP)                             :: LOGLAMB     ! mean value of the log-transformed topographic index (m)
-  REAL(SP)                             :: TISHAPE     ! shape parameter for the topo index Gamma distribution (-)
+  REAL(WP)                             :: SAREAMAX    ! maximum saturated area
+  REAL(WP)                             :: AXV_BEXP    ! ARNO/VIC "b" exponent
+  REAL(WP)                             :: LOGLAMB     ! mean value of the log-transformed topographic index (m)
+  REAL(WP)                             :: TISHAPE     ! shape parameter for the topo index Gamma distribution (-)
   ! time delay in runoff
-  REAL(SP)                             :: TIMEDELAY   ! time delay in runoff (days)
+  REAL(WP)                             :: TIMEDELAY   ! time delay in runoff (days)
   ! snow model
-  REAL(SP)                             :: MBASE       ! base melt temperature (deg. C)
-  REAL(SP)                             :: MFMAX       ! maximum melt factor (mm melt deg C.-1 6hrs-1)
-  REAL(SP)                             :: MFMIN       ! minimum melt factor (mm melt deg C.-1 6hrs-1)
-  REAL(SP)                             :: PXTEMP      ! rain-snow partition temperature (deg. C)
-  REAL(SP)                             :: OPG         ! precipitation gradient (-) 
-  REAL(SP)                             :: LAPSE       ! temperature gradient (deg. C)
+  REAL(WP)                             :: MBASE       ! base melt temperature (deg. C)
+  REAL(WP)                             :: MFMAX       ! maximum melt factor (mm melt deg C.-1 6hrs-1)
+  REAL(WP)                             :: MFMIN       ! minimum melt factor (mm melt deg C.-1 6hrs-1)
+  REAL(WP)                             :: PXTEMP      ! rain-snow partition temperature (deg. C)
+  REAL(WP)                             :: OPG         ! precipitation gradient (-) 
+  REAL(WP)                             :: LAPSE       ! temperature gradient (deg. C)
  END TYPE PARADJ
  
  ! --------------------------------------------------------------------------------------
@@ -146,23 +146,23 @@ MODULE multiparam_types
  ! --------------------------------------------------------------------------------------
  TYPE PARDVD
   ! bucket sizes (derived)
-  REAL(SP)                             :: MAXTENS_1   ! maximum tension storage in layer1 (mm)
-  REAL(SP)                             :: MAXTENS_2   ! maximum tension storage in layer2 (mm)
-  REAL(SP)                             :: MAXFREE_1   ! maximum free storage in layer 1 (mm)
-  REAL(SP)                             :: MAXFREE_2   ! maximum free storage in layer2 (mm)
-  REAL(SP)                             :: MAXTENS_1A  ! maximum storage in the recharge zone (mm)
-  REAL(SP)                             :: MAXTENS_1B  ! maximum storage in the lower zone (mm)
-  REAL(SP)                             :: MAXFREE_2A  ! maximum storage in the primary resvr (mm)
-  REAL(SP)                             :: MAXFREE_2B  ! maximum storage in the secondary resvr (mm)
+  REAL(WP)                             :: MAXTENS_1   ! maximum tension storage in layer1 (mm)
+  REAL(WP)                             :: MAXTENS_2   ! maximum tension storage in layer2 (mm)
+  REAL(WP)                             :: MAXFREE_1   ! maximum free storage in layer 1 (mm)
+  REAL(WP)                             :: MAXFREE_2   ! maximum free storage in layer2 (mm)
+  REAL(WP)                             :: MAXTENS_1A  ! maximum storage in the recharge zone (mm)
+  REAL(WP)                             :: MAXTENS_1B  ! maximum storage in the lower zone (mm)
+  REAL(WP)                             :: MAXFREE_2A  ! maximum storage in the primary resvr (mm)
+  REAL(WP)                             :: MAXFREE_2B  ! maximum storage in the secondary resvr (mm)
   ! evaporation
-  REAL(SP)                             :: RTFRAC2     ! fraction of roots in the lower layer (-)
+  REAL(WP)                             :: RTFRAC2     ! fraction of roots in the lower layer (-)
   ! percolation/baseflow
-  REAL(SP)                             :: QBSAT       ! baseflow at saturation
+  REAL(WP)                             :: QBSAT       ! baseflow at saturation
   ! surface runoff
-  REAL(SP)                             :: POWLAMB     ! mean value of the power-transformed topographic index (m**(1/n))
-  REAL(SP)                             :: MAXPOW      ! max value of the power-transformed topographic index (m**(1/n))
+  REAL(WP)                             :: POWLAMB     ! mean value of the power-transformed topographic index (m**(1/n))
+  REAL(WP)                             :: MAXPOW      ! max value of the power-transformed topographic index (m**(1/n))
   ! routing
-  REAL(SP), DIMENSION(NTDH_MAX)        :: FRAC_FUTURE ! fraction of runoff in future time steps
+  REAL(WP), DIMENSION(NTDH_MAX)        :: FRAC_FUTURE ! fraction of runoff in future time steps
   INTEGER(I4B)                         :: NTDH_NEED   ! number of time-steps with non-zero routing contribution
  END TYPE PARDVD
  

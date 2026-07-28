@@ -11,7 +11,7 @@ MODULE multiroute
  public :: AROUTE, AROUTE_3d
  public :: MROUTE
 
- REAL(SP), DIMENSION(NTDH_MAX)                :: FUTURE     ! runoff placed in future time steps
+ REAL(WP), DIMENSION(NTDH_MAX)                :: FUTURE     ! runoff placed in future time steps
 
  TYPE(RUNOFF), DIMENSION(:), POINTER          :: AROUTE     ! runoff for all time steps
  TYPE(RUNOFF),dimension(:,:,:), allocatable   :: AROUTE_3d  ! runoff for all time steps on a grid

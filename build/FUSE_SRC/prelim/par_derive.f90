@@ -37,7 +37,7 @@ contains
     err=10; message="f-PAR_DERIVE/&"//trim(message); return
   endif
   ! ---------------------------------------------------------------------------------------
-  IF (SMODL%iESOIL.EQ.iopt_rootweight) DPARAM%RTFRAC2 = 1._SP - MPARAM%RTFRAC1
+  IF (SMODL%iESOIL.EQ.iopt_rootweight) DPARAM%RTFRAC2 = 1._WP - MPARAM%RTFRAC1
   ! ---------------------------------------------------------------------------------------
   END SUBROUTINE PAR_DERIVE
 

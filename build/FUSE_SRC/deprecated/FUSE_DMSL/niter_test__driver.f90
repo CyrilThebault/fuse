@@ -54,15 +54,15 @@ INTEGER(I4B)                           :: ONEMOD=1        ! just specify one mod
 ! ---------------------------------------------------------------------------------------
 INTEGER(I4B)                           :: IPAR    ! looping variable
 TYPE(PARATT)                           :: PARAM_META ! parameter metadata (model parameters)
-REAL(SP), DIMENSION(:), ALLOCATABLE    :: BL      ! vector of lower parameter bounds
-REAL(SP), DIMENSION(:), ALLOCATABLE    :: BU      ! vector of upper parameter bounds
-REAL(SP), DIMENSION(:), ALLOCATABLE    :: APAR    ! model parameter set
+REAL(WP), DIMENSION(:), ALLOCATABLE    :: BL      ! vector of lower parameter bounds
+REAL(WP), DIMENSION(:), ALLOCATABLE    :: BU      ! vector of upper parameter bounds
+REAL(WP), DIMENSION(:), ALLOCATABLE    :: APAR    ! model parameter set
 INTEGER(KIND=4)                        :: ISEED   ! seed for the random sequence
 REAL(KIND=4),DIMENSION(:), ALLOCATABLE :: URAND   ! vector of quasi-random numbers U[0,1]
 INTEGER(I4B)                           :: IPSET   ! (looping)
 INTEGER(I4B)                           :: IJAC    ! (looping)
 INTEGER(I4B)                           :: ISCH    ! (looping)
-REAL(SP)                               :: METRIC_VAL     ! error from the simulation
+REAL(WP)                               :: METRIC_VAL     ! error from the simulation
 ! ---------------------------------------------------------------------------------------
 ! (0) READ COMMAND LINE ARGUMENTS
 ! ---------------------------------------------------------------------------------------
@@ -130,7 +130,7 @@ DO IPSET=963,963+NUMPSET-1
  ! try freezing the Jacobian once we get "sufficiently close" to the solution
  JAC_RECOMPUTE = PERIOD_FREEZE
  DO IJAC=0,10,2
-  THRESH_FRZE = 1. * 10.**-REAL(IJAC, KIND(SP))
+  THRESH_FRZE = 1. * 10.**-REAL(IJAC, KIND(WP))
   !CALL FUSE_METRIC(APAR,METRIC_VAL,OUTPUT_FLAG)
  END DO  ! (loop through different numerix parameter combinations)
  print *, '**********'
@@ -138,7 +138,7 @@ DO IPSET=963,963+NUMPSET-1
  ! in the norm of the residual vector
  JAC_RECOMPUTE = SMALL_F_RATIO
  DO IJAC=10,10,2
-  THRESH_FRZE = REAL(IJAC, KIND(SP))/10._sp
+  THRESH_FRZE = REAL(IJAC, KIND(WP))/10._wp
   print *, THRESH_FRZE
   CALL FUSE_METRIC(APAR,METRIC_VAL,OUTPUT_FLAG)
  END DO  ! (loop through different numerix parameter combinations)
@@ -161,10 +161,10 @@ ERR_ITER_FUNC          = 1.e-9                 ! iteration convergence tolerance
 ERR_ITER_DX            = 1.e-9                 ! iteration convergence tolerance for dx
 THRESH_FRZE            = 1.e-9                 ! Threshold for freezing the Jacobian
 FRACSTATE_MIN          = 1.e-9                 ! fractional minimum value of state (for non-zero derivatives)
-SAFETY                 = 0.9_sp                ! safety factor in step-size equation
-RMIN                   = 0.1_sp                ! minimum step size multiplier
-RMAX                   = 4.0_sp                ! maximum step size multiplier
+SAFETY                 = 0.9_wp                ! safety factor in step-size equation
+RMIN                   = 0.1_wp                ! minimum step size multiplier
+RMAX                   = 4.0_wp                ! maximum step size multiplier
 NITER_TOTAL            = 100                   ! total number of iterations used in the implicit scheme
-MIN_TSTEP              = 0.01_sp/60._sp/24._sp ! minimum time step length (minutes --> days)
-MAX_TSTEP              = 1440.0_sp/60._sp/24._sp ! maximum time step length (minutes --> days)
+MIN_TSTEP              = 0.01_wp/60._wp/24._wp ! minimum time step length (minutes --> days)
+MAX_TSTEP              = 1440.0_wp/60._wp/24._wp ! maximum time step length (minutes --> days)
 END SUBROUTINE DEFAULT_NUMERIX

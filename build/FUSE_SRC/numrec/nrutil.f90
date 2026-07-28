@@ -72,8 +72,8 @@ MODULE nrutil
 CONTAINS
 !BL
   SUBROUTINE array_copy_r(src,dest,n_copied,n_not_copied)
-  REAL(SP), DIMENSION(:), INTENT(IN) :: src
-  REAL(SP), DIMENSION(:), INTENT(OUT) :: dest
+  REAL(WP), DIMENSION(:), INTENT(IN) :: src
+  REAL(WP), DIMENSION(:), INTENT(OUT) :: dest
   INTEGER(I4B), INTENT(OUT) :: n_copied, n_not_copied
   n_copied=min(size(src),size(dest))
   n_not_copied=size(src)-n_copied
@@ -81,8 +81,8 @@ CONTAINS
   END SUBROUTINE array_copy_r
 !BL
 !  SUBROUTINE array_copy_d(src,dest,n_copied,n_not_copied)
-!  REAL(DP), DIMENSION(:), INTENT(IN) :: src
-!  REAL(DP), DIMENSION(:), INTENT(OUT) :: dest
+!  REAL(WP), DIMENSION(:), INTENT(IN) :: src
+!  REAL(WP), DIMENSION(:), INTENT(OUT) :: dest
 !  INTEGER(I4B), INTENT(OUT) :: n_copied, n_not_copied
 !  n_copied=min(size(src),size(dest))
 !  n_not_copied=size(src)-n_copied
@@ -108,49 +108,49 @@ CONTAINS
   END SUBROUTINE swap_i
 !BL
   SUBROUTINE swap_r(a,b)
-  REAL(SP), INTENT(INOUT) :: a,b
-  REAL(SP) :: dum
+  REAL(WP), INTENT(INOUT) :: a,b
+  REAL(WP) :: dum
   dum=a
   a=b
   b=dum
   END SUBROUTINE swap_r
 !BL
   SUBROUTINE swap_rv(a,b)
-  REAL(SP), DIMENSION(:), INTENT(INOUT) :: a,b
-  REAL(SP), DIMENSION(SIZE(a)) :: dum
+  REAL(WP), DIMENSION(:), INTENT(INOUT) :: a,b
+  REAL(WP), DIMENSION(SIZE(a)) :: dum
   dum=a
   a=b
   b=dum
   END SUBROUTINE swap_rv
 !BL
   SUBROUTINE swap_c(a,b)
-  COMPLEX(SPC), INTENT(INOUT) :: a,b
-  COMPLEX(SPC) :: dum
+  COMPLEX(WPC), INTENT(INOUT) :: a,b
+  COMPLEX(WPC) :: dum
   dum=a
   a=b
   b=dum
   END SUBROUTINE swap_c
 !BL
   SUBROUTINE swap_cv(a,b)
-  COMPLEX(SPC), DIMENSION(:), INTENT(INOUT) :: a,b
-  COMPLEX(SPC), DIMENSION(SIZE(a)) :: dum
+  COMPLEX(WPC), DIMENSION(:), INTENT(INOUT) :: a,b
+  COMPLEX(WPC), DIMENSION(SIZE(a)) :: dum
   dum=a
   a=b
   b=dum
   END SUBROUTINE swap_cv
 !BL
   SUBROUTINE swap_cm(a,b)
-  COMPLEX(SPC), DIMENSION(:,:), INTENT(INOUT) :: a,b
-  COMPLEX(SPC), DIMENSION(size(a,1),size(a,2)) :: dum
+  COMPLEX(WPC), DIMENSION(:,:), INTENT(INOUT) :: a,b
+  COMPLEX(WPC), DIMENSION(size(a,1),size(a,2)) :: dum
   dum=a
   a=b
   b=dum
   END SUBROUTINE swap_cm
 !BL
   SUBROUTINE masked_swap_rs(a,b,mask)
-  REAL(SP), INTENT(INOUT) :: a,b
+  REAL(WP), INTENT(INOUT) :: a,b
   LOGICAL(LGT), INTENT(IN) :: mask
-  REAL(SP) :: swp
+  REAL(WP) :: swp
   if (mask) then
     swp=a
     a=b
@@ -159,9 +159,9 @@ CONTAINS
   END SUBROUTINE masked_swap_rs
 !BL
   SUBROUTINE masked_swap_rv(a,b,mask)
-  REAL(SP), DIMENSION(:), INTENT(INOUT) :: a,b
+  REAL(WP), DIMENSION(:), INTENT(INOUT) :: a,b
   LOGICAL(LGT), DIMENSION(:), INTENT(IN) :: mask
-  REAL(SP), DIMENSION(size(a)) :: swp
+  REAL(WP), DIMENSION(size(a)) :: swp
   where (mask)
     swp=a
     a=b
@@ -170,9 +170,9 @@ CONTAINS
   END SUBROUTINE masked_swap_rv
 !BL
   SUBROUTINE masked_swap_rm(a,b,mask)
-  REAL(SP), DIMENSION(:,:), INTENT(INOUT) :: a,b
+  REAL(WP), DIMENSION(:,:), INTENT(INOUT) :: a,b
   LOGICAL(LGT), DIMENSION(:,:), INTENT(IN) :: mask
-  REAL(SP), DIMENSION(size(a,1),size(a,2)) :: swp
+  REAL(WP), DIMENSION(size(a,1),size(a,2)) :: swp
   where (mask)
     swp=a
     a=b
@@ -182,7 +182,7 @@ CONTAINS
 !BL
 !BL
   FUNCTION reallocate_rv(p,n)
-  REAL(SP), DIMENSION(:), POINTER :: p, reallocate_rv
+  REAL(WP), DIMENSION(:), POINTER :: p, reallocate_rv
   INTEGER(I4B), INTENT(IN) :: n
   INTEGER(I4B) :: nold,ierr
   allocate(reallocate_rv(n),stat=ierr)
@@ -221,7 +221,7 @@ CONTAINS
   END FUNCTION reallocate_hv
 !BL
   FUNCTION reallocate_rm(p,n,m)
-  REAL(SP), DIMENSION(:,:), POINTER :: p, reallocate_rm
+  REAL(WP), DIMENSION(:,:), POINTER :: p, reallocate_rm
   INTEGER(I4B), INTENT(IN) :: n,m
   INTEGER(I4B) :: nold,mold,ierr
   allocate(reallocate_rm(n,m),stat=ierr)
@@ -260,7 +260,7 @@ CONTAINS
   END FUNCTION ifirstloc
 !BL
   FUNCTION imaxloc_r(arr)
-  REAL(SP), DIMENSION(:), INTENT(IN) :: arr
+  REAL(WP), DIMENSION(:), INTENT(IN) :: arr
   INTEGER(I4B) :: imaxloc_r
   INTEGER(I4B), DIMENSION(1) :: imax
   imax=maxloc(arr(:))
@@ -276,7 +276,7 @@ CONTAINS
   END FUNCTION imaxloc_i
 !BL
   FUNCTION iminloc(arr)
-  REAL(SP), DIMENSION(:), INTENT(IN) :: arr
+  REAL(WP), DIMENSION(:), INTENT(IN) :: arr
   INTEGER(I4B), DIMENSION(1) :: imin
   INTEGER(I4B) :: iminloc
   imin=minloc(arr(:))
@@ -392,11 +392,11 @@ CONTAINS
   END SUBROUTINE nrerror
 !BL
   FUNCTION arth_r(first,increment,n)
-  REAL(SP), INTENT(IN) :: first,increment
+  REAL(WP), INTENT(IN) :: first,increment
   INTEGER(I4B), INTENT(IN) :: n
-  REAL(SP), DIMENSION(n) :: arth_r
+  REAL(WP), DIMENSION(n) :: arth_r
   INTEGER(I4B) :: k,k2
-  REAL(SP) :: temp
+  REAL(WP) :: temp
   if (n > 0) arth_r(1)=first
   if (n <= NPAR_ARTH) then
     do k=2,n
@@ -445,11 +445,11 @@ CONTAINS
 !BL
 !BL
   FUNCTION geop_r(first,factor,n)
-  REAL(SP), INTENT(IN) :: first,factor
+  REAL(WP), INTENT(IN) :: first,factor
   INTEGER(I4B), INTENT(IN) :: n
-  REAL(SP), DIMENSION(n) :: geop_r
+  REAL(WP), DIMENSION(n) :: geop_r
   INTEGER(I4B) :: k,k2
-  REAL(SP) :: temp
+  REAL(WP) :: temp
   if (n > 0) geop_r(1)=first
   if (n <= NPAR_GEOP) then
     do k=2,n
@@ -472,11 +472,11 @@ CONTAINS
   END FUNCTION geop_r
 !BL
 !  FUNCTION geop_d(first,factor,n)
-!  REAL(DP), INTENT(IN) :: first,factor
+!  REAL(WP), INTENT(IN) :: first,factor
 !  INTEGER(I4B), INTENT(IN) :: n
-!  REAL(DP), DIMENSION(n) :: geop_d
+!  REAL(WP), DIMENSION(n) :: geop_d
 !  INTEGER(I4B) :: k,k2
-!  REAL(DP) :: temp
+!  REAL(WP) :: temp
 !  if (n > 0) geop_d(1)=first
 !  if (n <= NPAR_GEOP) then
 !    do k=2,n
@@ -524,11 +524,11 @@ CONTAINS
   END FUNCTION geop_i
 !BL
   FUNCTION geop_c(first,factor,n)
-  COMPLEX(SP), INTENT(IN) :: first,factor
+  COMPLEX(WPC), INTENT(IN) :: first,factor
   INTEGER(I4B), INTENT(IN) :: n
-  COMPLEX(SP), DIMENSION(n) :: geop_c
+  COMPLEX(WPC), DIMENSION(n) :: geop_c
   INTEGER(I4B) :: k,k2
-  COMPLEX(SP) :: temp
+  COMPLEX(WPC) :: temp
   if (n > 0) geop_c(1)=first
   if (n <= NPAR_GEOP) then
     do k=2,n
@@ -551,14 +551,14 @@ CONTAINS
   END FUNCTION geop_c
 !BL
   RECURSIVE FUNCTION cumsum_r(arr,seed) RESULT(ans)
-  REAL(SP), DIMENSION(:), INTENT(IN) :: arr
-  REAL(SP), OPTIONAL, INTENT(IN) :: seed
-  REAL(SP), DIMENSION(size(arr)) :: ans
+  REAL(WP), DIMENSION(:), INTENT(IN) :: arr
+  REAL(WP), OPTIONAL, INTENT(IN) :: seed
+  REAL(WP), DIMENSION(size(arr)) :: ans
   INTEGER(I4B) :: n,j
-  REAL(SP) :: sd
+  REAL(WP) :: sd
   n=size(arr)
   if (n == 0_i4b) RETURN
-  sd=0.0_sp
+  sd=0.0_wp
   if (present(seed)) sd=seed
   ans(1)=arr(1)+sd
   if (n < NPAR_CUMSUM) then
@@ -593,14 +593,14 @@ CONTAINS
 !BL
 !BL
   RECURSIVE FUNCTION cumprod(arr,seed) RESULT(ans)
-  REAL(SP), DIMENSION(:), INTENT(IN) :: arr
-  REAL(SP), OPTIONAL, INTENT(IN) :: seed
-  REAL(SP), DIMENSION(size(arr)) :: ans
+  REAL(WP), DIMENSION(:), INTENT(IN) :: arr
+  REAL(WP), OPTIONAL, INTENT(IN) :: seed
+  REAL(WP), DIMENSION(size(arr)) :: ans
   INTEGER(I4B) :: n,j
-  REAL(SP) :: sd
+  REAL(WP) :: sd
   n=size(arr)
   if (n == 0_i4b) RETURN
-  sd=1.0_sp
+  sd=1.0_wp
   if (present(seed)) sd=seed
   ans(1)=arr(1)*sd
   if (n < NPAR_CUMPROD) then
@@ -615,15 +615,15 @@ CONTAINS
 !BL
 !BL
   FUNCTION poly_rr(x,coeffs)
-  REAL(SP), INTENT(IN) :: x
-  REAL(SP), DIMENSION(:), INTENT(IN) :: coeffs
-  REAL(SP) :: poly_rr
-  REAL(SP) :: pow
-  REAL(SP), DIMENSION(:), ALLOCATABLE :: vec
+  REAL(WP), INTENT(IN) :: x
+  REAL(WP), DIMENSION(:), INTENT(IN) :: coeffs
+  REAL(WP) :: poly_rr
+  REAL(WP) :: pow
+  REAL(WP), DIMENSION(:), ALLOCATABLE :: vec
   INTEGER(I4B) :: i,n,nn
   n=size(coeffs)
   if (n <= 0) then
-    poly_rr=0.0_sp
+    poly_rr=0.0_wp
   else if (n < NPAR_POLY) then
     poly_rr=coeffs(n)
     do i=n-1,1,-1
@@ -634,7 +634,7 @@ CONTAINS
     pow=x
     vec(1:n)=coeffs
     do
-      vec(n+1)=0.0_sp
+      vec(n+1)=0.0_wp
       nn=ishft(n+1,-1)
       vec(1:nn)=vec(1:n:2)+pow*vec(2:n+1:2)
       if (nn == 1) exit
@@ -647,15 +647,15 @@ CONTAINS
   END FUNCTION poly_rr
 !BL
 !  FUNCTION poly_dd(x,coeffs)
-!  REAL(DP), INTENT(IN) :: x
-!  REAL(DP), DIMENSION(:), INTENT(IN) :: coeffs
-!  REAL(DP) :: poly_dd
-!  REAL(DP) :: pow
-!  REAL(DP), DIMENSION(:), ALLOCATABLE :: vec
+!  REAL(WP), INTENT(IN) :: x
+!  REAL(WP), DIMENSION(:), INTENT(IN) :: coeffs
+!  REAL(WP) :: poly_dd
+!  REAL(WP) :: pow
+!  REAL(WP), DIMENSION(:), ALLOCATABLE :: vec
 !  INTEGER(I4B) :: i,n,nn
 !  n=size(coeffs)
 !  if (n <= 0) then
-!    poly_dd=0.0_dp
+!    poly_dd=0.0_wp
 !  else if (n < NPAR_POLY) then
 !    poly_dd=coeffs(n)
 !    do i=n-1,1,-1
@@ -666,7 +666,7 @@ CONTAINS
 !    pow=x
 !    vec(1:n)=coeffs
 !    do
-!      vec(n+1)=0.0_dp
+!      vec(n+1)=0.0_wp
 !      nn=ishft(n+1,-1)
 !      vec(1:nn)=vec(1:n:2)+pow*vec(2:n+1:2)
 !      if (nn == 1) exit
@@ -679,15 +679,15 @@ CONTAINS
 !  END FUNCTION poly_dd
 !BL
   FUNCTION poly_rc(x,coeffs)
-  COMPLEX(SPC), INTENT(IN) :: x
-  REAL(SP), DIMENSION(:), INTENT(IN) :: coeffs
-  COMPLEX(SPC) :: poly_rc
-  COMPLEX(SPC) :: pow
-  COMPLEX(SPC), DIMENSION(:), ALLOCATABLE :: vec
+  COMPLEX(WPC), INTENT(IN) :: x
+  REAL(WP), DIMENSION(:), INTENT(IN) :: coeffs
+  COMPLEX(WPC) :: poly_rc
+  COMPLEX(WPC) :: pow
+  COMPLEX(WPC), DIMENSION(:), ALLOCATABLE :: vec
   INTEGER(I4B) :: i,n,nn
   n=size(coeffs)
   if (n <= 0) then
-    poly_rc=0.0_sp
+    poly_rc=0.0_wp
   else if (n < NPAR_POLY) then
     poly_rc=coeffs(n)
     do i=n-1,1,-1
@@ -698,7 +698,7 @@ CONTAINS
     pow=x
     vec(1:n)=coeffs
     do
-      vec(n+1)=0.0_sp
+      vec(n+1)=0.0_wp
       nn=ishft(n+1,-1)
       vec(1:nn)=vec(1:n:2)+pow*vec(2:n+1:2)
       if (nn == 1) exit
@@ -711,15 +711,15 @@ CONTAINS
   END FUNCTION poly_rc
 !BL
   FUNCTION poly_cc(x,coeffs)
-  COMPLEX(SPC), INTENT(IN) :: x
-  COMPLEX(SPC), DIMENSION(:), INTENT(IN) :: coeffs
-  COMPLEX(SPC) :: poly_cc
-  COMPLEX(SPC) :: pow
-  COMPLEX(SPC), DIMENSION(:), ALLOCATABLE :: vec
+  COMPLEX(WPC), INTENT(IN) :: x
+  COMPLEX(WPC), DIMENSION(:), INTENT(IN) :: coeffs
+  COMPLEX(WPC) :: poly_cc
+  COMPLEX(WPC) :: pow
+  COMPLEX(WPC), DIMENSION(:), ALLOCATABLE :: vec
   INTEGER(I4B) :: i,n,nn
   n=size(coeffs)
   if (n <= 0) then
-    poly_cc=0.0_sp
+    poly_cc=0.0_wp
   else if (n < NPAR_POLY) then
     poly_cc=coeffs(n)
     do i=n-1,1,-1
@@ -730,7 +730,7 @@ CONTAINS
     pow=x
     vec(1:n)=coeffs
     do
-      vec(n+1)=0.0_sp
+      vec(n+1)=0.0_wp
       nn=ishft(n+1,-1)
       vec(1:nn)=vec(1:n:2)+pow*vec(2:n+1:2)
       if (nn == 1) exit
@@ -743,13 +743,13 @@ CONTAINS
   END FUNCTION poly_cc
 !BL
   FUNCTION poly_rrv(x,coeffs)
-  REAL(SP), DIMENSION(:), INTENT(IN) :: coeffs,x
-  REAL(SP), DIMENSION(size(x)) :: poly_rrv
+  REAL(WP), DIMENSION(:), INTENT(IN) :: coeffs,x
+  REAL(WP), DIMENSION(size(x)) :: poly_rrv
   INTEGER(I4B) :: i,n,m
   m=size(coeffs)
   n=size(x)
   if (m <= 0) then
-    poly_rrv=0.0_sp
+    poly_rrv=0.0_wp
   else if (m < n .or. m < NPAR_POLY) then
     poly_rrv=coeffs(m)
     do i=m-1,1,-1
@@ -763,13 +763,13 @@ CONTAINS
   END FUNCTION poly_rrv
 !BL
 !   FUNCTION poly_ddv(x,coeffs)
-!   REAL(DP), DIMENSION(:), INTENT(IN) :: coeffs,x
-!   REAL(DP), DIMENSION(size(x)) :: poly_ddv
+!   REAL(WP), DIMENSION(:), INTENT(IN) :: coeffs,x
+!   REAL(WP), DIMENSION(size(x)) :: poly_ddv
 !   INTEGER(I4B) :: i,n,m
 !   m=size(coeffs)
 !   n=size(x)
 !   if (m <= 0) then
-!     poly_ddv=0.0_dp
+!     poly_ddv=0.0_wp
 !   else if (m < n .or. m < NPAR_POLY) then
 !     poly_ddv=coeffs(m)
 !     do i=m-1,1,-1
@@ -783,24 +783,24 @@ CONTAINS
 !   END FUNCTION poly_ddv
 !BL
   FUNCTION poly_msk_rrv(x,coeffs,mask)
-  REAL(SP), DIMENSION(:), INTENT(IN) :: coeffs,x
+  REAL(WP), DIMENSION(:), INTENT(IN) :: coeffs,x
   LOGICAL(LGT), DIMENSION(:), INTENT(IN) :: mask
-  REAL(SP), DIMENSION(size(x)) :: poly_msk_rrv
-  poly_msk_rrv=unpack(poly_rrv(pack(x,mask),coeffs),mask,0.0_sp)
+  REAL(WP), DIMENSION(size(x)) :: poly_msk_rrv
+  poly_msk_rrv=unpack(poly_rrv(pack(x,mask),coeffs),mask,0.0_wp)
   END FUNCTION poly_msk_rrv
 !BL
 !   FUNCTION poly_msk_ddv(x,coeffs,mask)
-!   REAL(DP), DIMENSION(:), INTENT(IN) :: coeffs,x
+!   REAL(WP), DIMENSION(:), INTENT(IN) :: coeffs,x
 !   LOGICAL(LGT), DIMENSION(:), INTENT(IN) :: mask
-!   REAL(DP), DIMENSION(size(x)) :: poly_msk_ddv
-!   poly_msk_ddv=unpack(poly_ddv(pack(x,mask),coeffs),mask,0.0_dp)
+!   REAL(WP), DIMENSION(size(x)) :: poly_msk_ddv
+!   poly_msk_ddv=unpack(poly_ddv(pack(x,mask),coeffs),mask,0.0_wp)
 !   END FUNCTION poly_msk_ddv
 !BL
 !BL
   RECURSIVE FUNCTION poly_term_rr(a,b) RESULT(u)
-  REAL(SP), DIMENSION(:), INTENT(IN) :: a
-  REAL(SP), INTENT(IN) :: b
-  REAL(SP), DIMENSION(size(a)) :: u
+  REAL(WP), DIMENSION(:), INTENT(IN) :: a
+  REAL(WP), INTENT(IN) :: b
+  REAL(WP), DIMENSION(size(a)) :: u
   INTEGER(I4B) :: n,j
   n=size(a)
   if (n <= 0) RETURN
@@ -816,9 +816,9 @@ CONTAINS
   END FUNCTION poly_term_rr
 !BL
   RECURSIVE FUNCTION poly_term_cc(a,b) RESULT(u)
-  COMPLEX(SPC), DIMENSION(:), INTENT(IN) :: a
-  COMPLEX(SPC), INTENT(IN) :: b
-  COMPLEX(SPC), DIMENSION(size(a)) :: u
+  COMPLEX(WPC), DIMENSION(:), INTENT(IN) :: a
+  COMPLEX(WPC), INTENT(IN) :: b
+  COMPLEX(WPC), DIMENSION(size(a)) :: u
   INTEGER(I4B) :: n,j
   n=size(a)
   if (n <= 0) RETURN
@@ -836,9 +836,9 @@ CONTAINS
 !BL
   FUNCTION zroots_unity(n,nn)
   INTEGER(I4B), INTENT(IN) :: n,nn
-  COMPLEX(SPC), DIMENSION(nn) :: zroots_unity
+  COMPLEX(WPC), DIMENSION(nn) :: zroots_unity
   INTEGER(I4B) :: k
-  REAL(SP) :: theta
+  REAL(WP) :: theta
   zroots_unity(1)=1.0
   theta=TWOPI/n
   k=1
@@ -852,43 +852,43 @@ CONTAINS
   END FUNCTION zroots_unity
 !BL
   FUNCTION outerprod_r(a,b)
-  REAL(SP), DIMENSION(:), INTENT(IN) :: a,b
-  REAL(SP), DIMENSION(size(a),size(b)) :: outerprod_r
+  REAL(WP), DIMENSION(:), INTENT(IN) :: a,b
+  REAL(WP), DIMENSION(size(a),size(b)) :: outerprod_r
   outerprod_r = spread(a,dim=2,ncopies=size(b)) * &
     spread(b,dim=1,ncopies=size(a))
   END FUNCTION outerprod_r
 !BL
 !   FUNCTION outerprod_d(a,b)
-!   REAL(DP), DIMENSION(:), INTENT(IN) :: a,b
-!   REAL(DP), DIMENSION(size(a),size(b)) :: outerprod_d
+!   REAL(WP), DIMENSION(:), INTENT(IN) :: a,b
+!   REAL(WP), DIMENSION(size(a),size(b)) :: outerprod_d
 !   outerprod_d = spread(a,dim=2,ncopies=size(b)) * &
 !     spread(b,dim=1,ncopies=size(a))
 !   END FUNCTION outerprod_d
 !BL
   FUNCTION outerdiv(a,b)
-  REAL(SP), DIMENSION(:), INTENT(IN) :: a,b
-  REAL(SP), DIMENSION(size(a),size(b)) :: outerdiv
+  REAL(WP), DIMENSION(:), INTENT(IN) :: a,b
+  REAL(WP), DIMENSION(size(a),size(b)) :: outerdiv
   outerdiv = spread(a,dim=2,ncopies=size(b)) / &
     spread(b,dim=1,ncopies=size(a))
   END FUNCTION outerdiv
 !BL
   FUNCTION outersum(a,b)
-  REAL(SP), DIMENSION(:), INTENT(IN) :: a,b
-  REAL(SP), DIMENSION(size(a),size(b)) :: outersum
+  REAL(WP), DIMENSION(:), INTENT(IN) :: a,b
+  REAL(WP), DIMENSION(size(a),size(b)) :: outersum
   outersum = spread(a,dim=2,ncopies=size(b)) + &
     spread(b,dim=1,ncopies=size(a))
   END FUNCTION outersum
 !BL
   FUNCTION outerdiff_r(a,b)
-  REAL(SP), DIMENSION(:), INTENT(IN) :: a,b
-  REAL(SP), DIMENSION(size(a),size(b)) :: outerdiff_r
+  REAL(WP), DIMENSION(:), INTENT(IN) :: a,b
+  REAL(WP), DIMENSION(size(a),size(b)) :: outerdiff_r
   outerdiff_r = spread(a,dim=2,ncopies=size(b)) - &
     spread(b,dim=1,ncopies=size(a))
   END FUNCTION outerdiff_r
 !BL
 !  FUNCTION outerdiff_d(a,b)
-!  REAL(DP), DIMENSION(:), INTENT(IN) :: a,b
-!  REAL(DP), DIMENSION(size(a),size(b)) :: outerdiff_d
+!  REAL(WP), DIMENSION(:), INTENT(IN) :: a,b
+!  REAL(WP), DIMENSION(size(a),size(b)) :: outerdiff_d
 !  outerdiff_d = spread(a,dim=2,ncopies=size(b)) - &
 !    spread(b,dim=1,ncopies=size(a))
 !  END FUNCTION outerdiff_d
@@ -908,8 +908,8 @@ CONTAINS
   END FUNCTION outerand
 !BL
   SUBROUTINE scatter_add_r(dest,source,dest_index)
-  REAL(SP), DIMENSION(:), INTENT(OUT) :: dest
-  REAL(SP), DIMENSION(:), INTENT(IN) :: source
+  REAL(WP), DIMENSION(:), INTENT(OUT) :: dest
+  REAL(WP), DIMENSION(:), INTENT(IN) :: source
   INTEGER(I4B), DIMENSION(:), INTENT(IN) :: dest_index
   INTEGER(I4B) :: m,n,j,i
   n=assert_eq2(size(source),size(dest_index),'scatter_add_r')
@@ -920,8 +920,8 @@ CONTAINS
   end do
   END SUBROUTINE scatter_add_r
 !   SUBROUTINE scatter_add_d(dest,source,dest_index)
-!   REAL(DP), DIMENSION(:), INTENT(OUT) :: dest
-!   REAL(DP), DIMENSION(:), INTENT(IN) :: source
+!   REAL(WP), DIMENSION(:), INTENT(OUT) :: dest
+!   REAL(WP), DIMENSION(:), INTENT(IN) :: source
 !   INTEGER(I4B), DIMENSION(:), INTENT(IN) :: dest_index
 !   INTEGER(I4B) :: m,n,j,i
 !   n=assert_eq2(size(source),size(dest_index),'scatter_add_d')
@@ -932,8 +932,8 @@ CONTAINS
 !   end do
 !   END SUBROUTINE scatter_add_d
   SUBROUTINE scatter_max_r(dest,source,dest_index)
-  REAL(SP), DIMENSION(:), INTENT(OUT) :: dest
-  REAL(SP), DIMENSION(:), INTENT(IN) :: source
+  REAL(WP), DIMENSION(:), INTENT(OUT) :: dest
+  REAL(WP), DIMENSION(:), INTENT(IN) :: source
   INTEGER(I4B), DIMENSION(:), INTENT(IN) :: dest_index
   INTEGER(I4B) :: m,n,j,i
   n=assert_eq2(size(source),size(dest_index),'scatter_max_r')
@@ -945,8 +945,8 @@ CONTAINS
   END SUBROUTINE scatter_max_r
 !BL
 !   SUBROUTINE scatter_max_d(dest,source,dest_index)
-!   REAL(DP), DIMENSION(:), INTENT(OUT) :: dest
-!   REAL(DP), DIMENSION(:), INTENT(IN) :: source
+!   REAL(WP), DIMENSION(:), INTENT(OUT) :: dest
+!   REAL(WP), DIMENSION(:), INTENT(IN) :: source
 !   INTEGER(I4B), DIMENSION(:), INTENT(IN) :: dest_index
 !   INTEGER(I4B) :: m,n,j,i
 !   n=assert_eq2(size(source),size(dest_index),'scatter_max_d')
@@ -958,8 +958,8 @@ CONTAINS
 !   END SUBROUTINE scatter_max_d
 !BL
   SUBROUTINE diagadd_rv(mat,diag)
-  REAL(SP), DIMENSION(:,:), INTENT(INOUT) :: mat
-  REAL(SP), DIMENSION(:), INTENT(IN) :: diag
+  REAL(WP), DIMENSION(:,:), INTENT(INOUT) :: mat
+  REAL(WP), DIMENSION(:), INTENT(IN) :: diag
   INTEGER(I4B) :: j,n
   n = assert_eq2(size(diag),min(size(mat,1),size(mat,2)),'diagadd_rv')
   do j=1,n
@@ -968,8 +968,8 @@ CONTAINS
   END SUBROUTINE diagadd_rv
 !BL
   SUBROUTINE diagadd_r(mat,diag)
-  REAL(SP), DIMENSION(:,:), INTENT(INOUT) :: mat
-  REAL(SP), INTENT(IN) :: diag
+  REAL(WP), DIMENSION(:,:), INTENT(INOUT) :: mat
+  REAL(WP), INTENT(IN) :: diag
   INTEGER(I4B) :: j,n
   n = min(size(mat,1),size(mat,2))
   do j=1,n
@@ -978,8 +978,8 @@ CONTAINS
   END SUBROUTINE diagadd_r
 !BL
   SUBROUTINE diagmult_rv(mat,diag)
-  REAL(SP), DIMENSION(:,:), INTENT(INOUT) :: mat
-  REAL(SP), DIMENSION(:), INTENT(IN) :: diag
+  REAL(WP), DIMENSION(:,:), INTENT(INOUT) :: mat
+  REAL(WP), DIMENSION(:), INTENT(IN) :: diag
   INTEGER(I4B) :: j,n
   n = assert_eq2(size(diag),min(size(mat,1),size(mat,2)),'diagmult_rv')
   do j=1,n
@@ -988,8 +988,8 @@ CONTAINS
   END SUBROUTINE diagmult_rv
 !BL
   SUBROUTINE diagmult_r(mat,diag)
-  REAL(SP), DIMENSION(:,:), INTENT(INOUT) :: mat
-  REAL(SP), INTENT(IN) :: diag
+  REAL(WP), DIMENSION(:,:), INTENT(INOUT) :: mat
+  REAL(WP), INTENT(IN) :: diag
   INTEGER(I4B) :: j,n
   n = min(size(mat,1),size(mat,2))
   do j=1,n
@@ -998,8 +998,8 @@ CONTAINS
   END SUBROUTINE diagmult_r
 !BL
   FUNCTION get_diag_rv(mat)
-  REAL(SP), DIMENSION(:,:), INTENT(IN) :: mat
-  REAL(SP), DIMENSION(size(mat,1)) :: get_diag_rv
+  REAL(WP), DIMENSION(:,:), INTENT(IN) :: mat
+  REAL(WP), DIMENSION(size(mat,1)) :: get_diag_rv
   INTEGER(I4B) :: j
   j=assert_eq2(size(mat,1),size(mat,2),'get_diag_rv')
   do j=1,size(mat,1)
@@ -1008,8 +1008,8 @@ CONTAINS
   END FUNCTION get_diag_rv
 !BL
 !   FUNCTION get_diag_dv(mat)
-!   REAL(DP), DIMENSION(:,:), INTENT(IN) :: mat
-!   REAL(DP), DIMENSION(size(mat,1)) :: get_diag_dv
+!   REAL(WP), DIMENSION(:,:), INTENT(IN) :: mat
+!   REAL(WP), DIMENSION(size(mat,1)) :: get_diag_dv
 !   INTEGER(I4B) :: j
 !   j=assert_eq2(size(mat,1),size(mat,2),'get_diag_dv')
 !   do j=1,size(mat,1)
@@ -1018,8 +1018,8 @@ CONTAINS
 !   END FUNCTION get_diag_dv
 !BL
   SUBROUTINE put_diag_rv(diagv,mat)
-  REAL(SP), DIMENSION(:), INTENT(IN) :: diagv
-  REAL(SP), DIMENSION(:,:), INTENT(INOUT) :: mat
+  REAL(WP), DIMENSION(:), INTENT(IN) :: diagv
+  REAL(WP), DIMENSION(:,:), INTENT(INOUT) :: mat
   INTEGER(I4B) :: j,n
   n=assert_eq2(size(diagv),min(size(mat,1),size(mat,2)),'put_diag_rv')
   do j=1,n
@@ -1028,8 +1028,8 @@ CONTAINS
   END SUBROUTINE put_diag_rv
 !BL
   SUBROUTINE put_diag_r(scal,mat)
-  REAL(SP), INTENT(IN) :: scal
-  REAL(SP), DIMENSION(:,:), INTENT(INOUT) :: mat
+  REAL(WP), INTENT(IN) :: scal
+  REAL(WP), DIMENSION(:,:), INTENT(INOUT) :: mat
   INTEGER(I4B) :: j,n
   n = min(size(mat,1),size(mat,2))
   do j=1,n
@@ -1038,12 +1038,12 @@ CONTAINS
   END SUBROUTINE put_diag_r
 !BL
   SUBROUTINE unit_matrix(mat)
-  REAL(SP), DIMENSION(:,:), INTENT(OUT) :: mat
+  REAL(WP), DIMENSION(:,:), INTENT(OUT) :: mat
   INTEGER(I4B) :: i,n
   n=min(size(mat,1),size(mat,2))
-  mat(:,:)=0.0_sp
+  mat(:,:)=0.0_wp
   do i=1,n
-    mat(i,i)=1.0_sp
+    mat(i,i)=1.0_wp
   end do
   END SUBROUTINE unit_matrix
 !BL
@@ -1068,12 +1068,12 @@ CONTAINS
   END FUNCTION lower_triangle
 !BL
   FUNCTION vabs(v)
-  REAL(SP), DIMENSION(:), INTENT(IN) :: v
-  REAL(SP) :: vabs
-  real(SP)::vvAbs(size(v))
+  REAL(WP), DIMENSION(:), INTENT(IN) :: v
+  REAL(WP) :: vabs
+  real(wp)::vvAbs(size(v))
   integer(I4B)::iMax
-  real(sp)::hugeRe,sqrtHuge
-  vvAbs=abs(v); hugeRe=huge(1._sp); sqrtHuge=sqrt(hugeRe)
+  real(wp)::hugeRe,sqrtHuge
+  vvAbs=abs(v); hugeRe=huge(1._wp); sqrtHuge=sqrt(hugeRe)
   iMax=maxval(maxloc(vvAbs))
   if(vvAbs(iMax)>sqrtHuge)then
 !D's safeguaard to avoid overflow in some cases

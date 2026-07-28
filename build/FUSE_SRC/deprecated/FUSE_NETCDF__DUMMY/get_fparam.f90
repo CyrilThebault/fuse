@@ -26,7 +26,7 @@ INTEGER(I4B)                           :: IPAR        ! loop through model param
 INTEGER(I4B)                           :: NPAR        ! number of parameter sets in output file
 REAL(MSP)                              :: APAR        ! parameter value (single precision)
 ! output
-REAL(SP), DIMENSION(MPAR), INTENT(OUT) :: XPAR        ! parameter value (whatever precision SP is)
+REAL(WP), DIMENSION(MPAR), INTENT(OUT) :: XPAR        ! parameter values (working precision) 
 include 'netcdf.inc'                                  ! use netCDF libraries
 ! ---------------------------------------------------------------------------------------
 ! check that the file exists

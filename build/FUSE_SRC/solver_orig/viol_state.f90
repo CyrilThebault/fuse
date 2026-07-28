@@ -19,9 +19,9 @@ USE multistate                                        ! model states (USE NSTATE
 USE model_numerix                                     ! model numerix
 IMPLICIT NONE
 ! input
-REAL(SP), DIMENSION(:), INTENT(IN)     :: X_TRY       ! vector of model states
+REAL(WP), DIMENSION(:), INTENT(IN)     :: X_TRY       ! vector of model states
 ! internal
-REAL(SP)                               :: XMIN        ! very small number
+REAL(WP)                               :: XMIN        ! very small number
 INTEGER(I4B)                           :: ISTT        ! loop through model states
 ! output
 LOGICAL(LGT)                           :: VIOL_STATE  ! .TRUE. if the states violate constraints
@@ -73,7 +73,7 @@ DO ISTT=1,NSTATE
     IF (X_TRY(ISTT).GT.MPARAM%MAXWATR_2)     VIOL_STATE=.TRUE.
    ELSE
     ! unlimited storage, but make sure the values are still sensible
-    IF (X_TRY(ISTT).GT.MPARAM%MAXWATR_2*10._sp) VIOL_STATE=.TRUE.
+    IF (X_TRY(ISTT).GT.MPARAM%MAXWATR_2*10._wp) VIOL_STATE=.TRUE.
    ENDIF
  END SELECT
 END DO ! (loop through states)

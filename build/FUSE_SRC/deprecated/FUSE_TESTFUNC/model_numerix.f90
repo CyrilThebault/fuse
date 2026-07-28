@@ -27,7 +27,7 @@ INTEGER(I4B)               :: INITIAL_NEWTON
 ! 6. Jacobian re-evaluation strategy
 INTEGER(I4B), PARAMETER    :: FULLYVARIABLE=0, CONST_SUBSTEP=1, CONSTFULLSTEP=2
 INTEGER(I4B)               :: JAC_RECOMPUTE
-REAL(SP), ALLOCATABLE      :: fjacDCMP(:,:), fjacCOPY(:,:), fjacINDX(:) ! (temporary arrays)
+REAL(WP), ALLOCATABLE      :: fjacDCMP(:,:), fjacCOPY(:,:), fjacINDX(:) ! (temporary arrays)
 ! 7. Method used to trap/fix errors in Newton
 INTEGER(I4B), PARAMETER    :: FULL_NEWTON=0, LINE_SEARCH=1
 INTEGER(I4B)               :: CHECK_OVERSHOOT
@@ -37,17 +37,17 @@ INTEGER(I4B)               :: SMALL_ENDSTEP
 ! ---------------------------------------------------------------------------------------
 ! (B) PARAMETERS
 ! ---------------------------------------------------------------------------------------
-REAL(SP)                   :: ERR_TRUNC_ABS  ! Absolute temporal truncation error tolerance
-REAL(SP)                   :: ERR_TRUNC_REL  ! Relative temporal truncation error tolerance
-REAL(SP)                   :: ERR_ITER_FUNC  ! Iteration convergence tolerance for function values
-REAL(SP)                   :: ERR_ITER_DX    ! Iteration convergence tolerance for dx
-REAL(SP)                   :: FRACSTATE_MIN  ! Fractional minimum value of state (for non-zero derivatives)
-REAL(SP)                   :: SAFETY         ! Safety factor in step-size equation
-REAL(SP)                   :: RMIN           ! Minimum step size multiplier
-REAL(SP)                   :: RMAX           ! Maximum step size multiplier
+REAL(WP)                   :: ERR_TRUNC_ABS  ! Absolute temporal truncation error tolerance
+REAL(WP)                   :: ERR_TRUNC_REL  ! Relative temporal truncation error tolerance
+REAL(WP)                   :: ERR_ITER_FUNC  ! Iteration convergence tolerance for function values
+REAL(WP)                   :: ERR_ITER_DX    ! Iteration convergence tolerance for dx
+REAL(WP)                   :: FRACSTATE_MIN  ! Fractional minimum value of state (for non-zero derivatives)
+REAL(WP)                   :: SAFETY         ! Safety factor in step-size equation
+REAL(WP)                   :: RMIN           ! Minimum step size multiplier
+REAL(WP)                   :: RMAX           ! Maximum step size multiplier
 INTEGER(I4B)               :: NITER_TOTAL    ! Total number of iterations used in the implicit scheme
-REAL(SP)                   :: MIN_TSTEP      ! Minimum time step length
-REAL(SP)                   :: MAX_TSTEP      ! Maximum time step length
+REAL(WP)                   :: MIN_TSTEP      ! Minimum time step length
+REAL(WP)                   :: MAX_TSTEP      ! Maximum time step length
 ! ---------------------------------------------------------------------------------------
 ! (C) DIAGNOSTIX
 ! ---------------------------------------------------------------------------------------

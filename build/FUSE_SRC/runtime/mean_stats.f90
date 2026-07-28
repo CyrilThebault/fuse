@@ -30,25 +30,25 @@ IMPLICIT NONE
 INTEGER(I4B)                           :: I           ! looping
 INTEGER(I4B)                           :: NS          ! number of samples
 INTEGER(I4B)                           :: IERR        ! error code for allocate/deallocate statements
-REAL(SP), DIMENSION(:), ALLOCATABLE    :: QOBS        ! observed runoff - whole time series
-REAL(SP), DIMENSION(:), ALLOCATABLE    :: QOBS_AVAIL  ! observed runoff - only time steps with QOBS available
+REAL(WP), DIMENSION(:), ALLOCATABLE    :: QOBS        ! observed runoff - whole time series
+REAL(WP), DIMENSION(:), ALLOCATABLE    :: QOBS_AVAIL  ! observed runoff - only time steps with QOBS available
 INTEGER(I4B)                           :: NUM_AVAIL   ! number of time steps with QOBS available
-LOGICAL(SP), DIMENSION(:), ALLOCATABLE :: QOBS_MASK   ! boolean: is QOBS available?
-REAL(SP), DIMENSION(:), ALLOCATABLE    :: QSIM        ! simulated runoff - whole time series
-REAL(SP), DIMENSION(:), ALLOCATABLE    :: QSIM_AVAIL  ! simulated runoff - only time steps with QOBS available
-REAL(SP), DIMENSION(:), ALLOCATABLE    :: DOBS        ! observed runoff anomalies
-REAL(SP), DIMENSION(:), ALLOCATABLE    :: DSIM        ! simulated runoff anomalies
-REAL(SP), DIMENSION(:), ALLOCATABLE    :: RAWD        ! observed-simulated differences in flow
-REAL(SP), DIMENSION(:), ALLOCATABLE    :: LOGD        ! observed-simulated differences in LOG flow
-REAL(SP)                               :: XB_OBS      ! mean observed runoff
-REAL(SP)                               :: XB_SIM      ! mean simulated runoff
-REAL(SP)                               :: SS_OBS      ! sum of squared observed runoff anomalies
-REAL(SP)                               :: SS_SIM      ! sum of squared simulated runoff anomalies
-REAL(SP)                               :: SS_LOBS     ! sum of squared lagged differences in observed runoff
-REAL(SP)                               :: SS_LSIM     ! sum of squared lagged differences in simulated runoff
-REAL(SP)                               :: SS_RAW      ! sum of squared differences in observed - simulated
-REAL(SP)                               :: SS_LOG      ! sum of squared differences in LOG observed - LOG simulated
-REAL(SP)                               :: NO_ZERO     ! avoid divide by zero
+LOGICAL(LGT),DIMENSION(:), ALLOCATABLE :: QOBS_MASK   ! boolean: is QOBS available?
+REAL(WP), DIMENSION(:), ALLOCATABLE    :: QSIM        ! simulated runoff - whole time series
+REAL(WP), DIMENSION(:), ALLOCATABLE    :: QSIM_AVAIL  ! simulated runoff - only time steps with QOBS available
+REAL(WP), DIMENSION(:), ALLOCATABLE    :: DOBS        ! observed runoff anomalies
+REAL(WP), DIMENSION(:), ALLOCATABLE    :: DSIM        ! simulated runoff anomalies
+REAL(WP), DIMENSION(:), ALLOCATABLE    :: RAWD        ! observed-simulated differences in flow
+REAL(WP), DIMENSION(:), ALLOCATABLE    :: LOGD        ! observed-simulated differences in LOG flow
+REAL(WP)                               :: XB_OBS      ! mean observed runoff
+REAL(WP)                               :: XB_SIM      ! mean simulated runoff
+REAL(WP)                               :: SS_OBS      ! sum of squared observed runoff anomalies
+REAL(WP)                               :: SS_SIM      ! sum of squared simulated runoff anomalies
+REAL(WP)                               :: SS_LOBS     ! sum of squared lagged differences in observed runoff
+REAL(WP)                               :: SS_LSIM     ! sum of squared lagged differences in simulated runoff
+REAL(WP)                               :: SS_RAW      ! sum of squared differences in observed - simulated
+REAL(WP)                               :: SS_LOG      ! sum of squared differences in LOG observed - LOG simulated
+REAL(WP)                               :: NO_ZERO     ! avoid divide by zero
 
 ! ---------------------------------------------------------------------------------------
 ! (1) PRELIMINARIES
@@ -66,7 +66,7 @@ QSIM = AROUTE_3d(1,1,eval_beg-sim_beg+1:eval_end-sim_beg+1)%Q_ROUTED
 QOBS = aValid(1,1,eval_beg-sim_beg+1:eval_end-sim_beg+1)%OBSQ
 
 ! check for missing QOBS values
-QOBS_MASK = QOBS.ne.REAL(NA_VALUE, KIND(SP)) ! find the time steps for which QOBS is available
+QOBS_MASK = QOBS.ne.REAL(NA_VALUE, KIND(WP)) ! find the time steps for which QOBS is available
 NUM_AVAIL = COUNT(QOBS_MASK) ! number of time steps for which QOBS is available
 
 if(isPrint)then
@@ -96,8 +96,8 @@ ELSE
                                               ! should be a copy of QSIM
                                                                  
   ! compute mean
-  XB_OBS  = SUM(QOBS_AVAIL(:)) / INT(NUM_AVAIL, KIND(SP))
-  XB_SIM  = SUM(QSIM_AVAIL(:)) / INT(NUM_AVAIL, KIND(SP))
+  XB_OBS  = SUM(QOBS_AVAIL(:)) / INT(NUM_AVAIL, KIND(WP))
+  XB_SIM  = SUM(QSIM_AVAIL(:)) / INT(NUM_AVAIL, KIND(WP))
   
   ! define NO_ZERO as 1% of the observed mean flow
   NO_ZERO = XB_OBS/100
@@ -126,8 +126,8 @@ ELSE
   MSTATS%QOBS_MEAN = XB_OBS
   MSTATS%QSIM_MEAN = XB_SIM
   ! compute the coefficient of variation
-  MSTATS%QOBS_CVAR = SQRT( SS_OBS / INT(NUM_AVAIL-1, KIND(SP)) ) / (XB_OBS+NO_ZERO)
-  MSTATS%QSIM_CVAR = SQRT( SS_SIM / INT(NUM_AVAIL-1, KIND(SP)) ) / (XB_SIM+NO_ZERO)
+  MSTATS%QOBS_CVAR = SQRT( SS_OBS / INT(NUM_AVAIL-1, KIND(WP)) ) / (XB_OBS+NO_ZERO)
+  MSTATS%QSIM_CVAR = SQRT( SS_SIM / INT(NUM_AVAIL-1, KIND(WP)) ) / (XB_SIM+NO_ZERO)
   ! compute the lag-1 correlation coefficient
   MSTATS%QOBS_LAG1 = SS_LOBS / (SQRT(SS_OBS*SS_OBS)+NO_ZERO)
   MSTATS%QSIM_LAG1 = SS_LSIM / (SQRT(SS_SIM*SS_SIM)+NO_ZERO)
@@ -190,15 +190,15 @@ endif
 !QOBS = AROUTE(ISTART:NUMTIM_SIM)%Q_ACCURATE ! TODO: MISSING AT THE MOMENT
 !RAWD(:) = QSIM(:) - QOBS(:)
 !SS_RAW  = DOT_PRODUCT(RAWD,RAWD)    ! = SUM( RAWD(:)*RAWD(:) )
-!MSTATS%NUM_RMSE = SQRT( SS_RAW / REAL(NS, KIND(SP)) )
+!MSTATS%NUM_RMSE = SQRT( SS_RAW / REAL(NS, KIND(WP)) )
 ! compute summary statistics for efficiency
-MSTATS%NUM_FUNCS     = MSTATS%NUM_FUNCS     / REAL(NUMTIM_SIM, KIND(SP)) ! number of function calls
-MSTATS%NUM_JACOBIAN  = MSTATS%NUM_JACOBIAN  / REAL(NUMTIM_SIM, KIND(SP)) ! number of times Jacobian is calculated
-MSTATS%NUMSUB_ACCEPT = MSTATS%NUMSUB_ACCEPT / REAL(NUMTIM_SIM, KIND(SP)) ! number of sub-steps accepted (taken)
-MSTATS%NUMSUB_REJECT = MSTATS%NUMSUB_REJECT / REAL(NUMTIM_SIM, KIND(SP)) ! number of sub-steps tried but rejected
-MSTATS%NUMSUB_NOCONV = MSTATS%NUMSUB_NOCONV / REAL(NUMTIM_SIM, KIND(SP)) ! number of sub-steps tried that did not converge
+MSTATS%NUM_FUNCS     = MSTATS%NUM_FUNCS     / REAL(NUMTIM_SIM, KIND(WP)) ! number of function calls
+MSTATS%NUM_JACOBIAN  = MSTATS%NUM_JACOBIAN  / REAL(NUMTIM_SIM, KIND(WP)) ! number of times Jacobian is calculated
+MSTATS%NUMSUB_ACCEPT = MSTATS%NUMSUB_ACCEPT / REAL(NUMTIM_SIM, KIND(WP)) ! number of sub-steps accepted (taken)
+MSTATS%NUMSUB_REJECT = MSTATS%NUMSUB_REJECT / REAL(NUMTIM_SIM, KIND(WP)) ! number of sub-steps tried but rejected
+MSTATS%NUMSUB_NOCONV = MSTATS%NUMSUB_NOCONV / REAL(NUMTIM_SIM, KIND(WP)) ! number of sub-steps tried that did not converge
 ! compute cumulative probability distributions
-MSTATS%NUMSUB_PROB   = REAL(PRB_NSUBS(:), KIND(SP)) / REAL(NUMTIM_SIM, KIND(SP))
+MSTATS%NUMSUB_PROB   = REAL(PRB_NSUBS(:), KIND(WP)) / REAL(NUMTIM_SIM, KIND(WP))
 
 ! ---------------------------------------------------------------------------------------
 END SUBROUTINE MEAN_STATS

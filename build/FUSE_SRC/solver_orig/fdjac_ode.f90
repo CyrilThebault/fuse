@@ -8,16 +8,16 @@ USE fuse_deriv_module
 ! Used to compute Jacobian of the ODE, based on the NR routine fdjac
 IMPLICIT NONE
 ! input/output
-REAL(SP), DIMENSION(:), INTENT(IN)    :: dsdt       ! state derivative
-REAL(SP), DIMENSION(:), INTENT(INOUT) :: x          ! trial state vector
-REAL(SP), DIMENSION(:,:), INTENT(OUT) :: df         ! Jacobian
+REAL(WP), DIMENSION(:), INTENT(IN)    :: dsdt       ! state derivative
+REAL(WP), DIMENSION(:), INTENT(INOUT) :: x          ! trial state vector
+REAL(WP), DIMENSION(:,:), INTENT(OUT) :: df         ! Jacobian
 LOGICAL(LGT), INTENT(IN), OPTIONAL    :: simeth     ! flag for semi-implicit Euler method
 ! internal
 LOGICAL(LGT)                          :: fdflux     ! flag to compute flux derivatives
-REAL(SP), PARAMETER                   :: EPS=-1.0e-4_sp  ! relative state change, NOTE force h to be negative
+REAL(WP), PARAMETER                   :: EPS=-1.0e-4_wp  ! relative state change, NOTE force h to be negative
 INTEGER(I4B)                          :: j,n        ! loop through statesm number of states
-REAL(SP)                              :: dx         ! relative change in state
-REAL(SP), DIMENSION(size(x))          :: xsav,xph,h ! perturbed states and change in states
+REAL(WP)                              :: dx         ! relative change in state
+REAL(WP), DIMENSION(size(x))          :: xsav,xph,h ! perturbed states and change in states
 ! check size of input argumets
 n=assert_eq(size(x),size(dsdt),size(df,1),size(df,2),'fdjac')
 ! if semi-implicit Euler method, then compute flux derivatives

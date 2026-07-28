@@ -21,7 +21,7 @@ module time_windows_module
 
     integer(i4b) :: nt
     character(len=1024) :: units_local
-    real(sp)            :: scale_to_days, dt_native, dt_days
+    real(wp)            :: scale_to_days, dt_native, dt_days
     integer(i4b) :: ios
     character(len=1024) :: cmessage
 
@@ -133,7 +133,7 @@ module time_windows_module
     implicit none
     
     integer(i4b), intent(in) :: ncid
-    real(sp), allocatable, intent(out) :: time_steps(:)
+    real(wp), allocatable, intent(out) :: time_steps(:)
     character(len=*), intent(out) :: units
     integer(i4b), intent(out) :: nt, ierr
     character(*), intent(out) :: message
@@ -181,17 +181,17 @@ module time_windows_module
 
   subroutine build_julian_axis(time_steps, units, jref, jdate, deltim_days, ierr, message)
     
-    real(sp), intent(in) :: time_steps(:)
+    real(wp), intent(in) :: time_steps(:)
     character(len=*), intent(in) :: units
-    real(sp), intent(out) :: jref
-    real(sp), allocatable, intent(out) :: jdate(:)
-    real(sp), intent(out)     :: deltim_days
+    real(wp), intent(out) :: jref
+    real(wp), allocatable, intent(out) :: jdate(:)
+    real(wp), intent(out)     :: deltim_days
     integer(i4b), intent(out) :: ierr
     character(*), intent(out) :: message
 
     integer(i4b) :: iy,im,id,ih
     character(len=1024) :: cmessage
-    real(sp) :: scale_to_days
+    real(wp) :: scale_to_days
 
     ierr=0; message="build_julian_axis/"
 
@@ -219,7 +219,7 @@ module time_windows_module
 
   ! ----- helper: determine scaling factor to convert time_steps into days --------------
 
-  real(sp) function time_units_to_days(units, ierr, message)
+  real(wp) function time_units_to_days(units, ierr, message)
     implicit none
     character(len=*), intent(in) :: units
     integer(i4b), intent(out) :: ierr
@@ -237,23 +237,23 @@ module time_windows_module
     p = index(u, " ")
     if(p <= 1) then
       ierr=1; message=trim(message)//"cannot parse units string: "//trim(units)
-      time_units_to_days = 0._sp
+      time_units_to_days = 0._wp
       return
     endif
    
     select case (trim(u(1:p-1)))
       case ("days", "day")
-        time_units_to_days = 1._sp
+        time_units_to_days = 1._wp
       case ("hours", "hour")
-        time_units_to_days = 1._sp / 24._sp
+        time_units_to_days = 1._wp / 24._wp
       case ("minutes", "minute", "mins", "min")
-        time_units_to_days = 1._sp / 1440._sp
+        time_units_to_days = 1._wp / 1440._wp
       case ("seconds", "second", "secs", "sec")
-        time_units_to_days = 1._sp / 86400._sp
+        time_units_to_days = 1._wp / 86400._wp
       case default
         ierr=1
         message=trim(message)//"unsupported time unit: "//trim(u(1:p-1))
-        time_units_to_days = 0._sp
+        time_units_to_days = 0._wp
     end select
 
   end function time_units_to_days
@@ -277,14 +277,14 @@ module time_windows_module
 
   subroutine map_dates_to_indices(jdate, date_start, date_end, i_beg, i_end, ierr, message)
 
-    real(sp), intent(in) :: jdate(:)
+    real(wp), intent(in) :: jdate(:)
     character(len=*), intent(in) :: date_start, date_end
     integer(i4b), intent(out) :: i_beg, i_end
     integer(i4b), intent(out) :: ierr
     character(*), intent(out) :: message
 
     integer(i4b) :: iy,im,id,ih
-    real(sp) :: j_start, j_end
+    real(wp) :: j_start, j_end
     character(len=1024) :: cmessage
 
     ierr=0; message="map_dates_to_indices/"

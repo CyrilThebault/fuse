@@ -20,7 +20,7 @@ USE multi_flux, ONLY: FLUX_0,M_FLUX,FDFLUX            ! model fluxes
 IMPLICIT NONE
 ! input
 INTEGER(I4B), INTENT(IN)               :: J           ! index of state variable
-REAL(SP), INTENT(IN)                   :: DS          ! difference in state variable 
+REAL(WP), INTENT(IN)                   :: DS          ! difference in state variable 
 ! internal
 INTEGER(I4B)                           :: IFLUX       ! loop thru fluxes
 INTEGER(I4B)                           :: IERR        ! error code for the allocate statement

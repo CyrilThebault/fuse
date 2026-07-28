@@ -19,9 +19,9 @@ USE multistate                                        ! model states (USE NSTATE
 USE model_numerix                                     ! model numerix
 IMPLICIT NONE
 ! input/output
-REAL(SP), DIMENSION(:), INTENT(INOUT)  :: X_TRY       ! vector of model states
+REAL(WP), DIMENSION(:), INTENT(INOUT)  :: X_TRY       ! vector of model states
 ! internal
-REAL(SP)                               :: XMIN        ! very small number
+REAL(WP)                               :: XMIN        ! very small number
 INTEGER(I4B)                           :: ISTT        ! loop through model states
 ! ---------------------------------------------------------------------------------------
 XMIN=FRACSTATE_MIN ! used to avoid zero derivatives
@@ -62,7 +62,7 @@ DO ISTT=1,NSTATE
      IF (X_TRY(ISTT).LT.XMIN*MPARAM%MAXWATR_2) X_TRY(ISTT) = XMIN*MPARAM%MAXWATR_2
     ELSE
      ! MPARAM%MAXWATR_2 is just a scaling parameter, but don't allow stupid values
-     IF (X_TRY(ISTT).LT.-MPARAM%MAXWATR_2*10._sp) X_TRY(ISTT) = -MPARAM%MAXWATR_2*10._sp
+     IF (X_TRY(ISTT).LT.-MPARAM%MAXWATR_2*10._wp) X_TRY(ISTT) = -MPARAM%MAXWATR_2*10._wp
     ENDIF
     ! *** SET UPPER LIMITS ***
     IF (SMODL%iARCH2.EQ.iopt_tens2pll_2 .OR. SMODL%iARCH2.EQ.iopt_fixedsiz_2) THEN
@@ -70,7 +70,7 @@ DO ISTT=1,NSTATE
      IF (X_TRY(ISTT).GT.MPARAM%MAXWATR_2) X_TRY(ISTT) = MPARAM%MAXWATR_2
     ELSE
      ! unlimited storage, but make sure the values are still sensible
-     !IF (X_TRY(ISTT).GT.MPARAM%MAXWATR_2*100._sp) X_TRY(ISTT) = MPARAM%MAXWATR_2*100._sp
+     !IF (X_TRY(ISTT).GT.MPARAM%MAXWATR_2*100._wp) X_TRY(ISTT) = MPARAM%MAXWATR_2*100._wp
     ENDIF
  END SELECT
 END DO ! (loop through states)

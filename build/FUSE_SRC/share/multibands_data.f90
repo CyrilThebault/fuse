@@ -22,8 +22,8 @@ MODULE multibands
  type(BANDS_VAR),dimension(:,:,:,:),ALLOCATABLE :: MBANDS_VAR_4d    ! basin band information in space plus time
 
  INTEGER(I4B)                          :: N_BANDS=0       ! number of bands, initialize to zero
- REAL(SP)                              :: Z_FORCING       ! elevation of forcing data (m)
- REAL(SP),DIMENSION(:,:),ALLOCATABLE   :: Z_FORCING_grid  ! elevation of forcing data (m) for the 2D domain
+ REAL(WP)                              :: Z_FORCING       ! elevation of forcing data (m)
+ REAL(WP),DIMENSION(:,:),ALLOCATABLE   :: Z_FORCING_grid  ! elevation of forcing data (m) for the 2D domain
  LOGICAL(LGT),DIMENSION(:,:),ALLOCATABLE   :: elev_mask   ! mask domain - TRUE means the cell must be masked, i.e. not run
  ! --------------------------------------------------------------------------------------
 

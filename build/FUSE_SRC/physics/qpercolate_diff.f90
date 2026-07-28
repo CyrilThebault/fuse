@@ -30,12 +30,12 @@ contains
   ! internal
   logical(lgt)                           :: comp_dflux  ! flag to compute flux derivatives
   integer(i4b)                           :: iState      ! state index
-  real(sp)                               :: phi         ! smoothed fraction of free water
-  real(sp)                               :: dphi_dx     ! derivative in smoothed fraction of free water
-  real(sp)                               :: df_dpsi     ! derivative of flux w.r.t. fraction
-  real(sp)                               :: dqperc_dx   ! derivative of percolation fux w.r.t. water state
-  REAL(SP)                               :: LZ_PD       ! lower zone percolation demand
-  real(sp), parameter                    :: ms=1.e-4_sp ! smoothing in sfrac(smax) function
+  real(wp)                               :: phi         ! smoothed fraction of free water
+  real(wp)                               :: dphi_dx     ! derivative in smoothed fraction of free water
+  real(wp)                               :: df_dpsi     ! derivative of flux w.r.t. fraction
+  real(wp)                               :: dqperc_dx   ! derivative of percolation fux w.r.t. water state
+  REAL(WP)                               :: LZ_PD       ! lower zone percolation demand
+  real(wp), parameter                    :: ms=1.e-4_wp ! smoothing in sfrac(smax) function
   ! ---------------------------------------------------------------------------------------
   ! associate variables with elements of data structure
   associate(&
@@ -80,7 +80,7 @@ contains
       end select ! no need for default since already in block
 
       ! compute derivatives in the percolation flux
-      df_dpsi   = k*c*phi**(c - 1._sp) ! derivative of flux w.r.t. fraction
+      df_dpsi   = k*c*phi**(c - 1._wp) ! derivative of flux w.r.t. fraction
       dqperc_dx = df_dpsi*dphi_dx
 
       ! populate derivative vector
@@ -101,7 +101,7 @@ contains
    CASE(iopt_perc_lower) ! perc defined by moisture content in lower layer (SAC)
     
     ! ----- compute flux ----------------------------------------------------------------
-    LZ_PD = 1._SP + MPARAM%SACPMLT*(1._SP - TSTATE%WATR_2/MPARAM%MAXWATR_2)**MPARAM%SACPEXP
+    LZ_PD = 1._WP + MPARAM%SACPMLT*(1._WP - TSTATE%WATR_2/MPARAM%MAXWATR_2)**MPARAM%SACPEXP
     M_FLUX%QPERC_12 = DPARAM%QBSAT*LZ_PD * (TSTATE%FREE_1/DPARAM%MAXFREE_1)
 
     ! ----- compute derivatives ---------------------------------------------------------------------

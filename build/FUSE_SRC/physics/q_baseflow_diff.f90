@@ -30,8 +30,8 @@ contains
   ! derivatives
   logical(lgt)                           :: comp_dflux  ! flag to compute flux derivatives
   integer(i4b)                           :: iState      ! state index
-  real(sp)                               :: phi         ! scaled water storage, phi=w/ws
-  real(sp)                               :: dqb_dw      ! derivative in baseflow flux w.r.t. water store
+  real(wp)                               :: phi         ! scaled water storage, phi=w/ws
+  real(wp)                               :: dqb_dw      ! derivative in baseflow flux w.r.t. water store
   ! -------------------------------------------------------------------------------------------------
   ! associate variables with elements of data structure
   associate(&
@@ -70,7 +70,7 @@ contains
     M_FLUX%QBASE_2  = qbsat*phi**p
 
     ! ----- compute derivative ------------------------------------------------------------
-    if(comp_dflux) dqb_dw = (qbsat*p/ws)*phi**(p - 1._sp)
+    if(comp_dflux) dqb_dw = (qbsat*p/ws)*phi**(p - 1._wp)
 
     end associate
    

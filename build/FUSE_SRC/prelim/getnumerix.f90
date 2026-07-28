@@ -12,7 +12,7 @@ SUBROUTINE GETNUMERIX(err, message)
 ! -----------------
 ! MODULE model_numerix -- model parameters stored in MODULE multiparam
 ! ---------------------------------------------------------------------------------------
-USE nrtype,ONLY:I4B,LGT,SP                            ! variable types, etc.
+USE nrtype, ONLY: I4B, LGT, WP                        ! variable types, etc.
 use utilities_dmsl_kit_FUSE,only:getSpareUnit
 USE fuse_fileManager,only:SETNGS_PATH,MOD_NUMERIX     ! defines data directory
 USE model_numerix,only:SOLUTION_METHOD,&              ! defines numerix decisions
@@ -66,6 +66,6 @@ READ(IUNIT,*) NITER_TOTAL             ! Total number of iterations used in the i
 READ(IUNIT,*) MIN_TSTEP               ! Minimum time step length (minutes)
 READ(IUNIT,*) MAX_TSTEP               ! Maximum time step length (minutes)
 CLOSE(IUNIT)
-MIN_TSTEP = MIN_TSTEP/(24._SP*60._SP)  ! Convert from minutes to days
-MAX_TSTEP = MAX_TSTEP/(24._SP*60._SP)  ! Convert from minutes to days
+MIN_TSTEP = MIN_TSTEP/(24._WP*60._WP)  ! Convert from minutes to days
+MAX_TSTEP = MAX_TSTEP/(24._WP*60._WP)  ! Convert from minutes to days
 END SUBROUTINE GETNUMERIX

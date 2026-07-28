@@ -16,26 +16,26 @@ contains
   ! ---------------------------------------------------------------------------------------
   ! ---------------------------------------------------------------------------------------
   ! Numerically-stable softplus with sharpness alpha
-  pure real(sp) function softplus(x, alpha) result(y)
+  pure real(wp) function softplus(x, alpha) result(y)
     implicit none
-    real(sp), intent(in) :: x, alpha
-    real(sp) :: ax
+    real(wp), intent(in) :: x, alpha
+    real(wp) :: ax
     ax = alpha * x
-    if (ax > 0.0_sp) then
-      y = (ax + log(1.0_sp + exp(-ax))) / alpha
+    if (ax > 0.0_wp) then
+      y = (ax + log(1.0_wp + exp(-ax))) / alpha
     else
-      y = log(1.0_sp + exp(ax)) / alpha
+      y = log(1.0_wp + exp(ax)) / alpha
     end if
   end function softplus
   ! ---------------------------------------------------------------------------------------
   ! ---------------------------------------------------------------------------------------
   ! Sigmoid
-  pure real(sp) function sigmoid(z) result(s)
-    real(sp), intent(in) :: z
-    if (z >= 0._sp) then
-      s = 1._sp / (1._sp + exp(-z))
+  pure real(wp) function sigmoid(z) result(s)
+    real(wp), intent(in) :: z
+    if (z >= 0._wp) then
+      s = 1._wp / (1._wp + exp(-z))
     else
-      s = exp(z) / (1._sp + exp(z))
+      s = exp(z) / (1._wp + exp(z))
     end if
   end function sigmoid
   ! ---------------------------------------------------------------------------------------
@@ -54,19 +54,19 @@ contains
   ! Apply soft constraints to model state variables
   ! ---------------------------------------------------------------------------------------
   ! input/output
-  REAL(SP), DIMENSION(:), INTENT(INOUT)  :: X_TRY       ! vector of model states
-  real(sp), dimension(:), intent(in)     :: lower       ! lower bound
-  real(sp), dimension(:), intent(in)     :: upper       ! upper bound
-  real(sp), dimension(:), intent(out)    :: dclamp      ! derivative
+  REAL(WP), DIMENSION(:), INTENT(INOUT)  :: X_TRY       ! vector of model states
+  real(wp), dimension(:), intent(in)     :: lower       ! lower bound
+  real(wp), dimension(:), intent(in)     :: upper       ! upper bound
+  real(wp), dimension(:), intent(out)    :: dclamp      ! derivative
   ! internal
   integer(i4b)                           :: i           ! index of model state variable
-  real(sp), parameter                    :: alpha=10_sp ! controls sharpness in smoothing
+  real(wp), parameter                    :: alpha=10_wp ! controls sharpness in smoothing
  
   do i=1,NSTATE
 
      ! hard constraints
      x_try(i)  = max( min(x_try(i), upper(i)), lower(i) )
-     dclamp(i) = 1._sp
+     dclamp(i) = 1._wp
 
      !   ! apply soft constraint to model states 
      !   x_try(i)  = lower(i) + softplus(x_try(i)-lower(i), alpha) - softplus(x_try(i)-upper(i), alpha)
@@ -95,10 +95,10 @@ contains
   IMPLICIT NONE
   ! input/output
   type(fuse_work), intent(in)            :: fuseStruct  ! fuse work structure
-  real(sp), dimension(:), intent(out)    :: lower       ! lower bound for states
-  real(sp), dimension(:), intent(out)    :: upper       ! upper bound for states
+  real(wp), dimension(:), intent(out)    :: lower       ! lower bound for states
+  real(wp), dimension(:), intent(out)    :: upper       ! upper bound for states
   ! internal
-  REAL(SP)                               :: XMIN        ! very small number
+  REAL(WP)                               :: XMIN        ! very small number
   INTEGER(I4B)                           :: ISTT        ! loop through model states
   ! ---------------------------------------------------------------------------------------
   associate(MPARAM => fuseStruct%par%param_adjust, &        ! adjuustable model parameters
@@ -142,7 +142,7 @@ contains
        lower(ISTT) = XMIN*MPARAM%MAXWATR_2
       ELSE
        ! MPARAM%MAXWATR_2 is just a scaling parameter, but don't allow stupid values
-       lower(ISTT) = -MPARAM%MAXWATR_2*10._sp
+       lower(ISTT) = -MPARAM%MAXWATR_2*10._wp
       ENDIF
       ! *** SET UPPER LIMITS ***
       IF (SMODL%iARCH2.EQ.iopt_tens2pll_2 .OR. SMODL%iARCH2.EQ.iopt_fixedsiz_2) THEN
@@ -150,7 +150,7 @@ contains
        upper(ISTT) = MPARAM%MAXWATR_2
       ELSE
        ! unlimited storage, but make sure the values are still sensible
-       upper(ISTT) = MPARAM%MAXWATR_2*1000._sp
+       upper(ISTT) = MPARAM%MAXWATR_2*1000._wp
       ENDIF
    END SELECT
   END DO ! (loop through states)

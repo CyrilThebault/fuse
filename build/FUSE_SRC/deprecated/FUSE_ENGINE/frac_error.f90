@@ -18,9 +18,9 @@ USE model_defnames
 USE multiparam                                        ! model parameters
 IMPLICIT NONE
 ! input/output
-REAL(SP), DIMENSION(:), INTENT(IN)     :: X_END1      ! one-step solution
-REAL(SP), DIMENSION(:), INTENT(IN)     :: X_END2      ! two-step solution
-REAL(SP), DIMENSION(SIZE(X_END1))      :: FRAC_ERROR  ! fractional error
+REAL(WP), DIMENSION(:), INTENT(IN)     :: X_END1      ! one-step solution
+REAL(WP), DIMENSION(:), INTENT(IN)     :: X_END2      ! two-step solution
+REAL(WP), DIMENSION(SIZE(X_END1))      :: FRAC_ERROR  ! fractional error
 ! internal
 INTEGER(I4B)                           :: ISTT        ! loop through model states
 ! ---------------------------------------------------------------------------------------

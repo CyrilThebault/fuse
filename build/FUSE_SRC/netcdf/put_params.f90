@@ -36,10 +36,10 @@ MODULE PUT_PARAMS_MODULE
   integer(i4b), dimension(2)             :: start2      ! 2-d start vector
   integer(i4b), dimension(2)             :: count2      ! 2-d count vector
   INTEGER(I4B)                           :: IVAR        ! loop through parameters
-  REAL(SP)                               :: XPAR        ! desired parameter
+  REAL(WP)                               :: XPAR        ! desired parameter
   REAL(MSP)                              :: APAR        ! convert to SP (need for SP write)
   integer(i4b)                           :: ib          ! index of elevation bands
-  REAL(SP)     , DIMENSION(N_BANDS)      :: XVEC        ! desired vector
+  REAL(WP)     , DIMENSION(N_BANDS)      :: XVEC        ! desired vector
   REAL(MSP)    , DIMENSION(N_BANDS)      :: AVEC        ! convert to SP (need for SP write)
   INTEGER(I4B)                           :: IVAR_ID     ! variable ID
   include 'netcdf.inc'                                  ! use netCDF libraries

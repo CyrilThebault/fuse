@@ -43,8 +43,8 @@ CHARACTER(LEN=120)                     :: FILE_NAME       ! name of single NetCD
 INTEGER(I4B)                           :: ONEMOD=1        ! just one model in output file
 LOGICAL(LGT)                           :: OUTPUT_FLAG     ! switch off/on model output
 INTEGER(I4B)                           :: MPAR            ! number of model parameters
-REAL(SP), DIMENSION(:), ALLOCATABLE    :: XPAR            ! model parameters
-REAL(SP)                               :: METRIC_VAL      ! value of the metric chosen as objective function
+REAL(WP), DIMENSION(:), ALLOCATABLE    :: XPAR            ! model parameters
+REAL(WP)                               :: METRIC_VAL      ! value of the metric chosen as objective function
 ! ---------------------------------------------------------------------------------------
 ! (0) GET COMMAND-LINE ARGUMENTS
 ! ---------------------------------------------------------------------------------------

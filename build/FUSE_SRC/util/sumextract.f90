@@ -20,12 +20,12 @@ IMPLICIT NONE
 ! input
 CHARACTER(*), INTENT(IN)               :: STATNAME    ! variable name
 ! internal
-REAL(SP)                               :: XVAR        ! variable
+REAL(WP)                               :: XVAR        ! variable
 ! output
-REAL(SP)                               :: SUMEXTRACT  ! FUNCTION name
+REAL(WP)                               :: SUMEXTRACT  ! FUNCTION name
 ! ---------------------------------------------------------------------------------------
 ! initialize XVAR
-XVAR=-9999._sp
+XVAR=-9999._wp
 ! DMSL diagnostix
 IF (TRIM(STATNAME).EQ.'var_residul') XVAR = MSTATS%VAR_RESIDUL
 IF (TRIM(STATNAME).EQ.'logp_simuln') XVAR = MSTATS%LOGP_SIMULN
@@ -51,7 +51,7 @@ IF (TRIM(STATNAME).EQ.'mean_njacob') XVAR = MSTATS%NUM_JACOBIAN
 IF (TRIM(STATNAME).EQ.'mean_accept') XVAR = MSTATS%NUMSUB_ACCEPT
 IF (TRIM(STATNAME).EQ.'mean_reject') XVAR = MSTATS%NUMSUB_REJECT
 IF (TRIM(STATNAME).EQ.'mean_noconv') XVAR = MSTATS%NUMSUB_NOCONV
-IF (TRIM(STATNAME).EQ.'maxnum_iter') XVAR = REAL(MSTATS%MAXNUM_ITERNS, KIND(SP))
+IF (TRIM(STATNAME).EQ.'maxnum_iter') XVAR = REAL(MSTATS%MAXNUM_ITERNS, KIND(WP))
 ! and, save the output
 SUMEXTRACT = XVAR
 ! ---------------------------------------------------------------------------------------

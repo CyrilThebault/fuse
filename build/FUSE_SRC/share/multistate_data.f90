@@ -39,6 +39,6 @@ MODULE multistate
  integer(i4b)                          :: ncid_out = -1 ! NetCDF output file ID
 
  ! initial store fraction (initialization)
- real(sp), parameter                   :: fracState0 = 0.25_sp
+ real(wp), parameter                   :: fracState0 = 0.25_wp
 
 END MODULE multistate

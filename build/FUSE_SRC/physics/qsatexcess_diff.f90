@@ -29,25 +29,25 @@ contains
   type(fuse_work), intent(inout)         :: fuseStruct  ! fuse work structure
   logical(lgt), intent(in), optional     :: want_dflux  ! if we want flux derivatives
   ! internal variables -- vic
-  real(sp)                               :: u,xp        ! temporary variables
-  real(sp)                               :: ds_dx       ! derivative of saturated area w.r.t. x
-  real(sp)                               :: dx_du       ! derivative of smooth max(u,0) w.r.t. u
-  real(sp)                               :: du_dw       ! derivative of u w.r.t. w
-  real(sp)                               :: ds_dw       ! derivative of saturated area w.r.t. w
+  real(wp)                               :: u,xp        ! temporary variables
+  real(wp)                               :: ds_dx       ! derivative of saturated area w.r.t. x
+  real(wp)                               :: dx_du       ! derivative of smooth max(u,0) w.r.t. u
+  real(wp)                               :: du_dw       ! derivative of u w.r.t. w
+  real(wp)                               :: ds_dw       ! derivative of saturated area w.r.t. w
   ! internal variables -- topmodel
-  REAL(SP)                               :: TI_SAT      ! topographic index where saturated
-  REAL(SP)                               :: TI_LOG      ! critical value of topo index in log space
-  REAL(SP)                               :: TI_OFF      ! offset in the Gamma distribution
-  REAL(SP)                               :: TI_SHP      ! shape of the Gamma distribution
-  REAL(SP)                               :: TI_CHI      ! CHI, see Sivapalan et al., 1987
-  REAL(SP)                               :: TI_ARG      ! argument of the Gamma function
-  REAL(SP)                               :: NO_ZERO=1.E-8  ! avoid divide by zero
+  REAL(WP)                               :: TI_SAT      ! topographic index where saturated
+  REAL(WP)                               :: TI_LOG      ! critical value of topo index in log space
+  REAL(WP)                               :: TI_OFF      ! offset in the Gamma distribution
+  REAL(WP)                               :: TI_SHP      ! shape of the Gamma distribution
+  REAL(WP)                               :: TI_CHI      ! CHI, see Sivapalan et al., 1987
+  REAL(WP)                               :: TI_ARG      ! argument of the Gamma function
+  REAL(WP)                               :: NO_ZERO=1.E-8  ! avoid divide by zero
   ! derivatives
   logical(lgt)                           :: comp_dflux  ! flag to compute flux derivatives
   integer(i4b)                           :: iState      ! state index  
-  real(sp), parameter                    :: ms=1.e-4_sp ! smoothing in smax function 
+  real(wp), parameter                    :: ms=1.e-4_wp ! smoothing in smax function 
 
-  real(sp) :: w, wmax, b
+  real(wp) :: w, wmax, b
   
   ! -------------------------------------------------------------------------------------------------
   ! associate variables with elements of data structure
@@ -78,17 +78,17 @@ contains
     b    = MPARAM%AXV_BEXP
 
     ! ----- compute flux ----------------------------------------------------------------------------
-    u  = 1._sp - w/wmax
-    xp = smax(u, 0._sp, ms)   ! smooth version of max(u,0)
-    M_FLUX%SATAREA = 1._sp - xp**b
+    u  = 1._wp - w/wmax
+    xp = smax(u, 0._wp, ms)   ! smooth version of max(u,0)
+    M_FLUX%SATAREA = 1._wp - xp**b
 
     ! ----- compute derivatives ---------------------------------------------------------------------
     if(comp_dflux)then
 
       ! compute derivative w.r.t. saturated area
-      ds_dx = -b*xp**(b - 1._sp)  ! derivative of saturated area w.r.t. xp
-      dx_du = dsmax(u, 0._sp, ms) ! derivative of smooth max(u,0) w.r.t. u
-      du_dw = -1._sp/wmax         ! derivative of u w.r.t. w
+      ds_dx = -b*xp**(b - 1._wp)  ! derivative of saturated area w.r.t. xp
+      dx_du = dsmax(u, 0._wp, ms) ! derivative of smooth max(u,0) w.r.t. u
+      du_dw = -1._wp/wmax         ! derivative of u w.r.t. w
       ds_dw = du_dw*dx_du*ds_dx   ! derivative of saturated area w.r.t. w
 
       ! since WATR_1 is the sum of individual state variables (e.g., WATR_1=TENS_1+FREE_1) simply copy derivative
@@ -112,7 +112,7 @@ contains
    CASE(iopt_prms_varnt)
     
     ! ----- compute flux ----------------------------------------------------------------------------
-    M_FLUX%SATAREA = MIN(TSTATE%TENS_1/DPARAM%MAXTENS_1, 1._sp) * MPARAM%SAREAMAX
+    M_FLUX%SATAREA = MIN(TSTATE%TENS_1/DPARAM%MAXTENS_1, 1._wp) * MPARAM%SAREAMAX
   
     ! ----- compute derivatives ---------------------------------------------------------------------
     if(comp_dflux) stop "qsatexcess: derivatives for iopt_prms_varnt not implemented yet"
@@ -134,11 +134,11 @@ contains
      ! convert the topographic index to log space
      TI_LOG = LOG( TI_SAT**MPARAM%QB_POWR )   
      ! compute the saturated area (NOTE: critical value of the topographic index is in log space)
-     TI_OFF = 3._sp           ! offset in the Gamma distribution (the "3rd" parameter)
+     TI_OFF = 3._wp           ! offset in the Gamma distribution (the "3rd" parameter)
      TI_SHP = MPARAM%TISHAPE  ! shape of the Gamma distribution (the "2nd" parameter)
      TI_CHI = (MPARAM%LOGLAMB - TI_OFF) / MPARAM%TISHAPE ! Chi -- loglamb is the first parameter (mean)
-     TI_ARG = MAX(0._sp, TI_LOG - TI_OFF) / TI_CHI       ! argument to the incomplete Gamma function
-     M_FLUX%SATAREA = 1._sp - GAMMP(TI_SHP, TI_ARG)      ! GAMMP is the incomplete Gamma function
+     TI_ARG = MAX(0._wp, TI_LOG - TI_OFF) / TI_CHI       ! argument to the incomplete Gamma function
+     M_FLUX%SATAREA = 1._wp - GAMMP(TI_SHP, TI_ARG)      ! GAMMP is the incomplete Gamma function
     ENDIF
   
     ! ----- compute derivatives ---------------------------------------------------------------------

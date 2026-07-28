@@ -3,21 +3,21 @@ USE nrtype; USE nrutil, ONLY : assert_eq
 use funcv_mod
 use model_numerix, ONLY : num_jacobian
 IMPLICIT NONE
-REAL(SP), DIMENSION(:), INTENT(IN) :: fvec
-REAL(SP), DIMENSION(:), INTENT(INOUT) :: x
-REAL(SP), DIMENSION(:,:), INTENT(OUT) :: df
+REAL(WP), DIMENSION(:), INTENT(IN) :: fvec
+REAL(WP), DIMENSION(:), INTENT(INOUT) :: x
+REAL(WP), DIMENSION(:,:), INTENT(OUT) :: df
 !INTERFACE
 ! FUNCTION funcv(xtry)
 ! USE nrtype
 ! IMPLICIT NONE
-! REAL(SP), DIMENSION(:), INTENT(IN) :: xtry
-! REAL(SP), DIMENSION(size(xtry)) :: funcv
+! REAL(WP), DIMENSION(:), INTENT(IN) :: xtry
+! REAL(WP), DIMENSION(size(xtry)) :: funcv
 ! END FUNCTION funcv
 !END INTERFACE
-REAL(SP), PARAMETER :: EPS=-1.0e-4_sp  ! NOTE force h to be negative
+REAL(WP), PARAMETER :: EPS=-1.0e-4_wp  ! NOTE force h to be negative
 INTEGER(I4B) :: j,n
-REAL(SP), DIMENSION(size(x)) :: xsav,xph,h
-REAL(SP), DIMENSION(size(df,1)) :: vv
+REAL(WP), DIMENSION(size(x)) :: xsav,xph,h
+REAL(WP), DIMENSION(size(df,1)) :: vv
 n=assert_eq(size(x),size(fvec),size(df,1),size(df,2),'fdjac')
 xsav=x
 h=EPS*abs(xsav)

@@ -66,11 +66,11 @@ INTEGER(I4B)                           :: NPAR            ! loop through model p
 TYPE(PARATT)                           :: PARAM_META      ! parameter metadata (model parameters)
 INTEGER(I4B)                           :: ONEMOD          ! index of the model used (=1)
 ! Parameter vectors
-REAL(SP),DIMENSION(:),ALLOCATABLE      :: X0I             ! parameter vector
-REAL(SP),DIMENSION(:),ALLOCATABLE      :: XLO             ! lower bound on solution, either none or both bounds must be present
-REAL(SP),DIMENSION(:),ALLOCATABLE      :: XHI             ! upper bound on solution, either none or both bounds must be present
-REAL(SP),DIMENSION(:),ALLOCATABLE      :: XDF             ! default parameter vector
-REAL(SP)                               :: FPAR            ! function value for parameter set
+REAL(WP),DIMENSION(:),ALLOCATABLE      :: X0I             ! parameter vector
+REAL(WP),DIMENSION(:),ALLOCATABLE      :: XLO             ! lower bound on solution, either none or both bounds must be present
+REAL(WP),DIMENSION(:),ALLOCATABLE      :: XHI             ! upper bound on solution, either none or both bounds must be present
+REAL(WP),DIMENSION(:),ALLOCATABLE      :: XDF             ! default parameter vector
+REAL(WP)                               :: FPAR            ! function value for parameter set
 ! ---------------------------------------------------------------------------------------
 ! (0) READ COMMAND LINE ARGUMENTS
 ! ---------------------------------------------------------------------------------------
@@ -110,7 +110,7 @@ SOLUTION_METHOD, TEMPORAL_ERROR_CONTROL, ERR_TRUNC_ABS, ERR_TRUNC_REL
 ! ---------------------------------------------------------------------------------------
 ! Read data from the "BATEA-compliant" ASCII files
 CALL GETFORCING(INFERN_START,NTIM)
-!INFERN_START=1; NTIM=20; NUMTIM=NTIM; DELTIM=1._SP
+!INFERN_START=1; NTIM=20; NUMTIM=NTIM; DELTIM=1._WP
 !ALLOCATE(AFORCE(NTIM),AROUTE(NTIM))  ! (shared in module multiroute)
 !AFORCE(INFERN_START:NTIM)%PPT   = (/0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,50.,50.,50.,50.,50.,0.,0.,0.,0.,0./)
 !AFORCE(INFERN_START:NTIM)%PET   = (/5.,5.,5.,5.,5.,5.,5.,5.,5.,5., 5., 5., 5., 5., 5.,5.,5.,5.,5.,5./)
@@ -178,8 +178,8 @@ DO
  DO MPAR=1,NGRID
   DO NPAR=1,NGRID
    ! perturb parameters
-   X0I(IPAR) = XLO(IPAR) + REAL(MPAR-1,KIND(SP))/REAL(NGRID-1,KIND(SP)) * (XHI(IPAR)-XLO(IPAR))
-   X0I(JPAR) = XLO(JPAR) + REAL(NPAR-1,KIND(SP))/REAL(NGRID-1,KIND(SP)) * (XHI(JPAR)-XLO(JPAR))
+   X0I(IPAR) = XLO(IPAR) + REAL(MPAR-1,KIND(WP))/REAL(NGRID-1,KIND(WP)) * (XHI(IPAR)-XLO(IPAR))
+   X0I(JPAR) = XLO(JPAR) + REAL(NPAR-1,KIND(WP))/REAL(NGRID-1,KIND(WP)) * (XHI(JPAR)-XLO(JPAR))
    ! run model (parameters and statistics are written in FUSE_METRIC)
    CALL FUSE_METRIC(X0I,FPAR,OUTPUT_FLAG)
    write(*,'(i6,1x,20(f9.3,1x))') PCOUNT, X0I

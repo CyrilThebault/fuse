@@ -15,10 +15,10 @@ USE multiparam                                        ! model parameters
 USE multistate                                        ! model states
 IMPLICIT NONE
 ! input
-REAL(SP), INTENT(IN)                   :: DT          ! length of the time step
+REAL(WP), INTENT(IN)                   :: DT          ! length of the time step
 ! internal
-REAL(SP), PARAMETER                    :: XMIN=1.E-06 ! very small number
-REAL(SP), PARAMETER                    :: missingValue=-9999._sp
+REAL(WP), PARAMETER                    :: XMIN=1.E-06 ! very small number
+REAL(WP), PARAMETER                    :: missingValue=-9999._wp
 ! ---------------------------------------------------------------------------------------
 SELECT CASE(SMODL%iARCH1)  ! (upper layer architecture)
  CASE(iopt_onestate_1) ! upper layer defined by a single state variable
@@ -69,7 +69,7 @@ SELECT CASE(SMODL%iARCH2)  ! (lower layer architecture)
   ENDIF
   ! (derive state)
   FSTATE%TENS_2  = MIN(FSTATE%WATR_2, DPARAM%MAXTENS_2)         ! tension storage
-  FSTATE%FREE_2  = MAX(0._sp, FSTATE%WATR_2 - DPARAM%MAXTENS_2) ! free storage
+  FSTATE%FREE_2  = MAX(0._wp, FSTATE%WATR_2 - DPARAM%MAXTENS_2) ! free storage
   FSTATE%FREE_2A = missingValue                                 ! primary reservoir (undefined)
   FSTATE%FREE_2B = missingValue                                 ! secondary reservoir (undefined)
  CASE DEFAULT       ! (error check)

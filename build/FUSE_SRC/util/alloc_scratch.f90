@@ -75,14 +75,14 @@ CONTAINS
         message=trim(message)//"cannot allocate dSWE_dParam for band"
         return
       endif
-      work%snow%sbands(ib)%var%dSWE_dParam(:) = 0._sp
+      work%snow%sbands(ib)%var%dSWE_dParam(:) = 0._wp
     enddo
 
     ! ---- initialize the band snow vars once ----
-    work%snow%sbands(:)%var%SWE         = 0._sp
-    work%snow%sbands(:)%var%SNOWACCMLTN = 0._sp
-    work%snow%sbands(:)%var%SNOWMELT    = 0._sp
-    work%snow%sbands(:)%var%DSWE_DT     = 0._sp
+    work%snow%sbands(:)%var%SWE         = 0._wp
+    work%snow%sbands(:)%var%SNOWACCMLTN = 0._wp
+    work%snow%sbands(:)%var%SNOWMELT    = 0._wp
+    work%snow%sbands(:)%var%DSWE_DT     = 0._wp
 
     work%is_initialized = .true.
 
