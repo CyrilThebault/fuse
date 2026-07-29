@@ -242,6 +242,7 @@ FUSE_UTILMS += fuse_fileManager.f90
 FUSE_UTILMS += alloc_domain.f90
 FUSE_UTILMS += alloc_scratch.f90
 FUSE_UTILMS += time_utils.f90
+FUSE_UTILMS += parameter_transform.f90
 FUSE_UTILMS += metaoutput.f90
 FUSE_UTILMS += metaparams.f90
 FUSE_UTILMS += meta_stats.f90
