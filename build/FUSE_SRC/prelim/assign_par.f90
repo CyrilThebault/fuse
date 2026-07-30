@@ -80,7 +80,19 @@ contains
     STOP
   END SELECT
   ! ---------------------------------------------------------------------------------------
-  ! (3) UPPER-LAYER ARCHITECTURE
+  ! (3) INTERCEPTION
+  ! ---------------------------------------------------------------------------------------
+  SELECT CASE(SMODL%iINTRC)
+   CASE(iopt_no_intrcep) ! no interception store
+   CASE(iopt_gr5h_intrc) ! grh5 interception store
+    MPAR=MPAR+1; LPARAM(MPAR)%PARNAME = 'MAXSINT_0'  ! maximum interception storage (mm)
+   CASE DEFAULT
+    print *, "SMODL%iINTRC must be either iopt_no_intrcep or iopt_gr5h_intrc"
+    STOP
+
+  END SELECT
+  ! ---------------------------------------------------------------------------------------
+  ! (4) UPPER-LAYER ARCHITECTURE
   ! ---------------------------------------------------------------------------------------
   SELECT CASE(SMODL%iARCH1)
    CASE(iopt_tension2_1) ! tension storage sub-divided into recharge and excess 
@@ -96,7 +108,7 @@ contains
     STOP
   END SELECT  ! (different upper-layer architechure)
   ! ---------------------------------------------------------------------------------------
-  ! (4) LOWER-LAYER ARCHITECTURE / BASEFLOW
+  ! (5) LOWER-LAYER ARCHITECTURE / BASEFLOW
   ! ---------------------------------------------------------------------------------------
   SELECT CASE(SMODL%iARCH2)
    CASE(iopt_tens2pll_2) ! tension reservoir plus two parallel tanks
@@ -127,7 +139,7 @@ contains
     STOP
   END SELECT  ! different lower-layer architecture / baseflow parameterizations)
   ! ---------------------------------------------------------------------------------------
-  ! (5) EVAPORATION
+  ! (6) EVAPORATION
   ! ---------------------------------------------------------------------------------------
   SELECT CASE(SMODL%iESOIL)
    CASE(iopt_sequential)
@@ -138,7 +150,7 @@ contains
     print *, "SMODL%iESOIL must be either iopt_sequential or iopt_rootweight'"
   END SELECT  ! (different evaporation schemes)
   ! ---------------------------------------------------------------------------------------
-  ! (6) PERCOLATION
+  ! (7) PERCOLATION
   ! ---------------------------------------------------------------------------------------
   SELECT CASE(SMODL%iQPERC)
    CASE(iopt_perc_f2sat,iopt_perc_w2sat) ! standard equation k(theta)**c
@@ -152,7 +164,7 @@ contains
     STOP
   END SELECT  ! (different percolation options)
   ! ---------------------------------------------------------------------------------------
-  ! (7) INTERFLOW
+  ! (8) INTERFLOW
   ! ---------------------------------------------------------------------------------------
   SELECT CASE(SMODL%iQINTF)
    CASE(iopt_intflwsome) ! interflow
@@ -164,7 +176,7 @@ contains
     STOP
   END SELECT  ! (different interflow options)
   ! ---------------------------------------------------------------------------------------
-  ! (8) SURFACE RUNOFF
+  ! (9) SURFACE RUNOFF
   ! ---------------------------------------------------------------------------------------
   SELECT CASE(SMODL%iQSURF)
    CASE(iopt_arno_x_vic) ! ARNO/Xzang/VIC parameterization (upper zone control)
@@ -188,7 +200,7 @@ contains
     STOP
   END SELECT  ! (different surface runoff options)
   ! ---------------------------------------------------------------------------------------
-  ! (9) TIME DELAY IN RUNOFF
+  ! (10) TIME DELAY IN RUNOFF
   ! ---------------------------------------------------------------------------------------
   SELECT CASE(SMODL%iQ_TDH)
    CASE(iopt_rout_gamma) ! use a Gamma distribution with shape parameter = 2.5

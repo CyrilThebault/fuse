@@ -50,6 +50,8 @@ MODULE multiparam_types
   TYPE(PARATT)                         :: RH1P_SDEV   ! prior param2 of hyper param1: prior sdev of hypermean
   TYPE(PARATT)                         :: RH2P_MEAN   ! prior param1 of hyper param2: lower bound of hypersdev
   TYPE(PARATT)                         :: RH2P_SDEV   ! prior param2 of hyper param2: upper bound of hypersdev
+  ! interception (adjustable)
+  TYPE(PARATT)                         :: MAXSINT_0   ! maximum interception storage (mm)
   ! bucket sizes (adjustable)
   TYPE(PARATT)                         :: MAXWATR_1   ! maximum total storage in layer1 (mm)
   TYPE(PARATT)                         :: MAXWATR_2   ! maximum total storage in layer2 (mm)
@@ -102,6 +104,8 @@ MODULE multiparam_types
   REAL(WP)                             :: RH1P_SDEV   ! prior param2 of hyper param1: prior sdev of hypermean
   REAL(WP)                             :: RH2P_MEAN   ! prior param1 of hyper param2: lower bound of hypersdev
   REAL(WP)                             :: RH2P_SDEV   ! prior param2 of hyper param2: upper bound of hypersdev
+  ! interception
+  REAL(WP)                             :: MAXSINT_0   ! maximum interception storage (mm)
   ! bucket sizes (adjustable)
   REAL(WP)                             :: MAXWATR_1   ! maximum total storage in layer1 (mm)
   REAL(WP)                             :: MAXWATR_2   ! maximum total storage in layer2 (mm)
