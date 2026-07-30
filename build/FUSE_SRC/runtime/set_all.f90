@@ -24,6 +24,8 @@ contains
     REAL(WP), INTENT(IN)                  :: VAL          ! value
     INTEGER(I4B)                          :: ISNW         ! snow band index
     ! ---------------------------------------------------------------------------------------
+    ! interception
+    FSTATE%SINT_0  = VAL
     ! upper layer
     FSTATE%TENS_1A = VAL
     FSTATE%TENS_1B = VAL

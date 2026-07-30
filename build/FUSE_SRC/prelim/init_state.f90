@@ -22,6 +22,8 @@ IMPLICIT NONE
 REAL(WP), INTENT(IN)                  :: FRAC         ! fraction of capacity
 INTEGER(I4B)                          :: ISNW         ! snow band index
 ! ---------------------------------------------------------------------------------------
+! interception layer
+FSTATE%SINT_0 = 0._wp
 ! (upper layer)
 FSTATE%TENS_1A = DPARAM%MAXTENS_1A * FRAC
 FSTATE%TENS_1B = DPARAM%MAXTENS_1B * FRAC
