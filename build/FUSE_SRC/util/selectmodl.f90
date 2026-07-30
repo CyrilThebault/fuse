@@ -83,8 +83,7 @@ MESSAGE ='SELECTMODL/everything is fine'
 ! ---------------------------------------------------------------------------------------
 ! read in control file
 
-!CFILE = TRIM(SETNGS_PATH)//M_DECISIONS      ! control file info shared in MODULE ddirectory
-CFILE = TRIM(SETNGS_PATH)//'fuse_zDecisions_'//TRIM(FUSE_ID)//'.txt'      ! control file info shared in MODULE ddirectory
+CFILE = TRIM(SETNGS_PATH)//TRIM(M_DECISIONS)      ! control file info shared in MODULE ddirectory
 INQUIRE(FILE=trim(CFILE),EXIST=LEXIST)  ! check that control file exists
 IF (.not.LEXIST) THEN
   message="f-SELECTMODL/decisions file '"//trim(CFILE)//"' does not exist"
