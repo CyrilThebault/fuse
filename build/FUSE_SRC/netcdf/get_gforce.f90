@@ -21,7 +21,7 @@ contains
   ! --------------------------------------------------------------------------------------
   ! --------------------------------------------------------------------------------------
   ! --------------------------------------------------------------------------------------
-  
+
   subroutine read_latlon_2d(ncid, info, coord, ierr, message)
 
   use netcdf
@@ -128,13 +128,13 @@ contains
 
     else
       ! Rectilinear grid: lat(ny), lon(nx) -> broadcast to 2D
-      
+
       ! lon_1d is global length nx_global
       coord%lon_2d(:,:) = spread(lon_1d(1:nx), dim=2, ncopies=ny)
 
       ! lat_1d is global length ny_global; take this rank's slice then replicate across x
       coord%lat_2d(:,:) = spread(lat_1d(ystart:ystart+ny-1), dim=1, ncopies=nx)
-    
+
     endif
 
     deallocate(lat_1d, lon_1d)
@@ -185,41 +185,42 @@ contains
   ! --------------------------------------------------------------------------------------
   subroutine get_dimIds(ncid, varid, nexpect, varDimIDs, ierr, message)
   ! used to get the vector of dimension ids for a given variable
-  
+
   implicit none
-  
+
   ! input
   integer(i4b),intent(in)   :: ncid     ! NetCDF file ID
   integer(i4b),intent(in)   :: varid    ! NetCDF variable ID
   integer(i4b),intent(in)   :: nexpect  ! number of dimensions expected
-  
+
   ! output
   integer(i4b),intent(out)  :: varDimIDs(nexpect)  ! vector of dimension IDs
   integer(i4b),intent(out)  :: ierr     ! error code
   character(*), intent(out) :: message  ! error message
-  
+
   ! internal variables
   integer(i4b)              :: nVarDims ! number of dimensions for given variable
-  
+
   ! initialize error control
   ierr=0; message='get_dimIds/'
-  
+
   ! get number of dimensions
   ierr = nf90_inquire_variable(ncid, varid, ndims=nVarDims)
   if(ierr/=0)then; message=trim(message)//trim(nf90_strerror(ierr)); return; endif
-  
+
   ! check number of dimensions
   if(nVarDims/=nexpect)then; message=trim(message)//'unexpected number of dimensions for variable'; return; endif
-  
+
   ! get vector of dimension IDs
   ierr = nf90_inquire_variable(ncid, varid, dimids=varDimIDs(:nVarDims))
   if(ierr/=0)then; message=trim(message)//trim(nf90_strerror(ierr)); return; endif
-  
+
   end subroutine get_dimIds
-  
+
   ! --------------------------------------------------------------------------------------
- 
+
   subroutine get_forcing_varids(ncid, info, ierr, message)
+  use multiforce, only: amult_ppt, amult_pet, amult_q
   implicit none
   integer(i4b), intent(in)       :: ncid
   type(fuse_info), intent(inout) :: info
@@ -227,6 +228,7 @@ contains
   character(*), intent(out)      :: message
 
   integer(i4b) :: ivar
+  character(len=128) :: units
 
   ierr = 0
   message = "get_forcing_varids/"
@@ -247,12 +249,47 @@ contains
     call lookup_varid(ncid, trim(info%files%forc%name(ivar)), info%files%forc%varid(ivar), ierr, message)
     if(ierr/=0) return
 
+    if (ivar == iTEMP) cycle
+
+    units = ""
+    ierr = nf90_get_att(ncid, info%files%forc%varid(ivar), "units", units)
+
+    if (ierr /= nf90_noerr) then
+      message = trim(message)// "cannot read units for variable '"// trim(info%files%forc%name(ivar))//"': "// trim(nf90_strerror(ierr))
+      return
+    end if
+
+    select case (ivar)
+
+      case (iPRECIP)
+        call get_input_flux_multiplier(units, amult_ppt, ierr, message)
+
+      case (iPET)
+        call get_input_flux_multiplier(units, amult_pet, ierr, message)
+
+      case (iQOBS)
+        call get_input_flux_multiplier(units, amult_q, ierr, message)
+
+      case default
+        ierr = 20
+        message = trim(message)// &
+          "unexpected forcing variable while reading units"
+        return
+
+    end select
+
+    if (ierr /= 0) then
+      message = trim(message)// &
+        " [variable="//trim(info%files%forc%name(ivar))//"]"
+      return
+    end if
+
   end do  ! ivar
 
   contains
-    
-    subroutine lookup_varid(ncid, vname, vid, ierr, message)
-  
+
+   subroutine lookup_varid(ncid, vname, vid, ierr, message)
+
     integer(i4b), intent(in)    :: ncid
     character(len=*), intent(in) :: vname
     integer(i4b), intent(inout) :: vid
@@ -269,12 +306,130 @@ contains
     if (ierr /= 0) then
       message = trim(message)//trim(nf90_strerror(ierr))//" [var="//trim(vname)//"]"
     end if
-    
+
    end subroutine lookup_varid
-  
+
+   subroutine get_input_flux_multiplier(cunits, amult, ierr, message)
+
+    character(len=*), intent(in)    :: cunits
+    real(wp),         intent(out)   :: amult
+    integer(i4b),     intent(inout) :: ierr
+    character(*),     intent(inout) :: message
+
+    character(len=128) :: units_lc
+    character(len=32)  :: length_unit
+    character(len=32)  :: time_unit
+    real(wp)           :: length_to_mm
+    real(wp)           :: time_per_day
+    integer(i4b)       :: ipos
+    integer(i4b)       :: i
+    integer(i4b)       :: ichar_value
+
+    ierr  = 0
+    amult = -1._wp
+
+    units_lc = adjustl(trim(cunits))
+
+    ! Convert ASCII upper case to lower case
+    do i = 1, len_trim(units_lc)
+      ichar_value = iachar(units_lc(i:i))
+
+      if (ichar_value >= iachar("A") .and. &
+          ichar_value <= iachar("Z")) then
+        units_lc(i:i) = achar(ichar_value + 32)
+      end if
+    end do
+
+    ! Current supported syntax: length/time or length per time
+    ipos = index(units_lc, "/")
+
+    if (ipos > 0) then
+
+      ! Syntax: length/time
+      if (ipos <= 1 .or. ipos >= len_trim(units_lc)) then
+         ierr = 20
+         message = trim(message)// &
+          "unsupported flux units '"//trim(cunits)// &
+          "': expected length/time"
+         return
+      end if
+
+      length_unit = adjustl(trim(units_lc(:ipos-1)))
+      time_unit   = adjustl(trim(units_lc(ipos+1:)))
+
+    else
+
+      ! Syntax: length per time
+      ipos = index(units_lc, " per ")
+
+      if (ipos <= 1 .or. ipos + 4 > len_trim(units_lc)) then
+        ierr = 20
+        message = trim(message)// &
+          "unsupported flux units '"//trim(cunits)// &
+          "': expected length/time or length per time"
+        return
+      end if
+
+      length_unit = adjustl(trim(units_lc(:ipos-1)))
+      time_unit   = adjustl(trim(units_lc(ipos+5:)))
+
+    end if
+
+    ! Convert the numerator to millimetres
+    select case (trim(length_unit))
+
+      case ("mm", "millimeter", "millimeters", &
+            "millimetre", "millimetres")
+        length_to_mm = 1._wp
+
+      case ("cm", "centimeter", "centimeters", &
+            "centimetre", "centimetres")
+        length_to_mm = 10._wp
+
+      case ("dm", "decimeter", "decimeters", &
+            "decimetre", "decimetres")
+        length_to_mm = 100._wp
+
+      case ("m", "meter", "meters", &
+            "metre", "metres")
+        length_to_mm = 1000._wp
+
+      case default
+        ierr = 20
+        message = trim(message)// "unsupported length unit '"//trim(length_unit)// "' in '"//trim(cunits)//"'. Supported length units are: mm, cm, dm, m."
+        return
+
+    end select
+
+    ! Convert the denominator to units per day
+    select case (trim(time_unit))
+
+      case ("s", "sec", "secs", "second", "seconds")
+        time_per_day = 86400._wp
+
+      case ("min", "mins", "minute", "minutes")
+        time_per_day = 1440._wp
+
+      case ("h", "hr", "hrs", "hour", "hours")
+        time_per_day = 24._wp
+
+      case ("d", "day", "days")
+        time_per_day = 1._wp
+
+      case default
+        ierr = 20
+        message = trim(message)// "unsupported time unit '"//trim(time_unit)// "' in '"//trim(cunits)//"'. Supported time units are: s, min, h, d."
+        return
+
+    end select
+
+    amult = length_to_mm * time_per_day
+
+   end subroutine get_input_flux_multiplier
+
   end subroutine get_forcing_varids
 
-  
+
   SUBROUTINE get_gforce_3d(info, itim_start, numtim, ierr, message)
   ! ---------------------------------------------------------------------------------------
   ! Creator:
@@ -292,18 +447,19 @@ contains
   ! ---------------------------------------------------------------------------------------
   USE multiforce,only:gForce_3d                          ! gridded forcing data
   USE multiforce,only:aValid                             ! time series of lumped forcing/response data
-  
+  USE multiforce, only: amult_ppt, amult_pet, amult_q
+
   IMPLICIT NONE
-  
+
   ! input
   type(fuse_info), intent(in)             :: info        ! info data structure that holds spatial indices
   integer(i4b),    intent(in)             :: itim_start  ! index of model time step - start of the period to extract
   integer(i4b),    intent(in)             :: numtim      ! number of model time steps to extract
-  
+
   ! output
   integer(i4b),    intent(out)            :: ierr        ! error code
   character(*),    intent(out)            :: message     ! error message
-  
+
   ! internal
   integer(i4b)                            :: iVar        ! loop through forcing data
   real(wp),dimension(:,:,:),allocatable   :: gTemp       ! temporary 3d grid
@@ -311,16 +467,16 @@ contains
   integer(i4b)                            :: ystart       ! start index iin input file (for MPI)
   integer(i4b)                            :: start_3d(3)  ! start indices in NetCDF file
   integer(i4b)                            :: count_3d(3)  ! count in NetCDF file
-  
+
   ! initialize error control
   ierr=0; message='get_gforce_3d/'
   ! ---------------------------------------------------------------------------------------
-  
-  ! 3-d grid dimensions 
+
+  ! 3-d grid dimensions
   nx     = info%space%nx_local
   ny     = info%space%ny_local
   ystart = info%space%y_start_global  ! start index in input file (for MPI)
-  
+
   ! indices for NetCDF rea
   start_3d = (/ 1, ystart, itim_start/)
   count_3d = (/nx,     ny,     numtim/)
@@ -328,12 +484,12 @@ contains
   ! allocate space for the temporary grid
   allocate(gTemp(nx,ny,numtim), stat=ierr)
   if(ierr/=0)then; message=trim(message)//'problem allocating space for gTemp'; return; endif
-  
+
   ! get forcing grids
   do ivar = 1, NVAR_FORC
-  
+
    if(info%space%grid_flag .and. ivar == iQOBS) cycle ! skips qobs if a grid
-  
+
    ! get the data
    ierr = nf90_get_var(info%files%ncid_forc, info%files%forc%varid(ivar), gTemp, start=start_3d, count=count_3d)
    if(ierr/=0)then; message=trim(message)//trim(nf90_strerror(ierr)); return; endif
@@ -341,22 +497,22 @@ contains
    ! save the data in the structure -- and convert fluxes to mm/day
    select case(ivar)
 
-    case (iPRECIP); gForce_3d(:,:,1:numtim)%ppt  = gTemp(:,:,:)
+    case (iPRECIP); gForce_3d(:,:,1:numtim)%ppt  = gTemp(:,:,:) * amult_ppt
     case (iTEMP)  ; gForce_3d(:,:,1:numtim)%temp = gTemp(:,:,:)
-    case (iPET)   ; gForce_3d(:,:,1:numtim)%pet  = gTemp(:,:,:)
-    case (iQOBS)  ; aValid(   :,:,1:numtim)%obsq = gTemp(:,:,:)  ! TODO: check dimensions (works for nx=1, ny=1)
+    case (iPET)   ; gForce_3d(:,:,1:numtim)%pet  = gTemp(:,:,:) * amult_pet
+    case (iQOBS)  ; aValid(   :,:,1:numtim)%obsq = gTemp(:,:,:) * amult_q
     case default
       message=trim(message)//'unable to identify forcing variable'
       ierr=10; return
 
    end select  ! identify forcing variable
-  
+
   end do  ! (loop thru forcing variables)
- 
+
   ! deallocate space for gTemp
   deallocate(gTemp, stat=ierr)
   if(ierr/=0)then; message=trim(message)//'problem deallocating space for gTemp'; return; endif
-  
+
   end subroutine get_gforce_3d
 
 end module get_gforce_module
