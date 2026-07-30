@@ -39,8 +39,7 @@ integer(I4B), parameter ::  iopt_TENS1A = 9001, &
                             iopt_TENS_2 = 9006, &
                             iopt_FREE2A = 9007, &
                             iopt_FREE2B = 9008, &
-                            iopt_WATR_2 = 9009, &
-                            iopt_SINT_0 = 9010
+                            iopt_WATR_2 = 9009
 ! ------------------------------------------
 contains
 ! ------------------------------------------
@@ -85,7 +84,6 @@ case("TENS_2");  res = iopt_TENS_2
 case("FREE2A");  res = iopt_FREE2A
 case("FREE2B");  res = iopt_FREE2B
 case("WATR_2");  res = iopt_WATR_2
-case("SINT_0");     res = iopt_SINT_0
 case default;    res = -999
 endselect
 ! End procedure here
@@ -107,7 +105,6 @@ case(iopt_TENS_2); res = "TENS_2"
 case(iopt_FREE2A); res = "FREE2A"
 case(iopt_FREE2B); res = "FREE2B"
 case(iopt_WATR_2); res = "WATR_2"
-case(iopt_SINT_0); res = "SINT_0"
 case(iopt_additive_e); res = "additive_e"
 case(iopt_multiplc_e); res = "multiplc_e"
 case(iopt_tension1_1); res = "tension1_1"

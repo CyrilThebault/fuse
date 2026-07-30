@@ -6,6 +6,7 @@ MODULE multiparam_types
  ! Martyn Clark
  ! Modified by Brian Henn to include snow model, 6/2013
  ! Modified by Martyn Clark to separate type definitions from data storage, 01/2026
+ ! Modified by Cyril Thebault to include interception, 7/2026
  ! ---------------------------------------------------------------------------------------
  
  USE nrtype

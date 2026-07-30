@@ -285,6 +285,7 @@ PHYSICS = $(patsubst %, $(PHYSICS_DIR)/%, $(FUSE_PHYSICS))
 FUSE_MODGUT =
 FUSE_MODGUT += mod_derivs.f90
 FUSE_MODGUT += update_swe.f90
+FUSE_MODGUT += update_interception.f90
 FUSE_MODGUT += qrainerror.f90
 FUSE_MODGUT += qsatexcess.f90
 FUSE_MODGUT += evap_upper.f90

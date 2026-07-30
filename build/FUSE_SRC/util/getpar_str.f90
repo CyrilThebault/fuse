@@ -7,6 +7,7 @@ SUBROUTINE GETPAR_STR(PARNAME,METADAT)
 ! --------
 ! Martyn Clark, 2009
 ! Modified by Brian Henn to include snow model, 6/2013
+! Modified by Cyril Thebault to include interception, 7/2026
 ! ---------------------------------------------------------------------------------------
 ! Purpose:
 ! --------

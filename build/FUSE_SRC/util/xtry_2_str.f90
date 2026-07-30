@@ -33,7 +33,6 @@ REAL(WP),PARAMETER::missingValue=-9999._wp
 ! ---------------------------------------------------------------------------------------
 DO ISTT=1,NSTATE
  SELECT CASE(CSTATE(ISTT)%iSNAME)
-  CASE (iopt_SINT_0); TMPSTR%SINT_0 = X_TRY(ISTT)
   CASE (iopt_TENS1A); TMPSTR%TENS_1A = X_TRY(ISTT)
   CASE (iopt_TENS1B); TMPSTR%TENS_1B = X_TRY(ISTT)
   CASE (iopt_TENS_1); TMPSTR%TENS_1  = X_TRY(ISTT)

@@ -18,6 +18,7 @@ MODULE PAREXTRACT_MODULE
   ! --------
   ! Martyn Clark, 2007
   ! Modified by Martyn Clark to remove elevation band parameters (handled separately)
+  ! Modified by Cyril Thebault to include interception, 7/2026
   ! ---------------------------------------------------------------------------------------
   ! Purpose:
   ! --------
