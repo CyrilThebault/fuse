@@ -11,6 +11,7 @@ contains
   ! Creator:
   ! --------
   ! Martyn Clark, 2007
+  ! Modified by Cyril Thebault to include interception, 7/2026
   ! ---------------------------------------------------------------------------------------
   ! Purpose:
   ! --------
@@ -27,6 +28,19 @@ contains
   ! ---------------------------------------------------------------------------------------
   NSTATE=0
   !CSTATE(:)%SNAME(1:6) = 'NO_USE'
+  ! ---------------------------------------------------------------------------------------
+  ! (0) DEFINE INTERCEPTION STORE
+  ! ---------------------------------------------------------------------------------------
+  SELECT CASE(SMODL%iINTRC)
+   CASE(iopt_no_intrcep)
+    ! no interception store
+   CASE(iopt_gr5h_intrc)
+    CSTATE(NSTATE+1)%iSNAME = iopt_SINT_0
+    NSTATE = NSTATE+1
+   CASE DEFAULT
+    print *, "SMODL%iINTRC must be iopt_no_intrcep or iopt_gr5h_intrc"
+    STOP
+  END SELECT
   ! ---------------------------------------------------------------------------------------
   ! (1) DEFINE STATE VARIABLES IN THE UPPER LAYER
   ! ---------------------------------------------------------------------------------------

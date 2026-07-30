@@ -17,7 +17,7 @@ USE nrtype,ONLY:I4B,LGT                               ! defines data types
 USE fuse_fileManager,only:SETNGS_PATH,M_DECISIONS     ! defines data directory
 USE model_defn,ONLY:NDEC,SMODL,AMODL,&                ! defines model decisions
   LIST_RFERR,LIST_ARCH1,LIST_ARCH2,LIST_QSURF,LIST_QPERC,LIST_ESOIL,&
-  LIST_QINTF,LIST_Q_TDH,LIST_SNOWM
+  LIST_QINTF,LIST_Q_TDH,LIST_SNOWM,LIST_INTRC
 USE model_defnames,ONLY:DESC_STR2INT
 USE model_numerix,only:solution_method,temporal_error_control
 IMPLICIT NONE
@@ -53,6 +53,7 @@ INTEGER(I4B)                           :: ISW_ESOIL   ! loop thru evaporation
 INTEGER(I4B)                           :: ISW_QINTF   ! loop thru interflow
 INTEGER(I4B)                           :: ISW_Q_TDH   ! loop thru time delay options
 INTEGER(I4B)                           :: ISW_SNOWM   ! loop thru snow model options
+INTEGER(I4B)                           :: ISW_INTRC   ! loop thru interception options
 INTEGER(I4B)                           :: IX_RFERR    ! index for rainfall error options
 INTEGER(I4B)                           :: IX_ARCH1    ! index for upper layer architecture
 INTEGER(I4B)                           :: IX_ARCH2    ! index for lower layer architecture
@@ -62,6 +63,7 @@ INTEGER(I4B)                           :: IX_ESOIL    ! index for evaporation
 INTEGER(I4B)                           :: IX_QINTF    ! index for interflow
 INTEGER(I4B)                           :: IX_Q_TDH    ! index for time delay options
 INTEGER(I4B)                           :: IX_SNOWM    ! index for snow model options
+INTEGER(I4B)                           :: IX_INTRC    ! index for interception options
 INTEGER(I4B)                           :: IX_MODEL    ! model index
 ! (3) identify a unique model name
 CHARACTER(LEN=8)                       :: CNUM        ! model index (converted to text)
@@ -73,7 +75,7 @@ NAME_FMT=1 ! format for the naming convention
 ICOUNT  =0
 IX_MODEL=0
 IX_Q_TDH=0; IX_QINTF=0; IX_ESOIL=0; IX_QPERC=0; IX_QSURF=0; IX_ARCH2=0; IX_ARCH1=0; IX_RFERR=0
-IX_SNOWM = 0
+IX_SNOWM = 0; IX_INTRC = 0
 ERR =0
 MESSAGE ='SELECTMODL/everything is fine'
 ! ---------------------------------------------------------------------------------------
@@ -136,6 +138,7 @@ DO IDEC=1,NDEC
     CASE('QINTF'); SMODL%iQINTF = desc_str2int(M_CHOICE)
     CASE('Q_TDH'); SMODL%iQ_TDH = desc_str2int(M_CHOICE)
     CASE('SNOWM'); SMODL%iSNOWM = desc_str2int(M_CHOICE)
+    CASE('INTRC'); SMODL%iINTRC = desc_str2int(M_CHOICE)
     CASE DEFAULT
      message="f-SELECTMODL/UNRECOGNISED[DECISON='"//TRIM(DECISION)//"']&
                                     &[M_CHOICE='"//TRIM(M_CHOICE)//"']"
@@ -153,56 +156,60 @@ CLOSE(IUNIT)
 ! ---------------------------------------------------------------------------------------
 ! loop through model options
 MODEL_OPTIONS: DO ISW_MODEL=1,1 ! (dummy loop to exit)
-DO ISW_SNOWM=1,SIZE(LIST_SNOWM)  ! (snow model options)
- DO ISW_Q_TDH=1,SIZE(LIST_Q_TDH)  ! (time delay options)
-  DO ISW_QINTF=1,SIZE(LIST_QINTF)  ! (interflow options)
-   DO ISW_ESOIL=1,SIZE(LIST_ESOIL)  ! (evaporation options)
-    DO ISW_QPERC=1,SIZE(LIST_QPERC)  ! (percolation options)
-     DO ISW_QSURF=1,SIZE(LIST_QSURF)  ! (surface runoff options)
-      DO ISW_ARCH2=1,SIZE(LIST_ARCH2)  ! (lower-layer architecture options)
-       DO ISW_ARCH1=1,SIZE(LIST_ARCH1)  ! (upper-layer architecture options)
-        DO ISW_RFERR=1,SIZE(LIST_RFERR)  ! (rainfall error options)
-         ! don't allow a lower tension tank when there are two upper ones
-         IF (LIST_ARCH1(ISW_ARCH1)%MCOMPONENT.EQ.'tension2_1'.AND. &
-             LIST_ARCH2(ISW_ARCH2)%MCOMPONENT.EQ.'tens2pll_2') CYCLE
-         ! don't allow percolation below field capacity if there are multiple upper tanks
-         IF (LIST_ARCH1(ISW_ARCH1)%MCOMPONENT.NE.'onestate_1'.AND. &
-             LIST_QPERC(ISW_QPERC)%MCOMPONENT.EQ.'perc_w2sat') CYCLE
-         ICOUNT = ICOUNT + 1  ! (increment counter)
-         ! identify unique model
-         IF (SMODL%iRFERR.EQ.desc_str2int(LIST_RFERR(ISW_RFERR)%MCOMPONENT) .AND. &
-             SMODL%iARCH1.EQ.desc_str2int(LIST_ARCH1(ISW_ARCH1)%MCOMPONENT) .AND. &
-             SMODL%iARCH2.EQ.desc_str2int(LIST_ARCH2(ISW_ARCH2)%MCOMPONENT) .AND. &
-             SMODL%iQSURF.EQ.desc_str2int(LIST_QSURF(ISW_QSURF)%MCOMPONENT) .AND. &
-             SMODL%iQPERC.EQ.desc_str2int(LIST_QPERC(ISW_QPERC)%MCOMPONENT) .AND. &
-             SMODL%iESOIL.EQ.desc_str2int(LIST_ESOIL(ISW_ESOIL)%MCOMPONENT) .AND. &
-             SMODL%iQINTF.EQ.desc_str2int(LIST_QINTF(ISW_QINTF)%MCOMPONENT) .AND. &
-             SMODL%iQ_TDH.EQ.desc_str2int(LIST_Q_TDH(ISW_Q_TDH)%MCOMPONENT) .AND. &
-             SMODL%iSNOWM.EQ.desc_str2int(LIST_SNOWM(ISW_SNOWM)%MCOMPONENT)) THEN
-          ! identify model components
-          IX_RFERR = ISW_RFERR
-          IX_ARCH1 = ISW_ARCH1
-          IX_ARCH2 = ISW_ARCH2
-          IX_QSURF = ISW_QSURF
-          IX_QPERC = ISW_QPERC
-          IX_ESOIL = ISW_ESOIL
-          IX_QINTF = ISW_QINTF
-          IX_Q_TDH = ISW_Q_TDH
-          IX_SNOWM = ISW_SNOWM
-          ! identify model
-          IX_MODEL = ICOUNT
-          ! exit main do loop
-          EXIT MODEL_OPTIONS
-         ENDIF
-        END DO  ! RFERR
-       END DO  ! ARCH1
-      END DO  ! ARCH2
-     END DO  ! QSURF
-    END DO  ! QPERC
-   END DO  ! ESOIL
-  END DO  ! QINTF
- END DO  ! Q_TDH
-END DO  ! SNOWM
+DO ISW_INTRC=1,SIZE(LIST_INTRC) ! (interception options)
+ DO ISW_SNOWM=1,SIZE(LIST_SNOWM)  ! (snow model options)
+  DO ISW_Q_TDH=1,SIZE(LIST_Q_TDH)  ! (time delay options)
+   DO ISW_QINTF=1,SIZE(LIST_QINTF)  ! (interflow options)
+    DO ISW_ESOIL=1,SIZE(LIST_ESOIL)  ! (evaporation options)
+     DO ISW_QPERC=1,SIZE(LIST_QPERC)  ! (percolation options)
+      DO ISW_QSURF=1,SIZE(LIST_QSURF)  ! (surface runoff options)
+       DO ISW_ARCH2=1,SIZE(LIST_ARCH2)  ! (lower-layer architecture options)
+        DO ISW_ARCH1=1,SIZE(LIST_ARCH1)  ! (upper-layer architecture options)
+         DO ISW_RFERR=1,SIZE(LIST_RFERR)  ! (rainfall error options)
+          ! don't allow a lower tension tank when there are two upper ones
+          IF (LIST_ARCH1(ISW_ARCH1)%MCOMPONENT.EQ.'tension2_1'.AND. &
+              LIST_ARCH2(ISW_ARCH2)%MCOMPONENT.EQ.'tens2pll_2') CYCLE
+          ! don't allow percolation below field capacity if there are multiple upper tanks
+          IF (LIST_ARCH1(ISW_ARCH1)%MCOMPONENT.NE.'onestate_1'.AND. &
+              LIST_QPERC(ISW_QPERC)%MCOMPONENT.EQ.'perc_w2sat') CYCLE
+          ICOUNT = ICOUNT + 1  ! (increment counter)
+          ! identify unique model
+          IF (SMODL%iRFERR.EQ.desc_str2int(LIST_RFERR(ISW_RFERR)%MCOMPONENT) .AND. &
+              SMODL%iARCH1.EQ.desc_str2int(LIST_ARCH1(ISW_ARCH1)%MCOMPONENT) .AND. &
+              SMODL%iARCH2.EQ.desc_str2int(LIST_ARCH2(ISW_ARCH2)%MCOMPONENT) .AND. &
+              SMODL%iQSURF.EQ.desc_str2int(LIST_QSURF(ISW_QSURF)%MCOMPONENT) .AND. &
+              SMODL%iQPERC.EQ.desc_str2int(LIST_QPERC(ISW_QPERC)%MCOMPONENT) .AND. &
+              SMODL%iESOIL.EQ.desc_str2int(LIST_ESOIL(ISW_ESOIL)%MCOMPONENT) .AND. &
+              SMODL%iQINTF.EQ.desc_str2int(LIST_QINTF(ISW_QINTF)%MCOMPONENT) .AND. &
+              SMODL%iQ_TDH.EQ.desc_str2int(LIST_Q_TDH(ISW_Q_TDH)%MCOMPONENT) .AND. &
+              SMODL%iSNOWM.EQ.desc_str2int(LIST_SNOWM(ISW_SNOWM)%MCOMPONENT) .AND. &
+              SMODL%iINTRC == desc_str2int(LIST_INTRC(ISW_INTRC)%MCOMPONENT)) THEN
+           ! identify model components
+           IX_RFERR = ISW_RFERR
+           IX_ARCH1 = ISW_ARCH1
+           IX_ARCH2 = ISW_ARCH2
+           IX_QSURF = ISW_QSURF
+           IX_QPERC = ISW_QPERC
+           IX_ESOIL = ISW_ESOIL
+           IX_QINTF = ISW_QINTF
+           IX_Q_TDH = ISW_Q_TDH
+           IX_SNOWM = ISW_SNOWM
+           IX_INTRC = ISW_INTRC
+           ! identify model
+           IX_MODEL = ICOUNT
+           ! exit main do loop
+           EXIT MODEL_OPTIONS
+          ENDIF
+         END DO  ! RFERR
+        END DO  ! ARCH1
+       END DO  ! ARCH2
+      END DO  ! QSURF
+     END DO  ! QPERC
+    END DO  ! ESOIL
+   END DO  ! QINTF
+  END DO  ! Q_TDH
+ END DO  ! SNOWM
+END DO  ! INTRC
 END DO MODEL_OPTIONS
 
 ! check that a model was identified
@@ -231,6 +238,7 @@ SELECT CASE (NAME_FMT)
   DECISION='QINTF'; CALL MAKE_MODEL(IX_QINTF,DECISION,SMODL%MNAME)
   DECISION='Q_TDH'; CALL MAKE_MODEL(IX_Q_TDH,DECISION,SMODL%MNAME)
   DECISION='SNOWM'; CALL MAKE_MODEL(IX_SNOWM,DECISION,SMODL%MNAME)
+  DECISION='INTRC'; CALL MAKE_MODEL(IX_INTRC,DECISION,SMODL%MNAME)
 END SELECT
 ! add the numerix info
 DECISION='NMETH'; CALL MAKE_MODEL(SOLUTION_METHOD,DECISION,SMODL%MNAME)

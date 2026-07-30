@@ -6,6 +6,7 @@ MODULE model_defn_types
  ! Martyn Clark
  ! Modified by Brian Henn to include snow model, 6/2013
  ! Modified by Martyn Clark to separate data tyoes from data store, 01/2026
+ ! Modified by Cyril Thebault to include interception, 7/2026
  ! ---------------------------------------------------------------------------------------
  
  USE nrtype
@@ -33,6 +34,7 @@ MODULE model_defn_types
   INTEGER(I4B)                         :: iQINTF
   INTEGER(I4B)                         :: iQ_TDH
   INTEGER(I4B)                         :: iSNOWM           ! snow
+  INTEGER(I4B)                         :: iINTRC           ! interception
  END TYPE UMODEL
 
  ! structure to hold model state names
