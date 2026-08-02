@@ -146,49 +146,70 @@ contains
       select case(lookup)
         
         ! ---- files: paths ----
-        case ("filepaths.input_dir"        ); call get_value(subtable, trim(keys(j)%key), info%files%input_path       , stat=istat)
-        case ("filepaths.output_dir"       ); call get_value(subtable, trim(keys(j)%key), info%files%output_path      , stat=istat)
-        case ("filepaths.settings_dir"     ); call get_value(subtable, trim(keys(j)%key), info%files%setngs_path      , stat=istat)
+        case ("filepaths.input_dir"          ); call get_value(subtable, trim(keys(j)%key), info%files%input_path       , stat=istat)
+        case ("filepaths.output_dir"         ); call get_value(subtable, trim(keys(j)%key), info%files%output_path      , stat=istat)
+        case ("filepaths.settings_dir"       ); call get_value(subtable, trim(keys(j)%key), info%files%setngs_path      , stat=istat)
 
         ! ---- files: suffixes ----
-        case ("input.forcing_suffix"       ); call get_value(subtable, trim(keys(j)%key), info%files%suffix_forcing   , stat=istat)
-        case ("input.elevbands_suffix"     ); call get_value(subtable, trim(keys(j)%key), info%files%suffix_elev_bands, stat=istat)
+        case ("input.forcing_suffix"         ); call get_value(subtable, trim(keys(j)%key), info%files%suffix_forcing   , stat=istat)
+        case ("input.elevbands_suffix"       ); call get_value(subtable, trim(keys(j)%key), info%files%suffix_elev_bands, stat=istat)
 
         ! ---- files: settings filenames ----
-        case ("model.decisions_file"       ); call get_value(subtable, trim(keys(j)%key), info%files%m_decisions      , stat=istat)
-        case ("model.numerics_file"        ); call get_value(subtable, trim(keys(j)%key), info%files%mod_numerix      , stat=istat)
-        case ("model.constraints_file"     ); call get_value(subtable, trim(keys(j)%key), info%files%constraints      , stat=istat)
+        case ("model.decisions_file"         ); call get_value(subtable, trim(keys(j)%key), info%files%m_decisions      , stat=istat)
+        case ("model.numerics_file"          ); call get_value(subtable, trim(keys(j)%key), info%files%mod_numerix      , stat=istat)
+        case ("model.constraints_file"       ); call get_value(subtable, trim(keys(j)%key), info%files%constraints      , stat=istat)
 
         ! ---- files: forcing coordinate names ----
-        case ("forcing_coords.time"        ); call get_value(subtable, trim(keys(j)%key), info%files%time_name        , stat=istat)
-        case ("forcing_coords.latitude"    ); call get_value(subtable, trim(keys(j)%key), info%files%latitude_name    , stat=istat)
-        case ("forcing_coords.longitude"   ); call get_value(subtable, trim(keys(j)%key), info%files%longitude_name   , stat=istat)
+        case ("forcing_coords.time"          ); call get_value(subtable, trim(keys(j)%key), info%files%time_name        , stat=istat)
+        case ("forcing_coords.latitude"      ); call get_value(subtable, trim(keys(j)%key), info%files%latitude_name    , stat=istat)
+        case ("forcing_coords.longitude"     ); call get_value(subtable, trim(keys(j)%key), info%files%longitude_name   , stat=istat)
 
         ! ---- files: forcing variable names ----
-        case ("forcing_vars.precip"        ); call get_value(subtable, trim(keys(j)%key), info%files%precip_name      , stat=istat)
-        case ("forcing_vars.temp"          ); call get_value(subtable, trim(keys(j)%key), info%files%temp_name        , stat=istat)
-        case ("forcing_vars.pet"           ); call get_value(subtable, trim(keys(j)%key), info%files%pet_name         , stat=istat)
-        case ("forcing_vars.qobs"          ); call get_value(subtable, trim(keys(j)%key), info%files%qobs_name        , stat=istat)
+        case ("forcing_vars.precip"          ); call get_value(subtable, trim(keys(j)%key), info%files%precip_name      , stat=istat)
+        case ("forcing_vars.temp"            ); call get_value(subtable, trim(keys(j)%key), info%files%temp_name        , stat=istat)
+        case ("forcing_vars.pet"             ); call get_value(subtable, trim(keys(j)%key), info%files%pet_name         , stat=istat)
+        case ("forcing_vars.qobs"            ); call get_value(subtable, trim(keys(j)%key), info%files%qobs_name        , stat=istat)
+
+        ! ---- hydrofabric: files ----
+        case ("hydrofabric.hfabric_path"     ); call get_value(subtable, trim(keys(j)%key), info%ntopo%hfabric_path     , stat=istat)
+        case ("hydrofabric.hfabric_file"     ); call get_value(subtable, trim(keys(j)%key), info%ntopo%hfabric_file     , stat=istat)
+        case ("hydrofabric.hfabric_newfile"  ); call get_value(subtable, trim(keys(j)%key), info%ntopo%hfabric_newfile  , stat=istat)
+
+        ! ---- hydrofabric: dimensions ----
+        case ("hydrofabric.dname_hru"        ); call get_value(subtable, trim(keys(j)%key), info%ntopo%dname_hru        , stat=istat)
+        case ("hydrofabric.dname_seg"        ); call get_value(subtable, trim(keys(j)%key), info%ntopo%dname_seg        , stat=istat)
+
+        ! ---- hydrofabric: variable names ----
+        case ("hydrofabric.varname_HRUid"    ); call get_value(subtable, trim(keys(j)%key), info%ntopo%varname_HRUid    , stat=istat)
+        case ("hydrofabric.varname_segId"    ); call get_value(subtable, trim(keys(j)%key), info%ntopo%varname_segId    , stat=istat)
+        case ("hydrofabric.varname_hruSegId" ); call get_value(subtable, trim(keys(j)%key), info%ntopo%varname_hruSegId , stat=istat)
+        case ("hydrofabric.varname_downSegId"); call get_value(subtable, trim(keys(j)%key), info%ntopo%varname_downSegId, stat=istat)
+        case ("hydrofabric.varname_area"     ); call get_value(subtable, trim(keys(j)%key), info%ntopo%varname_area     , stat=istat)
+        case ("hydrofabric.varname_slope"    ); call get_value(subtable, trim(keys(j)%key), info%ntopo%varname_slope    , stat=istat)
+        case ("hydrofabric.varname_length"   ); call get_value(subtable, trim(keys(j)%key), info%ntopo%varname_length   , stat=istat)
+
+        ! ---- hydrofabric: network topology ----
+        case ("hydrofabric.seg_outlet"       ); call get_value(subtable, trim(keys(j)%key), info%ntopo%idSegOut         , stat=istat)
 
         ! ---- config: runtime ----
-        case ("output.model_id"            ); call get_value(subtable, trim(keys(j)%key),  info%config%fmodel_id      , stat=istat)
-        case ("output.q_only"              ); call get_value(subtable, trim(keys(j)%key),  info%config%q_only         , stat=istat)
+        case ("output.model_id"              ); call get_value(subtable, trim(keys(j)%key), info%config%fmodel_id       , stat=istat)
+        case ("output.q_only"                ); call get_value(subtable, trim(keys(j)%key), info%config%q_only          , stat=istat)
 
         ! ---- config: periods ----
-        case ("run_periods.date_start_sim" ); call get_value(subtable, trim(keys(j)%key), info%config%date_start_sim  , stat=istat)
-        case ("run_periods.date_end_sim"   ); call get_value(subtable, trim(keys(j)%key), info%config%date_end_sim    , stat=istat)
-        case ("run_periods.date_start_eval"); call get_value(subtable, trim(keys(j)%key), info%config%date_start_eval , stat=istat)
-        case ("run_periods.date_end_eval"  ); call get_value(subtable, trim(keys(j)%key), info%config%date_end_eval   , stat=istat)
-        case ("run_periods.numtim_sub_str" ); call get_value(subtable, trim(keys(j)%key), info%config%numtim_sub_str  , stat=istat)
+        case ("run_periods.date_start_sim"   ); call get_value(subtable, trim(keys(j)%key), info%config%date_start_sim  , stat=istat)
+        case ("run_periods.date_end_sim"     ); call get_value(subtable, trim(keys(j)%key), info%config%date_end_sim    , stat=istat)
+        case ("run_periods.date_start_eval"  ); call get_value(subtable, trim(keys(j)%key), info%config%date_start_eval , stat=istat)
+        case ("run_periods.date_end_eval"    ); call get_value(subtable, trim(keys(j)%key), info%config%date_end_eval   , stat=istat)
+        case ("run_periods.numtim_sub_str"   ); call get_value(subtable, trim(keys(j)%key), info%config%numtim_sub_str  , stat=istat)
 
         ! ---- config: calibration ----
-        case ("calibration.metric"         ); call get_value(subtable, trim(keys(j)%key), info%config%metric          , stat=istat)
-        case ("calibration.transfo"        ); call get_value(subtable, trim(keys(j)%key), info%config%transfo         , stat=istat)
+        case ("calibration.metric"           ); call get_value(subtable, trim(keys(j)%key), info%config%metric          , stat=istat)
+        case ("calibration.transfo"          ); call get_value(subtable, trim(keys(j)%key), info%config%transfo         , stat=istat)
 
         ! ---- config: SCE (read numeric, then next populate legacy strings) ----
-        case ("sce.maxn"                   ); call get_value(subtable, trim(keys(j)%key), info%config%maxn            , stat=istat)
-        case ("sce.kstop"                  ); call get_value(subtable, trim(keys(j)%key), info%config%kstop           , stat=istat)
-        case ("sce.pcento"                 ); call get_value(subtable, trim(keys(j)%key), info%config%pcento          , stat=istat)
+        case ("sce.maxn"                     ); call get_value(subtable, trim(keys(j)%key), info%config%maxn            , stat=istat)
+        case ("sce.kstop"                    ); call get_value(subtable, trim(keys(j)%key), info%config%kstop           , stat=istat)
+        case ("sce.pcento"                   ); call get_value(subtable, trim(keys(j)%key), info%config%pcento          , stat=istat)
 
         ! ---- default case (something in the table that is not specified above) -----
         case default

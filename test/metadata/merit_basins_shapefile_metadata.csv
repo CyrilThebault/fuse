@@ -17,4 +17,5 @@ variable,up2,up2,riv,integer,,1,Second upstream river reach identifier,COMID of 
 variable,up3,up3,riv,integer,,1,Third upstream river reach identifier,COMID of upstream river reach number 3,Topology identifier; dimensionless; Target NetCDF type; source page does not explicitly specify storage type
 variable,up4,up4,riv,integer,,1,Fourth upstream river reach identifier,COMID of upstream river reach number 4,Topology identifier; dimensionless; Target NetCDF type; source page does not explicitly specify storage type
 variable,COMID,hruId,cat,integer,,1,Catchment identifier,COMID associated with the unit catchment,Topology identifier; dimensionless; Target NetCDF type; source page does not explicitly specify storage type
+variable,COMID,hruSegId,cat,integer,,1,Catchment identifier,Identifier of the river segment receiving runoff from the HRU,Topology identifier; dimensionless; Target NetCDF type; source page does not explicitly specify storage type
 variable,unitarea,unitarea,cat,double,,km2,Unit catchment area,Area of the unit catchment in square kilometres,Units explicitly stated by source; Target NetCDF type; source page does not explicitly specify storage type

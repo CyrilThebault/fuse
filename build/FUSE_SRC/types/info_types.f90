@@ -149,6 +149,35 @@ module info_types
 
  ! -------------------------------------------------------------------------------------
 
+ type :: topo_info
+
+   ! Input files
+   character(len=:), allocatable :: hfabric_path       ! hydrofabric path
+   character(len=:), allocatable :: hfabric_file       ! hydrofabric file
+   character(len=:), allocatable :: hfabric_newfile    ! hydrofabric file (new)
+  
+   ! NetCDF dimensions
+   character(len=:), allocatable :: dname_hru          ! dimension name: hru ID
+   character(len=:), allocatable :: dname_seg          ! dimension name: segment
+  
+   ! NetCDF variable names
+   character(len=:), allocatable :: varname_HRUid      ! variable name: HRU ID
+   character(len=:), allocatable :: varname_segId      ! variable name: segment ID
+   character(len=:), allocatable :: varname_hruSegId   ! variable name: ID of segment in HRU
+   character(len=:), allocatable :: varname_downSegId  ! variable name: downstream segment ID
+  
+   character(len=:), allocatable :: varname_area       ! variable name: HRU area
+   character(len=:), allocatable :: varname_slope      ! variable name: segment slope
+   character(len=:), allocatable :: varname_length     ! variable name: segment length
+
+   ! Network topology
+   integer(i4b)                  :: idSegOut = -9999   ! ID of outlet segment
+
+ end type topo_info
+
+ ! -------------------------------------------------------------------------------------
+
+
  type :: run_config
 
   ! provenance
@@ -210,6 +239,7 @@ module info_types
    type(space_info) :: space
    type(time_info)  :: time
    type(snow_info)  :: snow
+   type(topo_info)  :: ntopo
    type(file_info)  :: files
    type(run_config) :: config
  end type fuse_info

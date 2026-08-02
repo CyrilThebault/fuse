@@ -129,30 +129,55 @@ INCLUDES += -I$(HDF5_INCLUDE_DIR) -I$(NETCDF_C_INCLUDE) -I$(NETCDF_F_INCLUDE)
 LIBS += -L$(HDF5_LIB_DIR) -lhdf5 -lhdf5_hl -L$(NETCDF_F_LIB) -lnetcdff -L$(NETCDF_C_LIB) -lnetcdf
 
 #========================================================================
-# Assemble the required mizuRoute subroutines
+# mizuRoute source components used by FUSE
 #========================================================================
 
 MIZU_DIR := $(FUSE_ROOT)/external/mizuRoute/route/build/src
 
-# foundational mizuRoute subroutines
+# Core mizuRoute modules required by topology initialization and routing.
 MIZU_BASE =
 MIZU_BASE += $(MIZU_DIR)/public_var.f90
 MIZU_BASE += $(MIZU_DIR)/datetime_data.f90
 MIZU_BASE += $(MIZU_DIR)/dataTypes.f90
 MIZU_BASE += $(MIZU_DIR)/var_lookup.f90
 MIZU_BASE += $(MIZU_DIR)/nr_utils.f90
+MIZU_BASE += $(MIZU_DIR)/gamma_func.f90
 MIZU_BASE += $(MIZU_DIR)/ncio_utils.f90
 
-# Thin compatibility layer
-MIZU_HOOK =
-MIZU_HOOK += $(FUSE_SOURCE_DIR)/mizuRoute/globalData.f90
+# Thin FUSE compatibility layer.
+#
+# Provides the minimal FUSE-side types and legacy module interfaces
+# required by the unmodified mizuRoute source routines.
+MIZU_DATA =
+MIZU_DATA += $(FUSE_SOURCE_DIR)/mizuRoute/mizuRoute_types.f90
+MIZU_DATA += $(FUSE_SOURCE_DIR)/mizuRoute/mizuRoute_data.f90
 
-# Network topology
+# mizuRoute routines used to read, validate, augment, and optionally
+# write the river-network topology.
 MIZU_TOPO =
 MIZU_TOPO += $(MIZU_DIR)/allocation.f90
+MIZU_TOPO += $(MIZU_DIR)/popMetadat.f90
+MIZU_TOPO += $(MIZU_DIR)/hydraulic.f90
+MIZU_TOPO += $(MIZU_DIR)/network_topo.f90
+MIZU_TOPO += $(MIZU_DIR)/process_param.f90
+MIZU_TOPO += $(MIZU_DIR)/process_ntopo.f90
 MIZU_TOPO += $(MIZU_DIR)/read_streamSeg.f90
+MIZU_TOPO += $(MIZU_DIR)/write_streamSeg.f90
 
+# Complete set of imported mizuRoute dependencies required by the
+# FUSE-mizuRoute coupling.
+MIZU_LIB =
+MIZU_LIB += $(MIZU_BASE)
+MIZU_LIB += $(MIZU_DATA)
+MIZU_LIB += $(MIZU_TOPO)
 
+# FUSE-facing mizuRoute coupling routines.
+#
+# These routines transfer FUSE configuration into the compatibility
+# variables expected by mizuRoute, initialize the river-network
+# structures, and perform network routing.
+MIZU_RUN =
+MIZU_RUN += $(FUSE_SOURCE_DIR)/mizuRoute/init_mizuRoute_topo.f90
 
 #========================================================================
 # Assemble all of the FUSE sub-routines
@@ -372,10 +397,11 @@ SCE = sce_16plus.o
 FUSE_ALL = 
 FUSE_ALL += $(INIT)
 FUSE_ALL += $(NRUTIL)
+FUSE_ALL += $(MIZU_LIB)
 FUSE_ALL += $(DATAMS)
 FUSE_ALL += $(UTILMS)
 FUSE_ALL += $(TIMUTILS)
-FUSE_ALL += $(MIZU_BASE)
+FUSE_ALL += $(MIZU_RUN)
 FUSE_ALL += $(NR_SUB)
 FUSE_ALL += $(PHYSICS)
 FUSE_ALL += $(MODGUT)

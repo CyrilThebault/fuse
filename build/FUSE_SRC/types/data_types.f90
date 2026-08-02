@@ -7,6 +7,7 @@ module data_types
  use multistate_types,  only: STATEV
  use multi_flux_types,  only: FLUXES
  use multiroute_types,  only: RUNOFF
+ use mizuRoute_types,   only: mizuroute_topology
 
  private
  public :: coord_data, domain_data
@@ -66,6 +67,9 @@ module data_types
     ! 3D observed discharge / validity (optional)
     type(VDATA), allocatable      :: valid(:,:,:)       ! aValid (nx_local, ny_local, nt_window)
 
+    ! River-network topology
+    type(mizuroute_topology)      :: river_network      ! xx
+
     ! basin-average time series for output convenience
     type(FDATA), allocatable      :: aForce(:)          ! (nt_window)
     type(RUNOFF), allocatable     :: aRoute(:)          ! (nt_window)
@@ -73,5 +77,6 @@ module data_types
   end type domain_data
 
   ! -------------------------------------------------------------------------------------
-  
+
+
 end module data_types

@@ -32,6 +32,8 @@ contains
   USE alloc_domain_module,   only: allocate_domain_data         ! allocate space for data arrays in the domain structure
   USE alloc_domain_module,   only: set_legacy_arrays            ! copy arrays in the domain%data structure to legacy arrays 
 
+  USE init_mizuRoute_topo,   only: init_mizuroute_topology      ! initialize mizuRoute network topology
+
   implicit none
   
   ! input
@@ -53,7 +55,12 @@ contains
   ! read fuse control file (set paths/filenames etc.)
   call read_fuse_control_file(trim(opts%control_file), opts, info, ierr, cmessage) 
   if (ierr/=0)then; message=trim(message)//trim(cmessage); ierr=20; return; endif
- 
+
+  ! ----- initialize the river-network topology ------------------------------------------
+
+  call init_mizuroute_topology(info, domain, ierr, cmessage)
+  if (ierr/=0)then; message=trim(message)//trim(cmessage); ierr=20; return; endif
+
   ! ----- read domain metadata ------------------------------------------------------------
   
   ! populate domain structure with dimension lengths

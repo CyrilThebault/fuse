@@ -197,7 +197,7 @@ for (i in seq_len(nrow(variable_metadata))) {
   # Wouter's preprocessing for CAMELS-SPAT distinguishes split reaches by 
   # appending decimal suffixes to COMIDs (e.g., 71029071.1, 71029071.2).
   # Convert these to unique integer identifiers for mizuRoute.
-  if (variable_metadata$name[i] %in% c("COMID", "NextDownID")) {
+  if (variable_metadata$name[i] %in% c("COMID", "hruSegId", "NextDownID")) {
     values <- as.integer(round(values * 10))
   }
 
