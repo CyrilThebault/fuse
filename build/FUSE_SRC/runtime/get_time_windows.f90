@@ -13,7 +13,7 @@ module time_windows_module
   contains
 
   subroutine get_time_windows(ncid, info, ierr, message)
-    
+
     integer(i4b),      intent(in)    :: ncid
     type(fuse_info),   intent(inout) :: info
     integer(i4b),      intent(out)   :: ierr
@@ -21,7 +21,6 @@ module time_windows_module
 
     integer(i4b) :: nt
     character(len=1024) :: units_local
-    real(wp)            :: scale_to_days, dt_native, dt_days
     integer(i4b) :: ios
     character(len=1024) :: cmessage
 
@@ -36,7 +35,7 @@ module time_windows_module
     info%time%units     = trim(units_local)
 
     ! ----- build julian-day axis -------------------------------------------------------
-    
+
     call build_julian_axis(info%time%time_steps, trim(units_local), &
                            info%time%jdate_ref, info%time%jdate, info%time%deltim_days, ierr, cmessage)
     if(ierr/=0)then; message=trim(message)//trim(cmessage); return; endif
@@ -54,16 +53,16 @@ module time_windows_module
     if(ierr/=0)then; message=trim(message)//trim(cmessage); return; endif
 
     ! ----- validate window consistency -------------------------------------------------
-    
+
     call validate_windows(info%time, ierr, cmessage)
     if(ierr/=0)then; message=trim(message)//trim(cmessage); return; endif
 
     ! ----- derive simulation length ----------------------------------------------------
-    
+
     info%time%nt_sim = info%time%sim_end - info%time%sim_beg + 1
 
     ! ----- configure sub-period windowing ----------------------------------------------
-    
+
     ! convert sub-period string to integer
     read(info%config%numtim_sub_str,*,iostat=ios) info%time%nt_window
     if(ios/=0) then
@@ -90,7 +89,7 @@ module time_windows_module
   ! -------------------------------------------------------------------------------------
 
   ! ----- backwards compatibility: export to multiforce globals -------------------------
- 
+
   ! - New code stores all time-window metadata in info%time (source of truth).
   ! - Legacy routines still read multiforce globals (sim_beg, sim_end, numtim_sub, ...).
 
@@ -100,7 +99,7 @@ module time_windows_module
                           SUB_PERIODS_FLAG, istart, deltim
     implicit none
     type(fuse_info), intent(in) :: info
-   
+
     time_steps = info%time%time_steps
     timeUnits  = info%time%units
 
@@ -108,11 +107,11 @@ module time_windows_module
     sim_end    = info%time%sim_end
     eval_beg   = info%time%eval_beg
     eval_end   = info%time%eval_end
-   
+
     numtim_sim = info%time%nt_sim
     numtim_sub = info%time%nt_window
     SUB_PERIODS_FLAG = info%time%use_subperiods
-   
+
     istart = sim_beg
 
     deltim = info%time%deltim_days
@@ -127,11 +126,11 @@ module time_windows_module
   ! ----- helper: read time axis from NetCDF --------------------------------------------
 
   subroutine read_time_axis(ncid, time_steps, units, nt, ierr, message)
-    
+
     use netcdf
-    
+
     implicit none
-    
+
     integer(i4b), intent(in) :: ncid
     real(wp), allocatable, intent(out) :: time_steps(:)
     character(len=*), intent(out) :: units
@@ -180,7 +179,7 @@ module time_windows_module
   ! ----- helper: build julian axis -----------------------------------------------------
 
   subroutine build_julian_axis(time_steps, units, jref, jdate, deltim_days, ierr, message)
-    
+
     real(wp), intent(in) :: time_steps(:)
     character(len=*), intent(in) :: units
     real(wp), intent(out) :: jref
@@ -192,6 +191,11 @@ module time_windows_module
     integer(i4b) :: iy,im,id,ih
     character(len=1024) :: cmessage
     real(wp) :: scale_to_days
+
+    real(wp) :: dt_current
+    real(wp) :: tolerance
+    integer(i4b) :: i
+    logical(lgt), parameter :: do_timeCheck = .true.
 
     ierr=0; message="build_julian_axis/"
 
@@ -209,8 +213,47 @@ module time_windows_module
     if(ierr/=0) then; message=trim(message)//"allocate(jdate) failed"; return; endif
     jdate = jref + time_steps * scale_to_days
 
-    ! define length of forcing time steps
-    deltim_days = jdate(2) - jdate(1)
+    ! define the forcing timestep length in days
+    if (size(jdate) < 2) then
+      ierr = 1
+      message = trim(message)//"at least two forcing time steps are required"
+      return
+    endif
+
+    deltim_days = (time_steps(2) - time_steps(1)) * scale_to_days
+
+    if (deltim_days <= 0._wp) then
+      ierr = 1
+      message = trim(message)//"forcing time step must be positive"
+      return
+    endif
+
+    ! Allow for floating-point round-off in converted time coordinates
+    tolerance = epsilon(deltim_days) * 100._wp
+
+
+    ! Verify that the forcing time axis is increasing and regularly spaced.
+    if (do_timeCheck) then
+
+      do i = 3, size(jdate)
+
+        dt_current = (time_steps(i) - time_steps(i-1)) * scale_to_days
+
+        if (dt_current <= 0._wp) then
+          ierr = 1
+          message = trim(message)//"forcing time axis must be strictly increasing"
+          return
+        endif
+
+        if (abs(dt_current - deltim_days) > tolerance) then
+          ierr = 1
+          message = trim(message)//"forcing time steps are not equally spaced"
+          return
+        endif
+
+      enddo
+
+    endif
 
   end subroutine build_julian_axis
 
@@ -224,15 +267,15 @@ module time_windows_module
     character(len=*), intent(in) :: units
     integer(i4b), intent(out) :: ierr
     character(*), intent(out) :: message
-   
+
     character(len=:), allocatable :: u
     integer(i4b) :: p
-   
+
     ierr=0; message="time_units_to_days/"
-   
+
     ! lower-case copy (simple approach)
     u = tolower_str( trim(adjustl(units)) )
-   
+
     ! Look at the first token before a space
     p = index(u, " ")
     if(p <= 1) then
@@ -240,7 +283,7 @@ module time_windows_module
       time_units_to_days = 0._wp
       return
     endif
-   
+
     select case (trim(u(1:p-1)))
       case ("days", "day")
         time_units_to_days = 1._wp
@@ -322,7 +365,7 @@ module time_windows_module
   ! ----- helper: validate sim/eval logic -----------------------------------------------
 
   subroutine validate_windows(ti, ierr, message)
- 
+
     use info_types, only: time_info
     type(time_info), intent(in) :: ti
     integer(i4b), intent(out) :: ierr

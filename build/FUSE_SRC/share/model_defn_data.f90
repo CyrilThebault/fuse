@@ -7,6 +7,7 @@ MODULE model_defn
  ! Modified by Brian Henn to include snow model, 6/2013
  ! Modified by Martyn Clark to separate type definitions from data storage, 01/2026
  ! Modified by Cyril Thebault to include interception, 7/2026
+ ! Modified by Cyril Thebault to allow sub-daily time step, 07/2026
  ! ---------------------------------------------------------------------------------------
  
  USE nrtype
@@ -37,7 +38,7 @@ MODULE model_defn
  TYPE(DESC), DIMENSION(2)              :: LIST_INTRC      ! interception
  
  ! max steps in routing function
- INTEGER(I4B),PARAMETER::NTDH_MAX=500
+ INTEGER(I4B),PARAMETER                :: TDH_MAX = 500._WP ! Maximum routing delay horizon (days).
  
  ! model definitions
  CHARACTER(LEN=256)                    :: FNAME_NETCDF_RUNS    ! NETCDF output filename for model runs

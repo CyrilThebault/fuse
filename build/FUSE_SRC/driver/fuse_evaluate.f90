@@ -65,7 +65,7 @@ MODULE fuse_evaluate_module
     if (ierr /= 0) stop "problem allocating w_flux_3d in fuse_evaluate"
 
     ! populate parameter structures and initialize states
-    call initialize_run(XPAR, work, ierr, message)
+    call initialize_run(info, XPAR, work, ierr, message)
     if (ierr /= 0) stop trim(message)
     
     ! initialize timing
@@ -107,14 +107,14 @@ MODULE fuse_evaluate_module
   ! ----- private subroutine initialize_run: populate param sets and initialize states  -------------------------------
   ! -------------------------------------------------------------------------------------------------------------------
 
-  subroutine initialize_run(xpar, work, err, message)
+  subroutine initialize_run(info, xpar, work, err, message)
   
   use fuse_globaldata,  only: isPrint, fracstate0
   use model_defn,  only: SMODL
   use model_defnames
   
   use multiparam,  only: NUMPAR
-  use multiforce,  only: nspat1, nspat2, DELTIM
+  use multiforce,  only: nspat1, nspat2
   use multistate,  only: FSTATE, gState_3d
   use multistats,  only: PCOUNT
   use multibands
@@ -124,8 +124,11 @@ MODULE fuse_evaluate_module
   use str_2_xtry_module
   use xtry_2_str_module
   use put_params_module, only: put_params
+
+  use info_types, only: fuse_info
   implicit none
 
+  type(fuse_info)        , intent(in)      :: info
   real(wp), dimension(:) , intent(in)      :: xpar
   type(fuse_work)        , intent(inout)   :: work
 
@@ -148,7 +151,7 @@ MODULE fuse_evaluate_module
   end if
 
   ! compute derived model parameters (bucket sizes, etc.)
-  call par_derive(err, message)
+  call par_derive(info, err, message)
   if (err /= 0) then
     write(*,*) trim(message)
     stop
