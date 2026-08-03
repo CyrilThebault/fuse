@@ -9,7 +9,6 @@ MODULE multiparam_types
  ! ---------------------------------------------------------------------------------------
  
  USE nrtype
- USE model_defn, ONLY: NTDH_MAX
  
  implicit none
  private
@@ -162,7 +161,7 @@ MODULE multiparam_types
   REAL(WP)                             :: POWLAMB     ! mean value of the power-transformed topographic index (m**(1/n))
   REAL(WP)                             :: MAXPOW      ! max value of the power-transformed topographic index (m**(1/n))
   ! routing
-  REAL(WP), DIMENSION(NTDH_MAX)        :: FRAC_FUTURE ! fraction of runoff in future time steps
+  REAL(WP), ALLOCATABLE                :: FRAC_FUTURE(:) ! fraction of runoff in future time steps
   INTEGER(I4B)                         :: NTDH_NEED   ! number of time-steps with non-zero routing contribution
  END TYPE PARDVD
  

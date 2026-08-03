@@ -6,6 +6,7 @@ MODULE model_defn
  ! Martyn Clark
  ! Modified by Brian Henn to include snow model, 6/2013
  ! Modified by Martyn Clark to separate type definitions from data storage, 01/2026
+ ! Modified by Cyril Thebault to allow sub-daily time step, 07/2026
  ! ---------------------------------------------------------------------------------------
  
  USE nrtype
@@ -16,7 +17,7 @@ MODULE model_defn
  implicit none
  private
 
- public :: NDEC, NTDH_MAX, NSTATE, N_FLUX
+ public :: NDEC, TDH_MAX, NSTATE, N_FLUX
  public :: LIST_RFERR, LIST_ARCH1, LIST_ARCH2, LIST_QSURF, LIST_QPERC, LIST_ESOIL, LIST_QINTF, LIST_Q_TDH, LIST_SNOWM
  public :: FNAME_PREFIX, FNAME_TEMPRY, FNAME_ASCII
  public :: FNAME_NETCDF_RUNS, FNAME_NETCDF_PARA, FNAME_NETCDF_PARA_SCE, FNAME_NETCDF_PARA_PRE
@@ -35,7 +36,7 @@ MODULE model_defn
  TYPE(DESC), DIMENSION(2)              :: LIST_SNOWM      ! snow model
  
  ! max steps in routing function
- INTEGER(I4B),PARAMETER::NTDH_MAX=500
+ INTEGER(I4B),PARAMETER                :: TDH_MAX = 500._WP ! Maximum routing delay horizon (days).
  
  ! model definitions
  CHARACTER(LEN=256)                    :: FNAME_NETCDF_RUNS    ! NETCDF output filename for model runs

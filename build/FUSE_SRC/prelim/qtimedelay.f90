@@ -1,4 +1,4 @@
-SUBROUTINE QTIMEDELAY(err,message)
+SUBROUTINE QTIMEDELAY(info,err,message)
 ! ---------------------------------------------------------------------------------------
 ! Creator:
 ! --------
@@ -16,8 +16,9 @@ USE nrtype                                            ! variable types, etc.
 USE nr, ONLY : gammp                                  ! interface for the incomplete gamma function
 USE model_defn                                        ! model definition structure
 USE model_defnames
-USE multiforce                                        ! model forcing (need DELTIM)
 USE multiparam                                        ! model parameters
+USE info_types, ONLY: fuse_info
+USE multiroute, ONLY: FUTURE
 IMPLICIT NONE
 ! dummies
 integer(i4b),intent(out)::err
@@ -30,8 +31,64 @@ INTEGER(I4B)                           :: JTIM        ! (loop through future tim
 REAL(WP)                               :: TFUTURE     ! future time (units of days)
 REAL(WP)                               :: CUMPROB     ! cumulative probability at JTIM
 REAL(WP)                               :: PSAVE       ! cumulative probability at JTIM-1
+TYPE(fuse_info), INTENT(IN)            :: info
+INTEGER(I4B)                           :: ISTAT
 ! ---------------------------------------------------------------------------------------
 err=0
+
+! Compute the number of routing bins from the maximum routing horizon and the forcing timestep, both expressed in days.
+NTDH = CEILING(TDH_MAX / info%time%deltim_days, KIND=I4B)
+
+IF (NTDH < 2) THEN
+  ERR = 100
+  MESSAGE = 'f-QTIMEDELAY/at least two routing bins are required'
+  RETURN
+END IF
+
+! Allocate or resize the runoff fractions.
+IF (ALLOCATED(DPARAM%FRAC_FUTURE)) THEN
+  IF (SIZE(DPARAM%FRAC_FUTURE) /= NTDH) THEN
+    DEALLOCATE(DPARAM%FRAC_FUTURE, STAT=ISTAT)
+    IF (ISTAT /= 0) THEN
+      ERR = 100
+      MESSAGE = 'f-QTIMEDELAY/cannot deallocate DPARAM%FRAC_FUTURE'
+      RETURN
+    END IF
+  END IF
+END IF
+
+IF (.NOT.ALLOCATED(DPARAM%FRAC_FUTURE)) THEN
+  ALLOCATE(DPARAM%FRAC_FUTURE(NTDH), STAT=ISTAT)
+  IF (ISTAT /= 0) THEN
+    ERR = 100
+    MESSAGE = 'f-QTIMEDELAY/cannot allocate DPARAM%FRAC_FUTURE'
+    RETURN
+  END IF
+END IF
+
+! Allocate or resize the routing queue.
+IF (ALLOCATED(FUTURE)) THEN
+  IF (SIZE(FUTURE) /= NTDH) THEN
+    DEALLOCATE(FUTURE, STAT=ISTAT)
+    IF (ISTAT /= 0) THEN
+      ERR = 100
+      MESSAGE = 'f-QTIMEDELAY/cannot deallocate FUTURE'
+      RETURN
+    END IF
+  END IF
+END IF
+
+IF (.NOT.ALLOCATED(FUTURE)) THEN
+  ALLOCATE(FUTURE(NTDH), STAT=ISTAT)
+  IF (ISTAT /= 0) THEN
+    ERR = 100
+    MESSAGE = 'f-QTIMEDELAY/cannot allocate FUTURE'
+    RETURN
+  END IF
+
+  FUTURE = 0._WP
+END IF
+
 SELECT CASE(SMODL%iQ_TDH)
  CASE(iopt_rout_gamma) ! use a Gamma distribution with shape parameter = 2.5
   ALPHA = 2.5_WP                                             ! shape parameter
@@ -43,7 +100,7 @@ SELECT CASE(SMODL%iQ_TDH)
   NTDH = SIZE(DPARAM%FRAC_FUTURE)                            ! maximum number of future time steps
   ! loop through time steps and compute the fraction of runoff in future time steps
   DO JTIM=1,NTDH
-   TFUTURE                   = REAL(JTIM, WP)*DELTIM          ! future time (units of days)
+   TFUTURE                   = REAL(JTIM, WP)*info%time%deltim_days          ! future time (units of days)
    CUMPROB                   = GAMMP(ALPHA,ALAMB*TFUTURE)    ! cumulative probability at JTIM
    DPARAM%FRAC_FUTURE(JTIM)  = MAX(0._WP, CUMPROB-PSAVE)     ! probability between JTIM-1 and JTIM
    PSAVE                     = CUMPROB                       ! cumulative probability at JTIM-1

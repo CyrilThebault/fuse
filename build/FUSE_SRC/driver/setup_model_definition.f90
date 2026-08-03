@@ -1,10 +1,10 @@
 module setup_model_definition_MODULE
 
   USE nrtype
-  USE info_types, only: fuse_info 
+  USE info_types, only: fuse_info
   USE info_types, only: cli_options
   USE data_types, only: domain_data
-  USE multiparam_types, only: PARATT 
+  USE multiparam_types, only: PARATT
 
   implicit none
 
@@ -34,20 +34,20 @@ contains
   USE multiparam, only: LPARAM             ! list of model parameters
   USE multiparam, only: MAXN               ! maximum number of function evaluations in SCE -- used for NUMPSET
   USE multiforce, only: NUMPSET            ! number of model parameter sets
-  
+
   implicit none
-  
+
   ! input
   type(cli_options)   , intent(in)                  :: opts            ! command line interface options
   type(fuse_info)     , intent(inout)               :: info            ! the fuse info structure that stores "everything"
   type(domain_data)   , intent(in)                  :: domain          ! the fuse domain structure that stores data arrays
-  
+
   ! output
   real(wp)            , intent(out) , allocatable   :: aPar(:)         ! parameter vector
   real(wp)            , intent(out) , allocatable   :: BL(:), BU(:)    ! parameter bounds
   integer(i4b)        , intent(out)                 :: err             ! error code
   character(len=1024) , intent(out)                 :: message         ! error message
-  
+
   ! ----- internal -----------------------------------------------------------------------
   INTEGER(I4B)                                      :: IPAR            ! parameter index
   INTEGER(I4B)                                      :: NMOD            ! number of models
@@ -66,24 +66,24 @@ contains
   CALL UNIQUEMODL(NMOD)            ! get nmod unique models: stored in module model_defn; NMOD is intent(out)
   CALL GETPARMETA(ERR,CMESSAGE)    ! read parameter metadata from constraints txt file (parameter bounds etc.)
   if (err/=0)then; message=trim(message)//trim(cmessage); err=20; return; endif
-  
+
   ! Identify a single model: FMODEL_ID is read from the control file and used to build string for zDecisions
   CALL SELECTMODL(FMODEL_ID,ERR=ERR,MESSAGE=CMESSAGE) ! FMODEL_ID is intent(in)
   if (err/=0)then; message=trim(message)//trim(cmessage); err=20; return; endif
-  
+
   ! Define list of states and parameters for the current model
   ! NOTE: these definitions are global, so OK to be stored in a shared module
   CALL ASSIGN_STT()        ! state definitions are stored in module model_defn
   CALL ASSIGN_FLX()        ! flux definitions are stored in module model_defn
   CALL ASSIGN_PAR()        ! parameter definitions are stored in module multiparam
- 
+
   ! save information in global data structures
   info%config%nState    = NSTATE   ! NSTATE is in module model_defn
   info%config%nParam    = NUMPAR   ! NSTATE is in module multiparam
   info%config%listParam = LPARAM(1:NUMPAR)   ! (performs allocation) LPARAM is in module multiparam
 
   ! Compute derived model parameters (bucket sizes, etc.)
-  CALL PAR_DERIVE(ERR,CMESSAGE)
+  CALL PAR_DERIVE(info,ERR,CMESSAGE)
   if (err/=0)then; message=trim(message)//trim(cmessage); err=20; return; endif
 
   ! ----- initialize parameters, statistics, and output -----------------------------------
@@ -91,13 +91,13 @@ contains
   ! get number of parameter sets
   ! will be used to define the parameter set dimension of the NetCDF files
   select case(trim(opts%runmode))
-    
+
     ! options that run with a single parameter set
     case('def', 'idx', 'opt'); NUMPSET = 1
 
     ! use NUMPSET =1.2MAXN since final number of parameter sets produced by SCE is unknown
-    case('sce');               NUMPSET = int(1.2_wp * real(MAXN, wp)) 
-      
+    case('sce');               NUMPSET = int(1.2_wp * real(MAXN, wp))
+
     ! check
     case default
      message=trim(message)//'opts%runmode is unknown: '//trim(opts%runmode)
@@ -123,10 +123,10 @@ contains
   CALL DEF_PARAMS(nSet)                         ! define model parameters
   CALL DEF_OUTPUT(domain%coords,nx,ny,nb,nPar)  ! define model output time series (nPar used for parameter derivatives)
   CALL DEF_SSTATS()                             ! define summary statistics (REDEF)
- 
+
   ! get parameter bounds and random numbers
   ALLOCATE(APAR(NUMPAR),BL(NUMPAR),BU(NUMPAR))
- 
+
   DO IPAR=1,NUMPAR
    CALL GETPAR_STR(LPARAM(IPAR)%PARNAME,PARAM_META)
    BL(IPAR)   = PARAM_META%PARLOW  ! lower boundary
