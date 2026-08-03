@@ -19,12 +19,6 @@ contains
   USE multiparam, only: KSTOP   ! number of shuffling loops the value must change by PCENTO
   USE multiparam, only: PCENTO  ! the percentage
   USE multiparam, only: NUMPAR  ! # parameters
-  USE multiparam, only: LPARAM, PARATT
-
-  USE GETPAR_STR_MODULE, only: GETPAR_STR
-
-  USE parameter_transform_module, only: validate_transform
-  USE parameter_transform_module, only: vector_to_search_space
 
   USE fuse_globaldata, only: isPrint ! used to turn of printing for calibration runs
   USE fuse_globaldata, only: nFUSE_eval ! # FUSE evaluations
@@ -43,14 +37,8 @@ contains
   REAL(MSP), DIMENSION(:), ALLOCATABLE   :: BL_MSP    ! ! lower bound of model parameters
   REAL(MSP), DIMENSION(:), ALLOCATABLE   :: BU_MSP    ! ! upper bound of model parameters
 
-  REAL(MSP), DIMENSION(:), ALLOCATABLE   :: APAR_PHYS_MSP
-  REAL(MSP), DIMENSION(:), ALLOCATABLE   :: BL_PHYS_MSP
-  REAL(MSP), DIMENSION(:), ALLOCATABLE   :: BU_PHYS_MSP
-
   INTEGER(I4B), DIMENSION(:), ALLOCATABLE :: TRANSFORM_CODES
 
-  TYPE(PARATT)                           :: PARAM_META
-  INTEGER(I4B)                           :: IPAR
   INTEGER(I4B)                           :: IERR
   CHARACTER(LEN=256)                     :: MESSAGE
 
@@ -74,82 +62,15 @@ contains
   INIFLG =  1              ! 1 = include initial point in the population
   IPRINT =  1              ! 0 = supress printing
 
-  ! Store physical-space values using the precision required by SCE.
-  ALLOCATE(APAR_PHYS_MSP(NUMPAR))
-  ALLOCATE(BL_PHYS_MSP(NUMPAR))
-  ALLOCATE(BU_PHYS_MSP(NUMPAR))
+  call setup_parameter_transforms( APAR,     BL,     BU,       &
+                                   APAR_MSP, BL_MSP, BU_MSP,   &
+                                   TRANSFORM_CODES,            &
+                                   IERR, MESSAGE )
 
-  ALLOCATE(APAR_MSP(NUMPAR))
-  ALLOCATE(BL_MSP(NUMPAR))
-  ALLOCATE(BU_MSP(NUMPAR))
-
-  ALLOCATE(TRANSFORM_CODES(NUMPAR))
-
-  APAR_PHYS_MSP = APAR
-  BL_PHYS_MSP   = BL
-  BU_PHYS_MSP   = BU
-
-  ! Retrieve and validate the transformation code for each model parameter.
-  DO IPAR = 1, NUMPAR
-
-    CALL GETPAR_STR(LPARAM(IPAR)%PARNAME, PARAM_META)
-
-    TRANSFORM_CODES(IPAR) = PARAM_META%PARVTN
-
-    CALL validate_transform(                  &
-      LPARAM(IPAR)%PARNAME,                   &
-      BL_PHYS_MSP(IPAR),                      &
-      APAR_PHYS_MSP(IPAR),                    &
-      BU_PHYS_MSP(IPAR),                      &
-      TRANSFORM_CODES(IPAR),                  &
-      IERR,                                   &
-      MESSAGE)
-
-    IF (IERR /= 0) THEN
-      WRITE(*,'(A)') TRIM(MESSAGE)
-      STOP 'Invalid parameter transformation'
-    END IF
-
-  END DO
-
-  ! Transform the initial parameter set into optimizer search space.
-  CALL vector_to_search_space(                &
-    APAR_PHYS_MSP,                            &
-    TRANSFORM_CODES,                          &
-    APAR_MSP,                                 &
-    IERR,                                     &
-    MESSAGE)
-
-  IF (IERR /= 0) THEN
-    WRITE(*,'(A)') TRIM(MESSAGE)
-    STOP 'Unable to transform initial parameter set'
-  END IF
-
-  ! Transform the lower parameter bounds into optimizer search space.
-  CALL vector_to_search_space(                &
-    BL_PHYS_MSP,                              &
-    TRANSFORM_CODES,                          &
-    BL_MSP,                                   &
-    IERR,                                     &
-    MESSAGE)
-
-  IF (IERR /= 0) THEN
-    WRITE(*,'(A)') TRIM(MESSAGE)
-    STOP 'Unable to transform lower parameter bounds'
-  END IF
-
-  ! Transform the upper parameter bounds into optimizer search space.
-  CALL vector_to_search_space(                &
-    BU_PHYS_MSP,                              &
-    TRANSFORM_CODES,                          &
-    BU_MSP,                                   &
-    IERR,                                     &
-    MESSAGE)
-
-  IF (IERR /= 0) THEN
-    WRITE(*,'(A)') TRIM(MESSAGE)
-    STOP 'Unable to transform upper parameter bounds'
-  END IF
+  if (IERR /= 0) then
+    write(*,'(A)') trim(MESSAGE)
+    stop 'Unable to set up parameter transformations'
+  end if
 
   ! pass the FUSE structures to the context setter
   ! NOTE: in sce_context_set, info/work/domain have the target attribute so can point to them
@@ -181,9 +102,99 @@ contains
 
   ! deallocate SCE and transformation arrays
   DEALLOCATE(APAR_MSP, BL_MSP, BU_MSP)
-  DEALLOCATE(APAR_PHYS_MSP, BL_PHYS_MSP, BU_PHYS_MSP)
   DEALLOCATE(TRANSFORM_CODES)
 
   end subroutine sce_driver
+
+  ! ------------------------------------------------------------------------
+  ! Prepare parameter transformations for SCE optimization.
+  ! ------------------------------------------------------------------------
+  subroutine setup_parameter_transforms( apar_phys,   bl_phys,   bu_phys,    &
+                                         apar_search, bl_search, bu_search,  &
+                                         transform_codes, ierr, message)
+
+    use multiparam, only: NUMPAR, LPARAM, PARATT
+    use getpar_str_module, only: getpar_str
+    use parameter_transform_module, only: validate_transform
+    use parameter_transform_module, only: vector_to_search_space
+
+    implicit none
+
+    real(wp), intent(in) :: apar_phys(:)
+    real(wp), intent(in) :: bl_phys(:)
+    real(wp), intent(in) :: bu_phys(:)
+
+    real(MSP), allocatable, intent(out) :: apar_search(:)
+    real(MSP), allocatable, intent(out) :: bl_search(:)
+    real(MSP), allocatable, intent(out) :: bu_search(:)
+
+    integer(I4B), allocatable, intent(out) :: transform_codes(:)
+
+    integer(I4B), intent(out) :: ierr
+    character(len=*), intent(out) :: message
+
+    real(MSP), allocatable :: apar_phys_msp(:)
+    real(MSP), allocatable :: bl_phys_msp(:)
+    real(MSP), allocatable :: bu_phys_msp(:)
+
+    type(PARATT) :: param_meta
+    integer(I4B) :: ipar
+
+    ierr = 0
+    message = ''
+
+    allocate(apar_phys_msp(NUMPAR))
+    allocate(bl_phys_msp(NUMPAR))
+    allocate(bu_phys_msp(NUMPAR))
+
+    allocate(apar_search(NUMPAR))
+    allocate(bl_search(NUMPAR))
+    allocate(bu_search(NUMPAR))
+
+    allocate(transform_codes(NUMPAR))
+
+    apar_phys_msp = apar_phys
+    bl_phys_msp   = bl_phys
+    bu_phys_msp   = bu_phys
+
+    do ipar = 1, NUMPAR
+
+      call getpar_str(LPARAM(ipar)%PARNAME, param_meta)
+
+      transform_codes(ipar) = param_meta%PARVTN
+
+      call validate_transform(LPARAM(ipar)%PARNAME, bl_phys_msp(ipar), &
+                              apar_phys_msp(ipar), bu_phys_msp(ipar),  &
+                              transform_codes(ipar), ierr, message)
+
+      if (ierr /= 0) then
+        message = "Parameter validation: "//trim(message)
+        return
+      end if
+
+    end do
+
+    call vector_to_search_space(apar_phys_msp, transform_codes, apar_search, ierr, message)
+
+    if (ierr /= 0) then
+      message = 'Initial parameter set: '//trim(message)
+      return
+    end if
+
+    call vector_to_search_space(bl_phys_msp, transform_codes, bl_search, ierr, message)
+
+    if (ierr /= 0) then
+      message = 'Lower parameter bounds: '//trim(message)
+      return
+    end if
+
+    call vector_to_search_space(bu_phys_msp, transform_codes, bu_search, ierr, message)
+
+    if (ierr /= 0) then
+      message = 'Upper parameter bounds: '//trim(message)
+      return
+    end if
+
+  end subroutine setup_parameter_transforms
 
 end module sce_driver_MODULE

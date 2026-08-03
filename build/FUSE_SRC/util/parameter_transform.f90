@@ -92,8 +92,7 @@ contains
   ! -------------------------------------------------------------------------------------
   ! Transform a complete parameter vector to the optimizer search space.
   ! -------------------------------------------------------------------------------------
-  subroutine vector_to_search_space(physical_values, transform_codes, search_values, &
-                                    ierr, message)
+  subroutine vector_to_search_space(physical_values, transform_codes, search_values, ierr, message)
 
     real(MSP), intent(in)                 :: physical_values(:)
     integer(I4B), intent(in)              :: transform_codes(:)
@@ -119,29 +118,15 @@ contains
 
       select case (transform_codes(i))
 
-      case (TRANS_NONE)
-        continue
-
-      case (TRANS_LOG10, TRANS_LN)
-
-        if (physical_values(i) <= 0.0_MSP) then
-          ierr = 11
-          write(message,'(a,i0,a)') &
-            'Cannot apply logarithmic transformation to parameter ', i, &
-            ': value must be strictly positive.'
-          return
-        end if
+      case (TRANS_NONE, TRANS_LOG10, TRANS_LN)
+        search_values(i) = to_search_space(physical_values(i), transform_codes(i))
 
       case default
         ierr = 12
-        write(message,'(a,i0,a,i0)') &
-          'Unknown transformation code ', transform_codes(i), &
-          ' for parameter ', i
+        write(message,'(a,i0,a,i0)') 'Unknown transformation code ', transform_codes(i), ' for parameter ', i
         return
 
       end select
-
-      search_values(i) = to_search_space(physical_values(i), transform_codes(i))
 
     end do
 
@@ -151,8 +136,7 @@ contains
   ! -------------------------------------------------------------------------------------
   ! Transform a complete optimizer vector back to physical parameter space.
   ! -------------------------------------------------------------------------------------
-  subroutine vector_to_physical_space(search_values, transform_codes, physical_values, &
-                                      ierr, message)
+  subroutine vector_to_physical_space(search_values, transform_codes, physical_values, ierr, message)
 
     real(MSP), intent(in)                 :: search_values(:)
     integer(I4B), intent(in)              :: transform_codes(:)
@@ -179,14 +163,11 @@ contains
       select case (transform_codes(i))
 
       case (TRANS_NONE, TRANS_LOG10, TRANS_LN)
-        physical_values(i) = &
-          to_physical_space(search_values(i), transform_codes(i))
+        physical_values(i) = to_physical_space(search_values(i), transform_codes(i))
 
       case default
         ierr = 21
-        write(message,'(a,i0,a,i0)') &
-          'Unknown transformation code ', transform_codes(i), &
-          ' for parameter ', i
+        write(message,'(a,i0,a,i0)') 'Unknown transformation code ', transform_codes(i), ' for parameter ', i
         return
 
       end select
@@ -199,8 +180,7 @@ contains
   ! -------------------------------------------------------------------------------------
   ! Validate a transformation and its physical bounds.
   ! -------------------------------------------------------------------------------------
-  subroutine validate_transform(parname, lower, default_value, upper, &
-                                transform_code, ierr, message)
+  subroutine validate_transform(parname, lower, default_value, upper, transform_code, ierr, message)
 
     character(len=*), intent(in)          :: parname
     real(MSP), intent(in)                 :: lower
@@ -215,15 +195,13 @@ contains
 
     if (lower > upper) then
       ierr = 1
-      write(message,'(a,a)') &
-        'Invalid parameter bounds for ', trim(parname)
+      write(message,'(a,a)') 'Invalid parameter bounds for ', trim(parname)
       return
     end if
 
     if (default_value < lower .or. default_value > upper) then
       ierr = 2
-      write(message,'(a,a)') &
-        'Default value outside bounds for ', trim(parname)
+      write(message,'(a,a)') 'Default value outside bounds for ', trim(parname)
       return
     end if
 
@@ -234,13 +212,10 @@ contains
 
     case (TRANS_LOG10, TRANS_LN)
 
-      if (lower <= 0.0_MSP .or. default_value <= 0.0_MSP .or. &
-          upper <= 0.0_MSP) then
+      if (lower <= 0.0_MSP .or. default_value <= 0.0_MSP .or. upper <= 0.0_MSP) then
 
         ierr = 3
-        write(message,'(a,a,a)') &
-          'Logarithmic transformation requires strictly positive values for ', &
-          trim(parname), '.'
+        write(message,'(a,a,a)') 'Logarithmic transformation requires strictly positive values for ', trim(parname)
         return
 
       end if
@@ -248,9 +223,7 @@ contains
     case default
 
       ierr = 4
-      write(message,'(a,i0,a,a)') &
-        'Unknown transformation code ', transform_code, &
-        ' for parameter ', trim(parname)
+      write(message,'(a,i0,a,a)') 'Unknown transformation code ', transform_code, ' for parameter ', trim(parname)
       return
 
     end select
