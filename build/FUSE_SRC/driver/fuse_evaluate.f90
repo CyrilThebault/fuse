@@ -21,6 +21,7 @@ MODULE fuse_evaluate_module
     ! Modified by Cyril Thébault to allow different metrics as objective function, 2024
     ! Modified by Martyn Clark to call differentiable modeling routines, 12/2025
     ! Modified by Martyn Clark to simplify/refactor, 02/2026
+    ! Modified by Cyril Thébault to include interception, 7/2026
     ! ---------------------------------------------------------------------------------------
     ! Purpose:
     ! --------
@@ -377,7 +378,7 @@ MODULE fuse_evaluate_module
   use multistate,   only: gState_3d, FSTATE, MSTATE
   use multiroute,   only: MROUTE, AROUTE_3d
   use multibands
-  use multi_flux,   only: W_FLUX, W_FLUX_3d
+  use multi_flux,   only: W_FLUX, W_FLUX_3d, M_FLUX
   use set_all_module, only: SET_STATE, SET_FLUXES, SET_ROUTE
 
   ! state vector conversions
@@ -488,6 +489,34 @@ MODULE fuse_evaluate_module
 
     end select
 
+    ! -------------------------
+    ! interception
+    ! -------------------------
+    select case(diff_mode)
+
+      case(original)
+        M_FLUX%PIN0 = M_FLUX%EFF_PPT
+        call UPDATE_INTERCEPTION(DELTIM, ierr, cmessage)
+
+      if (ierr /= 0) then
+        err = 1
+        message = trim(cmessage)
+        return
+      end if
+
+      case(differentiable)
+        if (SMODL%iINTRC /= iopt_no_intrcep) then
+          err = 1
+          message = 'advance_one_cell: interception not yet implemented for differentiable mode'
+          return
+        end if
+
+      case default
+        err = 1
+        message = 'advance_one_cell: cannot identify diff_mode (interception)'
+        return
+
+    end select
     ! -------------------------
     ! soil physics
     ! -------------------------

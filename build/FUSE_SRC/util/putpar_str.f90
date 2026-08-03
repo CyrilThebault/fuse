@@ -7,6 +7,7 @@ SUBROUTINE PUTPAR_STR(METADAT,PARNAME)
 ! --------
 ! Martyn Clark, 2009
 ! Modified by Brian Henn to include snow model, 6/2013
+! Modified by Cyril Thebault to include interception, 7/2026
 ! ---------------------------------------------------------------------------------------
 ! Purpose:
 ! --------
@@ -29,6 +30,7 @@ CASE('RH1P_MEAN');  PARMETA%RH1P_MEAN = METADAT
 CASE('RH1P_SDEV');  PARMETA%RH1P_SDEV = METADAT
 CASE('RH2P_MEAN');  PARMETA%RH2P_MEAN = METADAT
 CASE('RH2P_SDEV');  PARMETA%RH2P_SDEV = METADAT
+CASE('REFSINT_0');  PARMETA%REFSINT_0 = METADAT
 CASE('MAXWATR_1');  PARMETA%MAXWATR_1 = METADAT
 CASE('MAXWATR_2');  PARMETA%MAXWATR_2 = METADAT
 CASE('FRACTEN');    PARMETA%FRACTEN   = METADAT

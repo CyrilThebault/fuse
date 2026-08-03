@@ -40,6 +40,7 @@ contains
   INTEGER(I4B)                           :: ISW_QINTF   ! loop thru interflow
   INTEGER(I4B)                           :: ISW_Q_TDH   ! loop thru time delay options
   INTEGER(I4B)                           :: ISW_SNOWM   ! loop thru snow model options
+  INTEGER(I4B)                           :: ISW_INTRC   ! loop thru interception options
   ! Start procedure here
   !err=0; message="UNIQUEMODL/ok"
   ! ---------------------------------------------------------------------------------------
@@ -77,6 +78,9 @@ contains
   ! snow model switch
   LIST_SNOWM(1)%MCOMPONENT = 'no_snowmod' ! no snow model
   LIST_SNOWM(2)%MCOMPONENT = 'temp_index' ! temperature index snow model
+  ! interception
+  LIST_INTRC(1)%MCOMPONENT = 'no_intrcep' ! no interception store
+  LIST_INTRC(2)%MCOMPONENT = 'gr5h_intrc' ! gr5h interception store
   ! ---------------------------------------------------------------------------------------
   ! (2) LOOP THROUGH MODEL COMPONENTS AND DEFINE A SET OF UNIQUE MODELS
   ! ---------------------------------------------------------------------------------------
@@ -90,57 +94,61 @@ contains
   ! g) define interflow method
   ! h) define time delay in runoff
   ICOUNT = 0 ! initialize counter
-  ! loop through snow model options
-  DO ISW_SNOWM=1,SIZE(LIST_SNOWM)
-  ! (loop through time delay options)
-  DO ISW_Q_TDH=1,SIZE(LIST_Q_TDH)
-   ! (loop through interflow options)
-   DO ISW_QINTF=1,SIZE(LIST_QINTF)
-    ! (loop through evaporation options)
-    DO ISW_ESOIL=1,SIZE(LIST_ESOIL)
-     ! (loop through percolation options)
-     DO ISW_QPERC=1,SIZE(LIST_QPERC)
-      ! (loop through surface runoff options)
-      DO ISW_QSURF=1,SIZE(LIST_QSURF)
-       ! (loop through lower-layer architecture options)
-       DO ISW_ARCH2=1,SIZE(LIST_ARCH2)
-        ! (loop through upper-layer architecture options)
-        DO ISW_ARCH1=1,SIZE(LIST_ARCH1)
-         ! (loop through rainfall error options)
-         DO ISW_RFERR=1,SIZE(LIST_RFERR)
-          ! don't allow a lower tension tank when there are two upper ones
-          IF (LIST_ARCH1(ISW_ARCH1)%MCOMPONENT(1:10).EQ.'tension2_1'.AND. &
-              LIST_ARCH2(ISW_ARCH2)%MCOMPONENT(1:10).EQ.'tens2pll_2') CYCLE
-          ! don't allow percolation below field capacity if there are multiple upper tanks
-          IF (LIST_ARCH1(ISW_ARCH1)%MCOMPONENT(1:10).NE.'onestate_1'.AND. &
-              LIST_QPERC(ISW_QPERC)%MCOMPONENT(1:10).EQ.'perc_w2sat') CYCLE
-          ICOUNT = ICOUNT + 1  ! (increment counter)
-          IF (ICOUNT.LE.SIZE(AMODL)) THEN
-           ! save unique model combinations
-           AMODL(ICOUNT)%iRFERR = desc_str2int(LIST_RFERR(ISW_RFERR)%MCOMPONENT)
-           AMODL(ICOUNT)%iARCH1 = desc_str2int(LIST_ARCH1(ISW_ARCH1)%MCOMPONENT)
-           AMODL(ICOUNT)%iARCH2 = desc_str2int(LIST_ARCH2(ISW_ARCH2)%MCOMPONENT)
-           AMODL(ICOUNT)%iQSURF = desc_str2int(LIST_QSURF(ISW_QSURF)%MCOMPONENT)
-           AMODL(ICOUNT)%iQPERC = desc_str2int(LIST_QPERC(ISW_QPERC)%MCOMPONENT)
-           AMODL(ICOUNT)%iESOIL = desc_str2int(LIST_ESOIL(ISW_ESOIL)%MCOMPONENT)
-           AMODL(ICOUNT)%iQINTF = desc_str2int(LIST_QINTF(ISW_QINTF)%MCOMPONENT)
-           AMODL(ICOUNT)%iQ_TDH = desc_str2int(LIST_Q_TDH(ISW_Q_TDH)%MCOMPONENT)
-           AMODL(ICOUNT)%iSNOWM = desc_str2int(LIST_Q_TDH(ISW_SNOWM)%MCOMPONENT)
-           !write(*,'(i3,1x,7(a10,1x))') icount, amodl(icount)
-          ELSE
-           ! need to allocate more space
-           print *, 'insufficent space to hold model combinations'
-           stop
-          ENDIF
-         END DO  ! RFERR
-        END DO  ! ARCH1
-       END DO  ! ARCH2
-      END DO  ! QSURF
-     END DO  ! QPERC
-    END DO  ! ESOIL
-   END DO  ! QINTF
-  END DO  ! Q_TDH
-  END DO ! SNOWM
+  ! loop through interception options
+  DO ISW_INTRC = 1, SIZE(LIST_INTRC)
+   ! loop through snow model options
+   DO ISW_SNOWM=1,SIZE(LIST_SNOWM)
+    ! (loop through time delay options)
+    DO ISW_Q_TDH=1,SIZE(LIST_Q_TDH)
+     ! (loop through interflow options)
+     DO ISW_QINTF=1,SIZE(LIST_QINTF)
+      ! (loop through evaporation options)
+      DO ISW_ESOIL=1,SIZE(LIST_ESOIL)
+       ! (loop through percolation options)
+       DO ISW_QPERC=1,SIZE(LIST_QPERC)
+        ! (loop through surface runoff options)
+        DO ISW_QSURF=1,SIZE(LIST_QSURF)
+         ! (loop through lower-layer architecture options)
+         DO ISW_ARCH2=1,SIZE(LIST_ARCH2)
+          ! (loop through upper-layer architecture options)
+          DO ISW_ARCH1=1,SIZE(LIST_ARCH1)
+           ! (loop through rainfall error options)
+           DO ISW_RFERR=1,SIZE(LIST_RFERR)
+            ! don't allow a lower tension tank when there are two upper ones
+            IF (LIST_ARCH1(ISW_ARCH1)%MCOMPONENT(1:10).EQ.'tension2_1'.AND. &
+                LIST_ARCH2(ISW_ARCH2)%MCOMPONENT(1:10).EQ.'tens2pll_2') CYCLE
+            ! don't allow percolation below field capacity if there are multiple upper tanks
+            IF (LIST_ARCH1(ISW_ARCH1)%MCOMPONENT(1:10).NE.'onestate_1'.AND. &
+                LIST_QPERC(ISW_QPERC)%MCOMPONENT(1:10).EQ.'perc_w2sat') CYCLE
+            ICOUNT = ICOUNT + 1  ! (increment counter)
+            IF (ICOUNT.LE.SIZE(AMODL)) THEN
+             ! save unique model combinations
+             AMODL(ICOUNT)%iRFERR = desc_str2int(LIST_RFERR(ISW_RFERR)%MCOMPONENT)
+             AMODL(ICOUNT)%iARCH1 = desc_str2int(LIST_ARCH1(ISW_ARCH1)%MCOMPONENT)
+             AMODL(ICOUNT)%iARCH2 = desc_str2int(LIST_ARCH2(ISW_ARCH2)%MCOMPONENT)
+             AMODL(ICOUNT)%iQSURF = desc_str2int(LIST_QSURF(ISW_QSURF)%MCOMPONENT)
+             AMODL(ICOUNT)%iQPERC = desc_str2int(LIST_QPERC(ISW_QPERC)%MCOMPONENT)
+             AMODL(ICOUNT)%iESOIL = desc_str2int(LIST_ESOIL(ISW_ESOIL)%MCOMPONENT)
+             AMODL(ICOUNT)%iQINTF = desc_str2int(LIST_QINTF(ISW_QINTF)%MCOMPONENT)
+             AMODL(ICOUNT)%iQ_TDH = desc_str2int(LIST_Q_TDH(ISW_Q_TDH)%MCOMPONENT)
+             AMODL(ICOUNT)%iSNOWM = desc_str2int(LIST_SNOWM(ISW_SNOWM)%MCOMPONENT)
+             AMODL(ICOUNT)%iINTRC = desc_str2int(LIST_INTRC(ISW_INTRC)%MCOMPONENT)
+             !write(*,'(i3,1x,7(a10,1x))') icount, amodl(icount)
+            ELSE
+             ! need to allocate more space
+             print *, 'insufficent space to hold model combinations'
+             stop
+            ENDIF
+           END DO  ! RFERR
+          END DO  ! ARCH1
+         END DO  ! ARCH2
+        END DO  ! QSURF
+       END DO  ! QPERC
+      END DO  ! ESOIL
+     END DO  ! QINTF
+    END DO  ! Q_TDH
+   END DO ! SNOWM
+  END DO ! INTRC
   ! ---------------------------------------------------------------------------------------
   NMOD = ICOUNT
   !pause
