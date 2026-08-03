@@ -493,7 +493,13 @@ MODULE fuse_evaluate_module
 
       case(original)
         M_FLUX%PIN0 = M_FLUX%EFF_PPT
-        call UPDATE_INTERCEPTION(DELTIM)
+        call UPDATE_INTERCEPTION(DELTIM, ierr, cmessage)
+
+      if (ierr /= 0) then
+        err = 1
+        message = trim(cmessage)
+        return
+      end if
 
       case(differentiable)
         if (SMODL%iINTRC /= iopt_no_intrcep) then
