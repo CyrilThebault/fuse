@@ -101,6 +101,7 @@ module info_types
  type :: forcing_vars
   character(len=64), allocatable :: name(:)   ! NFORC
   integer(i4b),      allocatable :: varid(:)  ! NFORC
+  real(wp),          allocatable :: multiplier(:)
  end type
 
  ! ---

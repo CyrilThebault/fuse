@@ -195,6 +195,7 @@ module time_windows_module
     real(wp) :: dt_current
     real(wp) :: tolerance
     integer(i4b) :: i
+    logical(lgt), parameter :: do_timeCheck = .true.
 
     ierr=0; message="build_julian_axis/"
 
@@ -232,21 +233,27 @@ module time_windows_module
 
 
     ! Verify that the forcing time axis is increasing and regularly spaced.
-    do i = 3, size(jdate)
-      dt_current = (time_steps(i) - time_steps(i-1)) * scale_to_days
+    if (do_timeCheck) then
 
-      if (dt_current <= 0._wp) then
-        ierr = 1
-        message = trim(message)//"forcing time axis must be strictly increasing"
-        return
-      endif
+      do i = 3, size(jdate)
 
-      if (abs(dt_current - deltim_days) > tolerance) then
-         ierr = 1
-         message = trim(message)//"forcing time steps are not equally spaced"
-         return
-      endif
-    enddo
+        dt_current = (time_steps(i) - time_steps(i-1)) * scale_to_days
+
+        if (dt_current <= 0._wp) then
+          ierr = 1
+          message = trim(message)//"forcing time axis must be strictly increasing"
+          return
+        endif
+
+        if (abs(dt_current - deltim_days) > tolerance) then
+          ierr = 1
+          message = trim(message)//"forcing time steps are not equally spaced"
+          return
+        endif
+
+      enddo
+
+    endif
 
   end subroutine build_julian_axis
 

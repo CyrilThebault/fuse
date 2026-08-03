@@ -30,13 +30,10 @@ contains
 
   ! data stored in legacy modules
   USE model_defn, only: NSTATE             ! number of state variables
-  USE model_defn, only: TDH_MAX            ! maximum routing delay horizon (days)
   USE multiparam, only: NUMPAR             ! number of paramters for the current model
   USE multiparam, only: LPARAM             ! list of model parameters
   USE multiparam, only: MAXN               ! maximum number of function evaluations in SCE -- used for NUMPSET
-  USE multiparam, only: DPARAM             ! derived model parameters
   USE multiforce, only: NUMPSET            ! number of model parameter sets
-  USE multiroute, only: FUTURE
 
   implicit none
 
@@ -54,8 +51,6 @@ contains
   ! ----- internal -----------------------------------------------------------------------
   INTEGER(I4B)                                      :: IPAR            ! parameter index
   INTEGER(I4B)                                      :: NMOD            ! number of models
-  INTEGER(I4B)                                      :: NTDH            ! number of routing time-delay bins
-  INTEGER(I4B)                                      :: ISTAT           ! allocation status
   TYPE(PARATT)                                      :: PARAM_META      ! parameter metadata (model parameters)
   CHARACTER(LEN=1024)                               :: CMESSAGE        ! error message
   ! ----- output dimensions --------------------------------------------------------------
@@ -87,32 +82,8 @@ contains
   info%config%nParam    = NUMPAR   ! NSTATE is in module multiparam
   info%config%listParam = LPARAM(1:NUMPAR)   ! (performs allocation) LPARAM is in module multiparam
 
-
-  ! Compute the number of routing bins from the maximum routing horizon and the forcing timestep, both expressed in days.
-  NTDH = CEILING(TDH_MAX / info%time%deltim_days, KIND=I4B)
-
-  ! Allocate the runoff fractions assigned to future routing bins.
-  ALLOCATE(DPARAM%FRAC_FUTURE(NTDH), STAT=ISTAT)
-  IF (ISTAT /= 0) THEN
-    ERR = 20
-    MESSAGE = TRIM(MESSAGE)//"cannot allocate DPARAM%FRAC_FUTURE"
-    RETURN
-  ENDIF
-
-  ! Allocate the routing queue using the same number of bins.
-  ALLOCATE(FUTURE(NTDH), STAT=ISTAT)
-  IF (ISTAT /= 0) THEN
-    DEALLOCATE(DPARAM%FRAC_FUTURE)
-    ERR = 20
-    MESSAGE = TRIM(MESSAGE)//"cannot allocate FUTURE"
-    RETURN
-  ENDIF
-
-  ! Initialise the routing queue before the first model evaluation.
-  FUTURE = 0._WP
-
   ! Compute derived model parameters (bucket sizes, etc.)
-  CALL PAR_DERIVE(ERR,CMESSAGE)
+  CALL PAR_DERIVE(info,ERR,CMESSAGE)
   if (err/=0)then; message=trim(message)//trim(cmessage); err=20; return; endif
 
   ! ----- initialize parameters, statistics, and output -----------------------------------

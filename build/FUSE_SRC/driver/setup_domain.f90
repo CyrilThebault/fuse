@@ -25,7 +25,7 @@ contains
   USE time_windows_module,   only: get_time_windows             ! get info on the rolling time windows
   USE time_windows_module,   only: export_time_to_multiforce    ! populate legacy multiforce modules
 
-  USE get_gforce_module,     only: get_forcing_varids           ! get name/varid table for forcing variables
+  USE get_gforce_module,     only: get_forcing_metadata         ! get forcing metadata
   USE get_gforce_module,     only: read_latlon_2d               ! read lat/lon
   USE read_elevbands_module, only: read_elevbands               ! read elevation bands
 
@@ -98,7 +98,7 @@ contains
   call read_elevbands(info, domain, ierr, cmessage)
   if (ierr/=0)then; message=trim(message)//trim(cmessage); ierr=20; return; endif
 
-  call get_forcing_varids(info%files%ncid_forc, info, ierr, cmessage)
+  call get_forcing_metadata(info%files%ncid_forc, info, ierr, cmessage)
   if (ierr/=0)then; message=trim(message)//trim(cmessage); ierr=20; return; endif
 
   ! ----- Routines that use the old structures --------------------------------------------

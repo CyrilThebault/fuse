@@ -52,8 +52,6 @@ MODULE multiforce
  public :: ivarid_iy, ivarid_im, ivarid_id, ivarid_ih, ivarid_imin, ivarid_dsec
  public :: ivarid_ppt, ivarid_temp, ivarid_pet, ivarid_q
 
- public :: amult_ppt, amult_pet, amult_q
-
  public ::  NA_VALUE, NA_VALUE_SP
 
  SAVE
@@ -165,11 +163,6 @@ MODULE multiforce
  INTEGER(i4b)                          :: ivarid_temp = -1   ! variable ID for temperature
  INTEGER(i4b)                          :: ivarid_pet  = -1   ! variable ID for potential ET
  INTEGER(i4b)                          :: ivarid_q    = -1   ! variable ID for runoff
-
-  ! multipliers for variables to convert fluxes to mm/day
- REAL(WP)                              :: amult_ppt = -1._wp ! convert precipitation to mm/day
- REAL(WP)                              :: amult_pet = -1._wp ! convert potential ET to mm/day
- REAL(WP)                              :: amult_q   = -1._wp ! convert runoff to mm/day
 
  ! missing values
  INTEGER(I4B),PARAMETER                :: NA_VALUE    = -9999     ! integer designating missing values - TODO: retrieve from NetCDF file
