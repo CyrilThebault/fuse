@@ -8,6 +8,7 @@ sequential ESOIL     ! (6) evaporation
 intflwnone QINTF     ! (7) interflow
 rout_gamma Q_TDH     ! (8) time delay in runoff
 temp_index SNOWM     ! (9) snow model
+no_intrcep INTRC     ! (10) interception
 0                    ! naming convention for model (0=full, 1=index + numrx)
 ---------------------------------------------------------------------------
 ---------------------------------------------------------------------------
@@ -53,4 +54,8 @@ no_routing      ! no routing
 (9) snow model
 temp_index      ! temperature index snow model
 no_snowmod      ! no snow model
+---------------------------------------------------------------------------
+(10) interception
+no_intrcep      ! no interception store
+gr5h_intrc      ! gr5h interception store
 ---------------------------------------------------------------------------
