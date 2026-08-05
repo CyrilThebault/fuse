@@ -214,7 +214,6 @@ MODULE fuse_evaluate_module
   use multistate, only: gState_3d
   use multibands, only: MBANDS_VAR_4d
   use time_utils,        only: caldatss
-  use getPETgrid_module, only: getPETgrid
   use get_gforce_module, only: get_gforce_3d
   use put_output_module, only: put_output
 
@@ -238,7 +237,6 @@ MODULE fuse_evaluate_module
   integer(i4b) :: chunk_start_sim   ! start-of-chunk index in the simulation
 
   ! locals
-  logical(lgt), parameter :: computePET = .false.
   real(wp)     :: dt_sub, dt_full
   integer(i4b) :: iSpat1, iSpat2, iBands
 
@@ -308,10 +306,6 @@ MODULE fuse_evaluate_module
                                              work%step%time%ih, work%step%time%imin, work%step%time%dsec)
       timDat = work%step%time ! NOTE: used in the legacy data structures
 
-      ! compute potential ET
-      IF(computePET) CALL getPETgrid(ierr,message)
-      IF(ierr/=0) stop TRIM(message)
-   
       ! loop through grid points and run the model for one time step
       DO iSpat2=1,nSpat2
         DO iSpat1=1,nSpat1

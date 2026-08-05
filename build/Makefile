@@ -369,9 +369,6 @@ PRELIM = $(patsubst %, $(PRELIM_DIR)/%, $(FUSE_PRELIM))
 # FUSE runtime
 FUSE_RUNTIME =
 FUSE_RUNTIME += metrics.f90
-FUSE_RUNTIME += conv_funcs.f90
-FUSE_RUNTIME += clrsky_rad.f90
-FUSE_RUNTIME += getPETgrid.f90
 FUSE_RUNTIME += get_time_windows.f90
 FUSE_RUNTIME += initfluxes.f90
 FUSE_RUNTIME += set_all.f90
