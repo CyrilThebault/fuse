@@ -3,7 +3,7 @@ module sce_driver_MODULE
   USE nrtype
   use info_types,  only: fuse_info
   use work_types,  only: fuse_work
-  use data_types,  only: domain_data
+  use domain_types,  only: domain_data
 
   use sce_callback_context, only: set_sce_context, clear_sce_context
 
@@ -15,10 +15,6 @@ module sce_driver_MODULE
 contains
 
   subroutine sce_driver(info, work, domain, APAR, BL, BU)
-  USE multiparam, only: MAXN    ! maximum number of trials before optimization is terminated
-  USE multiparam, only: KSTOP   ! number of shuffling loops the value must change by PCENTO
-  USE multiparam, only: PCENTO  ! the percentage
-  USE multiparam, only: NUMPAR  ! # parameters
 
   USE fuse_globaldata, only: isPrint ! used to turn of printing for calibration runs
   USE fuse_globaldata, only: nFUSE_eval ! # FUSE evaluations
@@ -52,7 +48,14 @@ contains
   INTEGER(I4B)                           :: IPRINT  ! 0 = supress printing
   INTEGER(I4B)                           :: ISCE    ! unit number for SCE write
   INTEGER(KIND=4)                        :: ISEED   ! seed for the random sequence
+  
+  ! associate locals with variables in data structures
+  associate(numpar  => info%config%nParam,          &    ! # parameters
+            maxn    => info%config%maxn,            &    ! maximum number of trials before optimization is terminated
+            kstop   => info%config%kstop,           &    ! number of shuffling loops the value must change by PCENTO
+            pcento  => info%config%pcento)               ! the percentage
 
+  ! define parameters for SCE
   NOPT   =  NUMPAR         ! number of parameters to be optimized (NUMPAR in module multiparam)
   NGS    =     10          ! number of complexes in the initial population
   NPG    =  2*NOPT + 1     ! number of points in each complex
@@ -62,9 +65,10 @@ contains
   INIFLG =  1              ! 1 = include initial point in the population
   IPRINT =  1              ! 0 = supress printing
 
-  call setup_parameter_transforms( APAR,     BL,     BU,       &
-                                   APAR_MSP, BL_MSP, BU_MSP,   &
-                                   TRANSFORM_CODES,            &
+  call setup_parameter_transforms( info%config%listParam,     &
+                                   APAR,     BL,     BU,      &
+                                   APAR_MSP, BL_MSP, BU_MSP,  &
+                                   TRANSFORM_CODES,           &
                                    IERR, MESSAGE )
 
   if (IERR /= 0) then
@@ -104,21 +108,28 @@ contains
   DEALLOCATE(APAR_MSP, BL_MSP, BU_MSP)
   DEALLOCATE(TRANSFORM_CODES)
 
+  end associate
+
   end subroutine sce_driver
 
   ! ------------------------------------------------------------------------
   ! Prepare parameter transformations for SCE optimization.
   ! ------------------------------------------------------------------------
-  subroutine setup_parameter_transforms( apar_phys,   bl_phys,   bu_phys,    &
+  subroutine setup_parameter_transforms( LPARAM,                             &
+                                         apar_phys,   bl_phys,   bu_phys,    &
                                          apar_search, bl_search, bu_search,  &
-                                         transform_codes, ierr, message)
+                                         transform_codes,                    &
+                                         ierr, message)
 
-    use multiparam, only: NUMPAR, LPARAM, PARATT
+    USE multiparam_types, only: PARATT, PAR_ID
+
     use getpar_str_module, only: getpar_str
     use parameter_transform_module, only: validate_transform
     use parameter_transform_module, only: vector_to_search_space
 
     implicit none
+
+    type(par_id), intent(in) :: LPARAM(:)
 
     real(wp), intent(in) :: apar_phys(:)
     real(wp), intent(in) :: bl_phys(:)
@@ -138,10 +149,13 @@ contains
     real(MSP), allocatable :: bu_phys_msp(:)
 
     type(PARATT) :: param_meta
+    integer(i4b) :: numpar
     integer(I4B) :: ipar
 
     ierr = 0
     message = ''
+
+    numpar = size(LPARAM)
 
     allocate(apar_phys_msp(NUMPAR))
     allocate(bl_phys_msp(NUMPAR))

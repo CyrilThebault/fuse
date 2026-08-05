@@ -75,15 +75,10 @@ module work_types
    real(wp),     allocatable           :: dL_dPar(:)     ! derivative in loss function w.r.t. parameters
  end type fuse_adjoint
 
- ! chunk buffers (allocate per chunk)
- type fuse_chunk
-  type(fluxes), allocatable :: w_flux_3d(:,:,:)   ! (nspat1,nspat2,chunk_len)
-  type(runoff), allocatable :: aroute_3d(:,:,:)   ! (nspat1,nspat2,chunk_len)
- end type fuse_chunk
-
  ! run-level / evaluation-level
  type fuse_run
    type(summary) :: stats
+   integer(i4b)  :: n_evaluations = 0  ! number of parameter sets evaluated
  end type fuse_run
 
  ! --------------------------------------------------------------------------------------
@@ -95,7 +90,6 @@ module work_types
    type(fuse_param)   :: par     ! parameter structure
    type(fuse_numerix) :: num     ! numerix structure (linear algebra, ...)
    type(fuse_adjoint) :: adj     ! adjoint structure (differentiable fuse)
-   type(fuse_chunk)   :: chunk   ! chunk buffer
    type(fuse_run)     :: run     ! run-level structure
    logical(lgt)       :: is_initialized = .false.
  end type fuse_work

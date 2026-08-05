@@ -12,7 +12,7 @@ module read_elevbands_module
   use netcdf
   use info_types, only: fuse_info
   use info_types, only: space_info
-  use data_types, only: domain_data
+  use domain_types, only: domain_data
   implicit none
   private
 

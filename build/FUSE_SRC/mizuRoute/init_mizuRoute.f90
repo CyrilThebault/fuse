@@ -49,7 +49,7 @@ CONTAINS
 
   ! data types
   use info_types, only: fuse_info
-  use data_types, only: domain_data
+  use domain_types, only: domain_data
 
   ! shared data
   use public_var, only: ancil_dir

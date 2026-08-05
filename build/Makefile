@@ -246,7 +246,7 @@ FUSE_TYPES += multiroute_types.f90
 FUSE_TYPES += multistats_types.f90
 FUSE_TYPES += work_types.f90
 FUSE_TYPES += info_types.f90
-FUSE_TYPES += data_types.f90
+FUSE_TYPES += domain_types.f90
 TYPES = $(patsubst %, $(TYPES_DIR)/%, $(FUSE_TYPES))
 
 # combined type+data (mimic legacy code)
@@ -261,6 +261,7 @@ FUSE_SHARE += multistate_data.f90
 FUSE_SHARE += multi_flux_data.f90
 FUSE_SHARE += multiroute_data.f90
 FUSE_SHARE += multistats_data.f90
+FUSE_SHARE += manage_legacy_data.f90
 SHARE = $(patsubst %, $(SHARE_DIR)/%, $(FUSE_SHARE))
 
 # combine data modules together

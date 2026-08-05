@@ -4,7 +4,7 @@ MODULE fuse_evaluate_module
   use multi_flux_types, only: fluxes
   use info_types, only: fuse_info
   use work_types, only: fuse_work
-  use data_types, only: domain_data
+  use domain_types, only: domain_data
 
   IMPLICIT NONE
 
@@ -33,10 +33,9 @@ MODULE fuse_evaluate_module
     use nrtype
     use fuse_globaldata,only: NPAR_SNOW, isPrint, nFUSE_eval
     use model_defn,only: NSTATE
-    use multiparam,only: NUMPAR
     use multiforce,only: nspat1, nspat2, numtim_sub
     use multibands,only: N_BANDS, n_bands
-    use multistats,only: MSTATS, PCOUNT
+    use multistats,only: MSTATS
     use multi_flux,only: W_FLUX_3d
 
     IMPLICIT NONE
@@ -72,7 +71,7 @@ MODULE fuse_evaluate_module
     CALL CPU_TIME(T1)
 
     ! run fuse for the entire time series
-    call run_time_loop(info, work, OUTPUT_FLAG, err, message)
+    call run_time_loop(info, work, domain, OUTPUT_FLAG, err, message)
     if (err /= 0) stop trim(message)
 
     ! get timing information
@@ -93,7 +92,7 @@ MODULE fuse_evaluate_module
     endif ! if catchment mode (lumped or distributed)
 
     if(isPrint) PRINT *, 'Writing model statistics...'
-    CALL PUT_SSTATS(PCOUNT)
+    CALL PUT_SSTATS(work%run%n_evaluations)
 
     ! deallocate output buffer
     DEALLOCATE(W_FLUX_3d); IF (IERR.NE.0) STOP ' problem deallocating W_FLUX_3d in fuse_metric '
@@ -113,10 +112,8 @@ MODULE fuse_evaluate_module
   use model_defn,  only: SMODL
   use model_defnames
   
-  use multiparam,  only: NUMPAR
   use multiforce,  only: nspat1, nspat2
   use multistate,  only: FSTATE, gState_3d
-  use multistats,  only: PCOUNT
   use multibands
  
   use par_derive_module, only: par_derive 
@@ -141,7 +138,7 @@ MODULE fuse_evaluate_module
   message = ""
 
   ! increment parameter counter for model output
-  PCOUNT = PCOUNT + 1
+  work%run%n_evaluations = work%run%n_evaluations + 1
 
   ! add parameter set to the data structure
   call put_parset(xpar)
@@ -162,7 +159,7 @@ MODULE fuse_evaluate_module
   MBANDS(:)%info = MBANDS_INFO_3d(1,1,:)
 
   if (isPrint) print *, 'Writing parameter values...'
-  call put_params(PCOUNT)
+  call put_params(work%run%n_evaluations)
 
   ! initialize model states over the 2D gridded domain (1x1 in catchment mode)
   do iSpat2 = 1, nSpat2
@@ -209,7 +206,7 @@ MODULE fuse_evaluate_module
   ! ----- private subroutine run_time_loop: run fuse for the entire time series  --------------------------------------
   ! -------------------------------------------------------------------------------------------------------------------
 
-  subroutine run_time_loop(info, work, output_flag, ierr, message)
+  subroutine run_time_loop(info, work, domain, output_flag, ierr, message)
 
   use fuse_globaldata, only: isPrint
   use multiforce, only: timDat  ! NOTE: used in legacy cides
@@ -225,6 +222,7 @@ MODULE fuse_evaluate_module
 
   type(fuse_info)   , intent(in)    :: info           ! info structures that include "everything"
   type(fuse_work)   , intent(inout) :: work           ! work structures that depend on npar/nState
+  type(domain_data) , intent(inout) :: domain         ! domain structures that hold 3-d data 
   logical(lgt)      , intent(in)    :: output_flag
 
   integer(i4b)      , intent(out)   :: ierr
@@ -287,9 +285,10 @@ MODULE fuse_evaluate_module
     chunk_start_sim = in_idx - sim_beg + 1     ! start of chunk in simulation index space
     chunk_start_in  = in_idx                   ! start of chunk in input index space
 
-    ! load forcing for desired period into gForce_3d
+    ! load forcing for desired period into the domain%force data structure
     if(isPrint) PRINT *, 'New subperiod: loading forcing for ',chunk_len,' time steps'
-    call get_gforce_3d(info, chunk_start_in, chunk_len, ierr, message)
+    call get_gforce_3d(info, chunk_start_in, chunk_len, &
+                       domain, ierr, message)
     IF(ierr/=0) stop 'Error while extracting 3d forcing: '//trim(message)
     if(isPrint) PRINT *, 'Forcing loaded. Running FUSE...'
     
@@ -318,7 +317,7 @@ MODULE fuse_evaluate_module
         DO iSpat1=1,nSpat1
   
           ! run fuse for one grid cell
-          call advance_one_cell(work, sub_idx, iSpat1, iSpat2, dt_sub, dt_full, ierr, message)
+          call advance_one_cell(work, domain, sub_idx, iSpat1, iSpat2, dt_sub, dt_full, ierr, message)
           if (ierr /= 0)  stop trim(message)
   
           !if(sub_idx > 100) stop "check"
@@ -340,7 +339,7 @@ MODULE fuse_evaluate_module
     ! write model output
     IF (OUTPUT_FLAG) THEN
       if(isPrint) PRINT *, 'Write output for ',chunk_len,' time steps starting at indices', chunk_start_sim
-      CALL PUT_OUTPUT(work, chunk_start_sim, chunk_start_in, chunk_len)
+      CALL PUT_OUTPUT(domain, chunk_start_sim, chunk_start_in, chunk_len)
       if(isPrint) PRINT *, 'Done writing output'
     ELSE
       if(isPrint) PRINT *, 'OUTPUT_FLAG is set on FALSE, no output written'
@@ -368,13 +367,13 @@ MODULE fuse_evaluate_module
   ! ----- private subroutine advance_one_cell: run fuse for one grid cell ---------------------------------------------
   ! -------------------------------------------------------------------------------------------------------------------
 
-  subroutine advance_one_cell(work, sub_idx, iSpat1, iSpat2, dt_sub, dt_full, err, message)
+  subroutine advance_one_cell(work, domain, sub_idx, iSpat1, iSpat2, dt_sub, dt_full, err, message)
 
   ! switches / options
   use fuse_globaldata,   only: NA_VALUE_SP
   use model_defn,   only: SMODL, NSTATE
   use model_defnames
-  use multiforce,   only: DELTIM, gForce_3d, aForce, MFORCE, nspat1, nspat2
+  use multiforce,   only: DELTIM, MFORCE, nspat1, nspat2
   use multistate,   only: gState_3d, FSTATE, MSTATE
   use multiroute,   only: MROUTE, AROUTE_3d
   use multibands
@@ -400,6 +399,7 @@ MODULE fuse_evaluate_module
   implicit none
 
   type(fuse_work)       , intent(inout) :: work           ! work structures that depend on npar/nState
+  type(domain_data)     , intent(inout) :: domain         ! domain structures that hold 3-d data 
   integer(i4b)          , intent(in)    :: sub_idx, iSpat1, iSpat2
   real(wp)              , intent(inout) :: dt_sub, dt_full
   integer(i4b)          , intent(out)   :: err
@@ -421,7 +421,7 @@ MODULE fuse_evaluate_module
   if (.not. elev_mask(iSpat1,iSpat2)) then
 
     ! extract forcing for this grid cell and time step
-    MFORCE = gForce_3d(iSpat1,iSpat2,sub_idx)
+    MFORCE = domain%force(iSpat1,iSpat2,sub_idx)
 
     ! forcing sanity checks (keep behavior; convert STOP -> error return)
     if (MFORCE%PPT < 0.0_wp) then
@@ -568,10 +568,6 @@ MODULE fuse_evaluate_module
       MBANDS_VAR_4d(iSpat1,iSpat2,:,sub_idx+1)   = MBANDS(:)%var
 
     end if
-
-    ! forcing diagnostics
-    aForce(sub_idx)%ppt = sum(gForce_3d(:,:,sub_idx)%ppt) / real(size(gForce_3d(:,:,sub_idx)), kind=wp)
-    aForce(sub_idx)%pet = sum(gForce_3d(:,:,sub_idx)%pet) / real(size(gForce_3d(:,:,sub_idx)), kind=wp)
 
     ! stats
     call COMP_STATS()

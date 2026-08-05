@@ -1,7 +1,7 @@
 MODULE DEF_OUTPUT_MODULE
   USE nrtype
   USE netcdf
-  use data_types, only: coord_data
+  use domain_types, only: coord_data
   use iso_fortran_env, only: real32
   implicit none
   private

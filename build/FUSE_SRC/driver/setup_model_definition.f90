@@ -3,7 +3,7 @@ module setup_model_definition_MODULE
   USE nrtype
   USE info_types, only: fuse_info
   USE info_types, only: cli_options
-  USE data_types, only: domain_data
+  USE domain_types, only: domain_data
   USE multiparam_types, only: PARATT
 
   implicit none
@@ -28,7 +28,10 @@ contains
   USE DEF_OUTPUT_MODULE, only: DEF_OUTPUT                   ! define model output
   USE getpar_str_module, only: GETPAR_STR                   ! extracts parameter metadata
 
-  ! data stored in legacy modules
+  ! Legacy model-definition modules.
+  ! These variables are produced by the original FUSE model-definition
+  ! routines and are copied into the explicit FUSE data structures
+  ! (info, work, and domain) during setup.
   USE model_defn, only: NSTATE             ! number of state variables
   USE multiparam, only: NUMPAR             ! number of paramters for the current model
   USE multiparam, only: LPARAM             ! list of model parameters

@@ -2,7 +2,7 @@ module varextract_module
 
   use nrtype
   use iso_fortran_env, only: real32
-  use work_types, only: fuse_chunk
+  use domain_types, only: domain_data
   use fuse_globaldata, only: NA_VALUE_SP
 
   implicit none
@@ -11,18 +11,18 @@ module varextract_module
 
 contains
 
-  subroutine varextract_3d(chunk, varname, nspat1, nspat2, numtim, xout)
+  subroutine varextract_3d(domain, varname, nspat1, nspat2, numtim, xout)
   ! ---------------------------------------------------------------------------------------
   USE model_numerix
-  USE multiforce, only: gForce_3d, aValid                     ! model forcing data
+  USE multiforce, only: aValid                                ! model validation data
   USE multistate, only: gState_3d                             ! model states
   USE multi_flux, only: w_flux_3d                             ! model fluxes
   USE multiroute, only: aroute_3d                             ! routed runoff
   implicit none
 
-  type(fuse_chunk), intent(in) :: chunk
-  character(*),     intent(in) :: varname
-  integer(i4b),     intent(in) :: nspat1, nspat2, numtim
+  type(domain_data), intent(in) :: domain
+  character(*),      intent(in) :: varname
+  integer(i4b),      intent(in) :: nspat1, nspat2, numtim
 
   ! NetCDF output buffer (matches NF90_FLOAT)
   real(real32), intent(out) :: xout(nspat1, nspat2, numtim)
@@ -35,9 +35,9 @@ contains
   SELECT CASE (TRIM(VARNAME))
   
    ! extract forcing data
-   CASE ('ppt')        ; xout = real(gForce_3d(:,:,1:numtim)%PPT ,        kind=real32)
-   CASE ('temp')       ; xout = real(gForce_3d(:,:,1:numtim)%TEMP,        kind=real32) 
-   CASE ('pet')        ; xout = real(gForce_3d(:,:,1:numtim)%PET ,        kind=real32) 
+   CASE ('ppt')        ; xout = real(domain%force(:,:,1:numtim)%PPT ,        kind=real32)
+   CASE ('temp')       ; xout = real(domain%force(:,:,1:numtim)%TEMP,        kind=real32) 
+   CASE ('pet')        ; xout = real(domain%force(:,:,1:numtim)%PET ,        kind=real32) 
    
    ! extract response data
    ! TODO: Check this -- it is weird that obs q is 3d
