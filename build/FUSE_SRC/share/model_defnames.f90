@@ -1,16 +1,16 @@
 module model_defnames
 ! Purpose: Contains routines for alternating between char <-> int names
 ! Programmers: David McInerney and Dmitri Kavetski (University of Adelaide)
-USE nrtype 
+USE nrtype
 implicit none
 ! parameterised descriptions
-integer(I4B), parameter ::  iopt_additive_e = 1001, & 
+integer(I4B), parameter ::  iopt_additive_e = 1001, &
                             iopt_multiplc_e = 1002, &
                             iopt_tension1_1 = 2001, &
                             iopt_tension2_1 = 2002, &
-                            iopt_onestate_1 = 2003, & 
+                            iopt_onestate_1 = 2003, &
                             iopt_tens2pll_2 = 3001, &
-                            iopt_unlimfrc_2 = 3002, & 
+                            iopt_unlimfrc_2 = 3002, &
                             iopt_unlimpow_2 = 3003, &
                             iopt_fixedsiz_2 = 3004, &
                             iopt_topmdexp_2 = 3005, &
@@ -27,7 +27,9 @@ integer(I4B), parameter ::  iopt_additive_e = 1001, &
                             iopt_rout_gamma = 8001, &
                             iopt_no_routing = 8002, &
                             iopt_no_snowmod = 8501, &
-                            iopt_temp_index = 8502
+                            iopt_temp_index = 8502, &
+                            iopt_no_intrcep = 8601, &
+                            iopt_gr5h_intrc = 8602
 ! ---
 integer(I4B), parameter ::  iopt_TENS1A = 9001, &
                             iopt_TENS1B = 9002, &
@@ -72,6 +74,8 @@ case("rout_gamma"); res = iopt_rout_gamma
 case("no_routing"); res = iopt_no_routing
 case("no_snowmod"); res = iopt_no_snowmod
 case("temp_index"); res = iopt_temp_index
+case("no_intrcep"); res = iopt_no_intrcep
+case("gr5h_intrc"); res = iopt_gr5h_intrc
 case("TENS1B");  res = iopt_TENS1B
 case("TENS_1");  res = iopt_TENS_1
 case("FREE_1");  res = iopt_FREE_1
@@ -101,9 +105,9 @@ case(iopt_TENS_2); res = "TENS_2"
 case(iopt_FREE2A); res = "FREE2A"
 case(iopt_FREE2B); res = "FREE2B"
 case(iopt_WATR_2); res = "WATR_2"
-case(iopt_additive_e); res = "additive_e" 
+case(iopt_additive_e); res = "additive_e"
 case(iopt_multiplc_e); res = "multiplc_e"
-case(iopt_tension1_1); res = "tension1_1" 
+case(iopt_tension1_1); res = "tension1_1"
 case(iopt_tension2_1); res = "tension2_1"
 case(iopt_onestate_1); res = "onestate_1"
 case(iopt_tens2pll_2); res = "tens2pll_2"
@@ -124,6 +128,8 @@ case(iopt_rout_gamma); res = "rout_gamma"
 case(iopt_no_routing); res = "no_routing"
 case(iopt_no_snowmod); res = "no_snowmod"
 case(iopt_temp_index); res = "temp_index"
+case(iopt_no_intrcep); res = "no_intrcep"
+case(iopt_gr5h_intrc); res = "gr5h_intrc"
 case default;      res = "UNDFND"
 endselect
 ! End procedure here

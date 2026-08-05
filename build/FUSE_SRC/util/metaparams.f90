@@ -6,6 +6,7 @@ MODULE metaparams
   ! Martyn Clark, 2007
   ! Modified by Brian Henn to include snow model, 6/2013
   ! Modified by Martyn Clark to avoid per-band parameters, 12/2025
+  ! Modified by Cyril Thebault to include interception, 7/2026
   ! ---------------------------------------------------------------------------------------
   ! Purpose:
   ! --------
@@ -40,6 +41,7 @@ MODULE metaparams
   ! adjustable model parameters
   I=I+1; PNAME(I)='RFERR_ADD  '; PDESC(I)='additive rainfall error                            '; PUNIT(I)='mm      '; isBand(i)=.false.
   I=I+1; PNAME(I)='RFERR_MLT  '; PDESC(I)='multiplicative rainfall error                      '; PUNIT(I)='-       '; isBand(i)=.false.
+  I=I+1; PNAME(I)='REFSINT_0  '; PDESC(I)='characteristic interception storage                '; PUNIT(I)='mm      '; isBand(i)=.false.
   I=I+1; PNAME(I)='MAXWATR_1  '; PDESC(I)='maximum total storage in the upper layer           '; PUNIT(I)='mm      '; isBand(i)=.false.
   I=I+1; PNAME(I)='MAXWATR_2  '; PDESC(I)='maximum total storage in the lower layer           '; PUNIT(I)='mm      '; isBand(i)=.false.
   I=I+1; PNAME(I)='FRACTEN    '; PDESC(I)='fraction total storage as tension storage          '; PUNIT(I)='-       '; isBand(i)=.false.

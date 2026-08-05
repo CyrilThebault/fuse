@@ -4,6 +4,7 @@ SUBROUTINE INITFLUXES()
 ! --------
 ! Martyn Clark, 2007
 ! Modified by Brian Henn to include snow model, 6/2013
+! Modified by Cyril Thébault to include interception, 7/2026
 ! ---------------------------------------------------------------------------------------
 ! Purpose:
 ! --------
@@ -21,6 +22,9 @@ USE multibands                                        ! model snow bands
 IMPLICIT NONE
 INTEGER(I4B)                          :: ISNW         ! index for looping though SWE 
 ! ---------------------------------------------------------------------------------------
+M_FLUX%EVAP_0      = 0._wp; W_FLUX%EVAP_0      = 0._wp
+M_FLUX%PIN0        = 0._wp; W_FLUX%PIN0        = 0._wp
+M_FLUX%PTHRU       = 0._wp; W_FLUX%PTHRU       = 0._wp
 M_FLUX%EFF_PPT     = 0._wp; W_FLUX%EFF_PPT     = 0._wp
 M_FLUX%SATAREA     = 0._wp; W_FLUX%SATAREA     = 0._wp
 M_FLUX%QSURF       = 0._wp; W_FLUX%QSURF       = 0._wp

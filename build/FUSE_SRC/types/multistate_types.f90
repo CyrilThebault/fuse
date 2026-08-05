@@ -11,6 +11,8 @@ MODULE multistate_types
  ! model state structure
  ! --------------------------------------------------------------------------------------
  TYPE STATEV
+  ! interception layer
+  REAL(WP)                             :: SINT_0     ! interception storage (mm)
   ! snow layer
   REAL(WP)                             :: SWE_TOT    ! total storage as snow (mm)
   ! upper layer

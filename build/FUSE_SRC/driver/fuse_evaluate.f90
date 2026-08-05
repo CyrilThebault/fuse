@@ -21,6 +21,7 @@ MODULE fuse_evaluate_module
     ! Modified by Cyril Thébault to allow different metrics as objective function, 2024
     ! Modified by Martyn Clark to call differentiable modeling routines, 12/2025
     ! Modified by Martyn Clark to simplify/refactor, 02/2026
+    ! Modified by Cyril Thébault to include interception, 7/2026
     ! ---------------------------------------------------------------------------------------
     ! Purpose:
     ! --------
@@ -64,7 +65,7 @@ MODULE fuse_evaluate_module
     if (ierr /= 0) stop "problem allocating w_flux_3d in fuse_evaluate"
 
     ! populate parameter structures and initialize states
-    call initialize_run(XPAR, work, ierr, message)
+    call initialize_run(info, XPAR, work, ierr, message)
     if (ierr /= 0) stop trim(message)
     
     ! initialize timing
@@ -106,14 +107,14 @@ MODULE fuse_evaluate_module
   ! ----- private subroutine initialize_run: populate param sets and initialize states  -------------------------------
   ! -------------------------------------------------------------------------------------------------------------------
 
-  subroutine initialize_run(xpar, work, err, message)
+  subroutine initialize_run(info, xpar, work, err, message)
   
   use fuse_globaldata,  only: isPrint, fracstate0
   use model_defn,  only: SMODL
   use model_defnames
   
   use multiparam,  only: NUMPAR
-  use multiforce,  only: nspat1, nspat2, DELTIM
+  use multiforce,  only: nspat1, nspat2
   use multistate,  only: FSTATE, gState_3d
   use multistats,  only: PCOUNT
   use multibands
@@ -123,8 +124,11 @@ MODULE fuse_evaluate_module
   use str_2_xtry_module
   use xtry_2_str_module
   use put_params_module, only: put_params
+
+  use info_types, only: fuse_info
   implicit none
 
+  type(fuse_info)        , intent(in)      :: info
   real(wp), dimension(:) , intent(in)      :: xpar
   type(fuse_work)        , intent(inout)   :: work
 
@@ -147,7 +151,7 @@ MODULE fuse_evaluate_module
   end if
 
   ! compute derived model parameters (bucket sizes, etc.)
-  call par_derive(err, message)
+  call par_derive(info, err, message)
   if (err /= 0) then
     write(*,*) trim(message)
     stop
@@ -374,7 +378,7 @@ MODULE fuse_evaluate_module
   use multistate,   only: gState_3d, FSTATE, MSTATE
   use multiroute,   only: MROUTE, AROUTE_3d
   use multibands
-  use multi_flux,   only: W_FLUX, W_FLUX_3d
+  use multi_flux,   only: W_FLUX, W_FLUX_3d, M_FLUX
   use set_all_module, only: SET_STATE, SET_FLUXES, SET_ROUTE
 
   ! state vector conversions
@@ -485,6 +489,34 @@ MODULE fuse_evaluate_module
 
     end select
 
+    ! -------------------------
+    ! interception
+    ! -------------------------
+    select case(diff_mode)
+
+      case(original)
+        M_FLUX%PIN0 = M_FLUX%EFF_PPT
+        call UPDATE_INTERCEPTION(DELTIM, ierr, cmessage)
+
+      if (ierr /= 0) then
+        err = 1
+        message = trim(cmessage)
+        return
+      end if
+
+      case(differentiable)
+        if (SMODL%iINTRC /= iopt_no_intrcep) then
+          err = 1
+          message = 'advance_one_cell: interception not yet implemented for differentiable mode'
+          return
+        end if
+
+      case default
+        err = 1
+        message = 'advance_one_cell: cannot identify diff_mode (interception)'
+        return
+
+    end select
     ! -------------------------
     ! soil physics
     ! -------------------------

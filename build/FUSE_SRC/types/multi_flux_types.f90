@@ -8,7 +8,10 @@ MODULE multi_flux_types
  public :: FLUXES
 
  TYPE FLUXES
-  REAL(WP)                             :: EFF_PPT     ! effective precipitation (mm day-1)
+  REAL(WP)                             :: EVAP_0      ! evaporation from interception store (mm day-1)
+  REAL(WP)                             :: PIN0        ! precipitation entering interception store (mm day-1)
+  REAL(WP)                             :: PTHRU       ! precipitation through interception store (mm day-1)
+  REAL(WP)                             :: EFF_PPT     ! effective precipitation available to soil (mm day-1)
   REAL(WP)                             :: SATAREA     ! saturated area (-)
   REAL(WP)                             :: QSURF       ! surface runoff (mm day-1)
   REAL(WP)                             :: EVAP_1A     ! evaporation from soil excess zone (mm day-1)

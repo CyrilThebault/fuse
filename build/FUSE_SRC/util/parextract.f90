@@ -18,6 +18,7 @@ MODULE PAREXTRACT_MODULE
   ! --------
   ! Martyn Clark, 2007
   ! Modified by Martyn Clark to remove elevation band parameters (handled separately)
+  ! Modified by Cyril Thebault to include interception, 7/2026
   ! ---------------------------------------------------------------------------------------
   ! Purpose:
   ! --------
@@ -46,6 +47,7 @@ MODULE PAREXTRACT_MODULE
    CASE ('RH1P_SDEV')  ; XVAR = MPARAM%RH1P_SDEV
    CASE ('RH2P_MEAN')  ; XVAR = MPARAM%RH2P_MEAN
    CASE ('RH2P_SDEV')  ; XVAR = MPARAM%RH2P_SDEV
+   CASE ('REFSINT_0')  ; XVAR = MPARAM%REFSINT_0
    CASE ('MAXWATR_1')  ; XVAR = MPARAM%MAXWATR_1
    CASE ('MAXWATR_2')  ; XVAR = MPARAM%MAXWATR_2
    CASE ('FRACTEN')    ; XVAR = MPARAM%FRACTEN

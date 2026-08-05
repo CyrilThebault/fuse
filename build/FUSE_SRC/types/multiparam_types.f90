@@ -6,10 +6,10 @@ MODULE multiparam_types
  ! Martyn Clark
  ! Modified by Brian Henn to include snow model, 6/2013
  ! Modified by Martyn Clark to separate type definitions from data storage, 01/2026
+ ! Modified by Cyril Thebault to include interception, 7/2026
  ! ---------------------------------------------------------------------------------------
  
  USE nrtype
- USE model_defn, ONLY: NTDH_MAX
  
  implicit none
  private
@@ -50,6 +50,8 @@ MODULE multiparam_types
   TYPE(PARATT)                         :: RH1P_SDEV   ! prior param2 of hyper param1: prior sdev of hypermean
   TYPE(PARATT)                         :: RH2P_MEAN   ! prior param1 of hyper param2: lower bound of hypersdev
   TYPE(PARATT)                         :: RH2P_SDEV   ! prior param2 of hyper param2: upper bound of hypersdev
+  ! interception (adjustable)
+  TYPE(PARATT)                         :: REFSINT_0   ! characteristic interception storage (50% throughfall) (mm)
   ! bucket sizes (adjustable)
   TYPE(PARATT)                         :: MAXWATR_1   ! maximum total storage in layer1 (mm)
   TYPE(PARATT)                         :: MAXWATR_2   ! maximum total storage in layer2 (mm)
@@ -102,6 +104,8 @@ MODULE multiparam_types
   REAL(WP)                             :: RH1P_SDEV   ! prior param2 of hyper param1: prior sdev of hypermean
   REAL(WP)                             :: RH2P_MEAN   ! prior param1 of hyper param2: lower bound of hypersdev
   REAL(WP)                             :: RH2P_SDEV   ! prior param2 of hyper param2: upper bound of hypersdev
+  ! interception
+  REAL(WP)                             :: REFSINT_0   ! characteristic interception storage (50% throughfall) (mm)
   ! bucket sizes (adjustable)
   REAL(WP)                             :: MAXWATR_1   ! maximum total storage in layer1 (mm)
   REAL(WP)                             :: MAXWATR_2   ! maximum total storage in layer2 (mm)
@@ -162,7 +166,7 @@ MODULE multiparam_types
   REAL(WP)                             :: POWLAMB     ! mean value of the power-transformed topographic index (m**(1/n))
   REAL(WP)                             :: MAXPOW      ! max value of the power-transformed topographic index (m**(1/n))
   ! routing
-  REAL(WP), DIMENSION(NTDH_MAX)        :: FRAC_FUTURE ! fraction of runoff in future time steps
+  REAL(WP), ALLOCATABLE                :: FRAC_FUTURE(:) ! fraction of runoff in future time steps
   INTEGER(I4B)                         :: NTDH_NEED   ! number of time-steps with non-zero routing contribution
  END TYPE PARDVD
  

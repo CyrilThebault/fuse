@@ -73,8 +73,9 @@ CONTAINS
   if(ierr/=0)then; message=trim(message)//"cannot allocate elev bands (var)"; return; endif
 
   ! allocate forcing lookup table
-  allocate(info%files%forc%name(NVAR_FORC), info%files%forc%varid(NVAR_FORC), stat=ierr)
+  allocate(info%files%forc%name(NVAR_FORC), info%files%forc%varid(NVAR_FORC), info%files%forc%multiplier(NVAR_FORC), stat=ierr)
   if(ierr/=0)then; message=trim(message)//"cannot allocate forcing lookup table"; return; endif
+  info%files%forc%multiplier(:) = -1._wp
 
   end subroutine allocate_domain_data
 

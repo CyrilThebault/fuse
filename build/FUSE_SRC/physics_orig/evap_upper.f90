@@ -20,6 +20,11 @@ USE multiforce                                        ! model forcing
 USE multistate                                        ! model states
 USE multi_flux                                        ! model fluxes
 IMPLICIT NONE
+REAL(WP) :: PET_SOIL
+
+! Potential evaporation remaining after interception evaporation
+PET_SOIL = MAX(0._wp, MFORCE%PET - M_FLUX%EVAP_0)
+
 ! ---------------------------------------------------------------------------------------
 SELECT CASE(SMODL%iARCH1)  ! upper layer architecture
  ! --------------------------------------------------------------------------------------
@@ -29,12 +34,12 @@ SELECT CASE(SMODL%iARCH1)  ! upper layer architecture
   ! -----------------------------------------------------
   SELECT CASE(SMODL%iESOIL)
    CASE(iopt_sequential)
-    M_FLUX%EVAP_1A = MFORCE%PET * TSTATE%TENS_1A/DPARAM%MAXTENS_1A
-    M_FLUX%EVAP_1B = (MFORCE%PET - M_FLUX%EVAP_1A) * TSTATE%TENS_1B/DPARAM%MAXTENS_1B
+    M_FLUX%EVAP_1A = PET_SOIL * TSTATE%TENS_1A/DPARAM%MAXTENS_1A
+    M_FLUX%EVAP_1B = MAX(0._wp, PET_SOIL - M_FLUX%EVAP_1A) * TSTATE%TENS_1B/DPARAM%MAXTENS_1B
     M_FLUX%EVAP_1  = M_FLUX%EVAP_1A + M_FLUX%EVAP_1B
    CASE(iopt_rootweight)
-    M_FLUX%EVAP_1A = MFORCE%PET * MPARAM%RTFRAC1 * TSTATE%TENS_1A/DPARAM%MAXTENS_1A
-    M_FLUX%EVAP_1B = MFORCE%PET * DPARAM%RTFRAC2 * TSTATE%TENS_1B/DPARAM%MAXTENS_1B
+    M_FLUX%EVAP_1A = PET_SOIL * MPARAM%RTFRAC1 * TSTATE%TENS_1A/DPARAM%MAXTENS_1A
+    M_FLUX%EVAP_1B = PET_SOIL * DPARAM%RTFRAC2 * TSTATE%TENS_1B/DPARAM%MAXTENS_1B
     M_FLUX%EVAP_1  = M_FLUX%EVAP_1A + M_FLUX%EVAP_1B
    CASE DEFAULT
     print *, "SMODL%iESOIL must be either iopt_sequential or iopt_rootweight"
@@ -49,11 +54,11 @@ SELECT CASE(SMODL%iARCH1)  ! upper layer architecture
    CASE(iopt_sequential)
     M_FLUX%EVAP_1A = 0._wp
     M_FLUX%EVAP_1B = 0._wp
-    M_FLUX%EVAP_1  = MFORCE%PET * TSTATE%TENS_1/DPARAM%MAXTENS_1
+    M_FLUX%EVAP_1  = PET_SOIL * TSTATE%TENS_1/DPARAM%MAXTENS_1
    CASE(iopt_rootweight)
     M_FLUX%EVAP_1A = 0._wp
     M_FLUX%EVAP_1B = 0._wp
-    M_FLUX%EVAP_1  = MFORCE%PET * MPARAM%RTFRAC1 * TSTATE%TENS_1/DPARAM%MAXTENS_1
+    M_FLUX%EVAP_1  = PET_SOIL * MPARAM%RTFRAC1 * TSTATE%TENS_1/DPARAM%MAXTENS_1
    CASE DEFAULT
     print *, "SMODL%iESOIL must be either iopt_sequential or iopt_rootweight"
   END SELECT  ! (evaporation schemes)
