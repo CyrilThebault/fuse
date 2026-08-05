@@ -149,7 +149,7 @@ MIZU_BASE += $(MIZU_DIR)/ncio_utils.f90
 # Provides the minimal FUSE-side types and legacy module interfaces
 # required by the unmodified mizuRoute source routines.
 MIZU_DATA =
-MIZU_DATA += $(FUSE_SOURCE_DIR)/mizuRoute/mizuRoute_types.f90
+MIZU_DATA += $(FUSE_SOURCE_DIR)/types/mizuRoute_types.f90
 MIZU_DATA += $(FUSE_SOURCE_DIR)/mizuRoute/mizuRoute_data.f90
 
 # mizuRoute routines used to read, validate, augment, and optionally
@@ -164,12 +164,17 @@ MIZU_TOPO += $(MIZU_DIR)/process_ntopo.f90
 MIZU_TOPO += $(MIZU_DIR)/read_streamSeg.f90
 MIZU_TOPO += $(MIZU_DIR)/write_streamSeg.f90
 
+# mizuRoute remapping routines
+MIZU_RMAP += $(MIZU_DIR)/standalone/read_remap.f90
+MIZU_RMAP += $(MIZU_DIR)/process_remap.f90
+
 # Complete set of imported mizuRoute dependencies required by the
 # FUSE-mizuRoute coupling.
 MIZU_LIB =
 MIZU_LIB += $(MIZU_BASE)
 MIZU_LIB += $(MIZU_DATA)
 MIZU_LIB += $(MIZU_TOPO)
+MIZU_LIB += $(MIZU_RMAP)
 
 # FUSE-facing mizuRoute coupling routines.
 #
@@ -177,7 +182,7 @@ MIZU_LIB += $(MIZU_TOPO)
 # variables expected by mizuRoute, initialize the river-network
 # structures, and perform network routing.
 MIZU_RUN =
-MIZU_RUN += $(FUSE_SOURCE_DIR)/mizuRoute/init_mizuRoute_topo.f90
+MIZU_RUN += $(FUSE_SOURCE_DIR)/mizuRoute/init_mizuRoute.f90
 
 #========================================================================
 # Assemble all of the FUSE sub-routines

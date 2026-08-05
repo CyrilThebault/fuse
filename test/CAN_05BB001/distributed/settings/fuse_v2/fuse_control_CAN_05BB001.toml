@@ -42,7 +42,21 @@ varname_area   = "area"
 varname_slope  = "slope"
 varname_length = "length"
 
+[remapping]
+
+remap_file     = "lumped_to_hru.nc"
+
+dname_hru      = "polyid"
+dname_data     = "data"
+
+vname_hruid    = "polyid"
+vname_weight   = "weight"
+vname_num_qhru = "nOverlaps"
+vname_i_index  = "i_index"
+vname_j_index  = "j_index"
+
 [output]
+
 model_id = "2"
 q_only   = true
 

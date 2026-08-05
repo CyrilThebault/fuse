@@ -170,7 +170,7 @@ contains
         case ("forcing_vars.pet"             ); call get_value(subtable, trim(keys(j)%key), info%files%pet_name         , stat=istat)
         case ("forcing_vars.qobs"            ); call get_value(subtable, trim(keys(j)%key), info%files%qobs_name        , stat=istat)
 
-        ! ---- hydrofabric: files ----
+        ! ---- hydrofabric: path/filenames ----
         case ("hydrofabric.hfabric_path"     ); call get_value(subtable, trim(keys(j)%key), info%ntopo%hfabric_path     , stat=istat)
         case ("hydrofabric.hfabric_file"     ); call get_value(subtable, trim(keys(j)%key), info%ntopo%hfabric_file     , stat=istat)
         case ("hydrofabric.hfabric_newfile"  ); call get_value(subtable, trim(keys(j)%key), info%ntopo%hfabric_newfile  , stat=istat)
@@ -190,6 +190,20 @@ contains
 
         ! ---- hydrofabric: network topology ----
         case ("hydrofabric.seg_outlet"       ); call get_value(subtable, trim(keys(j)%key), info%ntopo%idSegOut         , stat=istat)
+
+        ! ---- remapping: filename ----
+        case ("remapping.remap_file"         ); call get_value(subtable, trim(keys(j)%key), info%remap%remap_file       , stat=istat)
+ 
+        ! ---- remapping: dimension names ----
+        case ("remapping.dname_hru"          ); call get_value(subtable, trim(keys(j)%key), info%remap%dname_hru        , stat=istat)
+        case ("remapping.dname_data"         ); call get_value(subtable, trim(keys(j)%key), info%remap%dname_data       , stat=istat)
+        
+        ! ---- remapping: variable names ----
+        case ("remapping.vname_hruid"        ); call get_value(subtable, trim(keys(j)%key), info%remap%vname_hruid      , stat=istat)
+        case ("remapping.vname_weight"       ); call get_value(subtable, trim(keys(j)%key), info%remap%vname_weight     , stat=istat)
+        case ("remapping.vname_num_qhru"     ); call get_value(subtable, trim(keys(j)%key), info%remap%vname_num_qhru   , stat=istat)
+        case ("remapping.vname_i_index"      ); call get_value(subtable, trim(keys(j)%key), info%remap%vname_i_index    , stat=istat)
+        case ("remapping.vname_j_index"      ); call get_value(subtable, trim(keys(j)%key), info%remap%vname_j_index    , stat=istat)
 
         ! ---- config: runtime ----
         case ("output.model_id"              ); call get_value(subtable, trim(keys(j)%key), info%config%fmodel_id       , stat=istat)

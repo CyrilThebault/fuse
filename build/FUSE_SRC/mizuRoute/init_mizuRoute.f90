@@ -1,4 +1,4 @@
-MODULE init_mizuRoute_topo
+MODULE init_mizuRoute
 
 ! data types
 USE nrtype,    ONLY: i4b,dp,lgt,strLen
@@ -23,27 +23,43 @@ USE var_lookup, ONLY: ixPFAF     , nVarsPFAF
 ! Shared data
 USE public_var, ONLY: iulog
 USE public_var, ONLY: charMissing
+USE public_var, ONLY: integerMissing
+USE public_var, ONLY: realMissing
 
 ! modules
 
 implicit none
 
 private
-public :: init_mizuroute_topology
+public :: init_mizuroute_domain
 
 CONTAINS
 
- subroutine init_mizuroute_topology(info, domain, ierr, message)
+ !-----------------------------------------------------------------------
+ ! Initialize the mizuRoute data structures used by FUSE.
+ !
+ ! This routine:
+ !   (1) initializes the mizuRoute metadata;
+ !   (2) configures the FUSE–mizuRoute interface;
+ !   (3) reads the spatial remapping information;
+ !   (4) constructs the river-network topology; and
+ !   (5) allocates the routing input data structures.
+ !-----------------------------------------------------------------------
+ subroutine init_mizuroute_domain(info, domain, ierr, message)
 
+  ! data types
   use info_types, only: fuse_info
   use data_types, only: domain_data
-  
+
+  ! shared data
+  use public_var, only: ancil_dir
   use public_var, only: idSegOut
   use public_var, only: ntopAugmentMode
-  use public_var, only: impulseResponseFunc
   use globalData, only: onRoute
 
-  use  popMetadat_module,   only: popMetadat
+  ! external subroutines
+  use popMetadat_module,   only: popMetadat           ! populate metadata
+  use read_remap,          only: get_remap_data       ! read remap data
 
   implicit none
 
@@ -52,11 +68,16 @@ CONTAINS
   integer(i4b),      intent(out)   :: ierr
   character(*),      intent(out)   :: message
 
-  character(len=strLen) :: cmessage
+  integer(i4b)                     :: nSpace(1:2) = integerMissing
+  character(len=strLen)            :: cmessage
 
   ierr = 0
   message = 'init_mizuroute_topology/'
 
+  !---------------------------------------------------------------------
+  ! Initialize mizuRoute metadata
+  !---------------------------------------------------------------------
+  
   ! Populate the default metadata structures
   call popMetadat(ierr, cmessage)
   if (ierr /= 0) then
@@ -64,26 +85,62 @@ CONTAINS
     return
   end if
 
-  ! Populate the mizuRoute data modules
+  !---------------------------------------------------------------------
+  ! Configure the FUSE–mizuRoute interface
+  !---------------------------------------------------------------------
+
+  ! get the spatial dimensions
+  nSpace(1) = info%space%ny_global ! latitude dimension
+  nSpace(2) = info%space%nx_global ! longitude dimension
+
+  ! Populate the shared mizuRoute control variables.
   call populate_mizu_modules(info)
 
-  ! flag to write the augmented hydrofabric
-  !  -- write if augmented filename provided in the control file
+  !---------------------------------------------------------------------
+  ! Read spatial remapping information
+  !---------------------------------------------------------------------
+
+  ! This defines the mapping between the FUSE hydrologic spatial units and the routing HRUs.
+  
+  if ( allocated(info%remap%remap_file) )then
+    
+    call get_remap_data(trim(ancil_dir)//trim(info%remap%remap_file), & ! input: file name
+                        nSpace,                                       & ! input: vector of spatial dimensions
+                        domain%remap%routing,                         & ! output: data structure to remap data from a polygon
+                        ierr, cmessage)                                 ! output: error control
+    
+    if(ierr/=0)then
+      message=trim(message)//trim(cmessage)
+      return
+    endif
+  
+  endif  ! (if remapping file exists)
+
+  !---------------------------------------------------------------------
+  ! Construct the river network topology
+  !---------------------------------------------------------------------
+
+  ! Write an augmented hydrofabric if an output filename is provided.
   ntopAugmentMode = allocated(info%ntopo%hfabric_newfile) 
 
-  ! enable allocation of the network structures required for impulse-response-function routing.
-  onRoute = .false.
-  onRoute(impulseResponseFunc) = .true.
+  ! Enable all mizuRoute routing formulations during network initialization so that
+  ! the complete set of routing-specific network data structures is available.
+  onRoute(:) = .true.
 
   ! Read the hydrofabric and compute the derived network attributes.
-  ! NOTE: init_ntopo is copied direct from mizuRoute
-  call init_ntopo(domain%river_network%n_hru,           &
-                  domain%river_network%n_seg,           &
-                  domain%river_network%hru,             &
-                  domain%river_network%seg,             &
-                  domain%river_network%hru2seg,         &
-                  domain%river_network%ntopo,           &
-                  domain%river_network%pfaf,            &
+
+  ! NOTE: init_ntopo is copied directly from mizuRoute without modification.
+  !
+  ! It is the only substantial mizuRoute routine duplicated in the FUSE compatibility layer; all other
+  ! mizuRoute functionality is called from the original mizuRoute modules and subroutines.
+
+  call init_ntopo(domain%river_network%topology%n_hru,           &
+                  domain%river_network%topology%n_seg,           &
+                  domain%river_network%topology%hru,             &
+                  domain%river_network%topology%seg,             &
+                  domain%river_network%topology%hru2seg,         &
+                  domain%river_network%topology%ntopo,           &
+                  domain%river_network%topology%pfaf,            &
                   ierr, cmessage)
 
   if (ierr /= 0) then
@@ -91,9 +148,29 @@ CONTAINS
     return
   end if
 
-  domain%river_network%is_initialized = .true.
+  domain%river_network%topology%is_initialized = .true.
 
- end subroutine init_mizuroute_topology
+  !---------------------------------------------------------------------
+  ! Initialize routing input data structures
+  !---------------------------------------------------------------------
+
+  associate(runoff => domain%river_network%runoff, &
+            n_hru  => domain%river_network%topology%n_hru)
+
+  runoff%nSpace    = nSpace
+  runoff%fillvalue = realMissing
+
+  ! allocate space for 2-d gridded runoff 
+  allocate(runoff%sim2d(nSpace(1), nSpace(2)), stat=ierr)
+  if(ierr/=0)then; message=trim(message)//'unable to allocate gridded runoff input'; return; endif
+
+  ! allocate space for HRU variables
+  allocate(runoff%basinRunoff(n_hru), stat=ierr)
+  if(ierr/=0)then; message=trim(message)//'unable to allocate hru runoff input'; return; endif
+
+  end associate
+
+ end subroutine init_mizuroute_domain
 
  ! ---------------------------------------------------------------------
  ! ---------------------------------------------------------------------
@@ -111,12 +188,25 @@ CONTAINS
 
   ! mizuRoute configuration expected by the unmodified source code
   !
-  ! File paths/names and dimension/variable names
+  ! File paths/names
   use public_var, only: ancil_dir
   use public_var, only: fname_ntopOld
   use public_var, only: fname_ntopNew
+
+  ! dimension names in hydrofabric file
   use public_var, only: dname_sseg
   use public_var, only: dname_nhru
+
+  ! dimension names in remapping file
+  use public_var, only: dname_hru_remap       ! name of dimension of river network HRU ID
+  use public_var, only: dname_data_remap      ! name of dimension of runoff HRU overlapping with river network HRU
+  
+  ! variable names in remapping file
+  use public_var, only: vname_hruid_in_remap  ! name of variable containing ID of river network HRU
+  use public_var, only: vname_weight          ! name of variable contating areal weights of runoff HRUs within each river network HRU
+  use public_var, only: vname_num_qhru        ! name of variable containing numbers of runoff HRUs within each river network HRU
+  use public_var, only: vname_i_index         ! name of variable containing index of xlon dimension in runoff grid (if runoff file is grid)
+  use public_var, only: vname_j_index         ! name of variable containing index of ylat dimension in runoff grid (if runoff file is grid)
 
   ! Routing options
   use public_var, only: idSegOut
@@ -154,6 +244,17 @@ CONTAINS
   ! reach properties
   meta_SEG    (ixSEG%length          )%varName = trim(info%ntopo%varname_length)    ! length of segment  (m)
   meta_SEG    (ixSEG%slope           )%varName = trim(info%ntopo%varname_slope)     ! slope of segment   (-)
+
+  ! DIMENSION NAMES for remapping (overwrite default name in public_var.f90)
+  dname_hru_remap      = trim(info%remap%dname_hru)         ! dimension name for river network HRU
+  dname_data_remap     = trim(info%remap%dname_data)        ! dimension name for runoff HRU ID
+  
+  ! VARIABLE NAMES for remapping (overwrite default name in public_var.f90)
+  vname_hruid_in_remap = trim(info%remap%vname_hruid)       ! variable name for river network hru id
+  vname_weight         = trim(info%remap%vname_weight)      ! variable name for areal weights of runoff HRUs within each river network
+  vname_num_qhru       = trim(info%remap%vname_num_qhru)    ! variable for numbers of runoff HRUs within each river network HRU
+  vname_i_index        = trim(info%remap%vname_i_index)     ! variable for numbers of y (latitude) index if runoff file is grid
+  vname_j_index        = trim(info%remap%vname_j_index)     ! variable for numbers of x (longitude) index if runoff file is grid
 
   ! network topology
   idSegOut = info%ntopo%idSegOut
@@ -284,4 +385,4 @@ CONTAINS
 
  END SUBROUTINE init_ntopo
 
-END MODULE init_mizuRoute_topo
+END MODULE init_mizuRoute

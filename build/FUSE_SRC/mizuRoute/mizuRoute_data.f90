@@ -92,6 +92,14 @@ module globalData
   !  -- named indices for routing methods defined in public_var
   logical(lgt), public :: onRoute(0:nRouteMethods-1) = .false.
 
+  ! ---------- conversion factors -----------------------------------------------
+  ! Runoff and solute mass-flux unit conversions. Default values of unity imply
+  ! that input data are already expressed in the native mizuRoute units.
+  real(dp),                        public :: time_conv        = 1.0_dp  ! time → s
+  real(dp),                        public :: length_conv      = 1.0_dp  ! length → m
+  real(dp),                        public :: time_conv_solute = 1.0_dp  ! solute time → s
+  real(dp),                        public :: mass_conv_solute = 1.0_dp  ! solute mass → mg
+
   ! ---------- routing parameter names -------------------------------------------------------------------
   ! spatially constant ....
   real(dp),                        public :: fshape                     ! shape parameter in time delay histogram (=gamma distribution) [-]

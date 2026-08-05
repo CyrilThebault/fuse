@@ -32,7 +32,7 @@ contains
   USE alloc_domain_module,   only: allocate_domain_data         ! allocate space for data arrays in the domain structure
   USE alloc_domain_module,   only: set_legacy_arrays            ! copy arrays in the domain%data structure to legacy arrays 
 
-  USE init_mizuRoute_topo,   only: init_mizuroute_topology      ! initialize mizuRoute network topology
+  USE init_mizuRoute,        only: init_mizuroute_domain        ! initialize mizuRoute structures used by FUSE
 
   implicit none
   
@@ -47,26 +47,28 @@ contains
   
   ! ----- internal -----------------------------------------------------------------------
   CHARACTER(LEN=1024)                               :: CMESSAGE        ! error message
-  ! ---------------------------------------------------------------------------------------
+  ! --------------------------------------------------------------------------------------
   ierr=0; message='setup_domain/'
 
-  ! ----- set paths and file names --------------------------------------------------------
+  ! ----- set paths and file names -------------------------------------------------------
   
   ! read fuse control file (set paths/filenames etc.)
   call read_fuse_control_file(trim(opts%control_file), opts, info, ierr, cmessage) 
   if (ierr/=0)then; message=trim(message)//trim(cmessage); ierr=20; return; endif
 
-  ! ----- initialize the river-network topology ------------------------------------------
-
-  call init_mizuroute_topology(info, domain, ierr, cmessage)
-  if (ierr/=0)then; message=trim(message)//trim(cmessage); ierr=20; return; endif
-
-  ! ----- read domain metadata ------------------------------------------------------------
+  ! ----- read domain metadata -----------------------------------------------------------
   
   ! populate domain structure with dimension lengths
   !   -- nx_global, ny_global, nt_global, n_bands
   call get_domain_dims(info, ierr, cmessage)
   if (ierr/=0)then; message=trim(message)//trim(cmessage); ierr=20; return; endif
+
+  ! ----- initialize the mizuRoute data structures used by FUSE --------------------------
+
+  call init_mizuroute_domain(info, domain, ierr, cmessage)
+  if (ierr/=0)then; message=trim(message)//trim(cmessage); ierr=20; return; endif
+
+  ! ----- MPI decomposition of the spatial domain ----------------------------------------
 
   ! get indices for MPI decomposition of the spatial domain: y_start_global, ny_local 
   ! NOTE: These indices will be used later to read different subsets of forcing data for different ranks

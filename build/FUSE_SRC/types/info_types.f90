@@ -151,7 +151,7 @@ module info_types
 
  type :: topo_info
 
-   ! Input files
+   ! Hydrofabric path/filenames
    character(len=:), allocatable :: hfabric_path       ! hydrofabric path
    character(len=:), allocatable :: hfabric_file       ! hydrofabric file
    character(len=:), allocatable :: hfabric_newfile    ! hydrofabric file (new)
@@ -174,6 +174,27 @@ module info_types
    integer(i4b)                  :: idSegOut = -9999   ! ID of outlet segment
 
  end type topo_info
+
+
+ ! -------------------------------------------------------------------------------------
+
+ type :: remap_info
+
+   ! Remapping filename
+   character(len=:), allocatable :: remap_file         ! remapping file
+
+   ! NetCDF dimensions
+   character(len=:), allocatable :: dname_hru          ! name of dimension of river network HRU ID
+   character(len=:), allocatable :: dname_data         ! name of dimension of runoff HRU overlapping with river network HRU
+
+   ! NetCDF variable names
+   character(len=:), allocatable :: vname_hruid        ! name of variable containing ID of river network HRU
+   character(len=:), allocatable :: vname_weight       ! name of variable contating areal weights of runoff HRUs within each river network HRU
+   character(len=:), allocatable :: vname_num_qhru     ! name of variable containing numbers of runoff HRUs within each river network HRU
+   character(len=:), allocatable :: vname_i_index      ! name of variable containing index of xlon dimension in runoff grid (if runoff file is grid)
+   character(len=:), allocatable :: vname_j_index      ! name of variable containing index of ylat dimension in runoff grid (if runoff file is grid)
+
+ end type remap_info
 
  ! -------------------------------------------------------------------------------------
 
@@ -240,6 +261,7 @@ module info_types
    type(time_info)  :: time
    type(snow_info)  :: snow
    type(topo_info)  :: ntopo
+   type(remap_info) :: remap
    type(file_info)  :: files
    type(run_config) :: config
  end type fuse_info
