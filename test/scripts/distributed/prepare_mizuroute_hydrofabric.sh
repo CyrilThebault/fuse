@@ -118,7 +118,7 @@ echo
 echo "Step 1: Extract required variables"
 
 ncks -O -h \
-    -v segId,NextDownID,hruId,lengthkm,slope,unitarea \
+    -v segId,NextDownID,hruId,hruSegId,lengthkm,slope,unitarea \
     "${INPUT_FILE}" \
     "${WORK_FILE}"
 
@@ -151,7 +151,7 @@ echo
 echo "Step 3: Create compact hydrofabric"
 
 ncks -O -h \
-    -v segId,NextDownID,hruId,length,slope,area \
+    -v segId,NextDownID,hruId,hruSegId,length,slope,area \
     "${WORK_FILE}" \
     "${OUTPUT_FILE}"
 

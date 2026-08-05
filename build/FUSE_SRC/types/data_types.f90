@@ -8,6 +8,9 @@ module data_types
  use multi_flux_types,  only: FLUXES
  use multiroute_types,  only: RUNOFF
 
+ use mizuroute_types,   only: river_network_data
+ use mizuroute_types,   only: spatial_remap_data
+
  private
  public :: coord_data, domain_data
 
@@ -66,6 +69,10 @@ module data_types
     ! 3D observed discharge / validity (optional)
     type(VDATA), allocatable      :: valid(:,:,:)       ! aValid (nx_local, ny_local, nt_window)
 
+    ! Remapping and netework routing
+    type(river_network_data)      :: river_network      ! river_network%topology, river_network%runoff, ...
+    type(spatial_remap_data)      :: remap              ! remap%forcing, remap%routing
+
     ! basin-average time series for output convenience
     type(FDATA), allocatable      :: aForce(:)          ! (nt_window)
     type(RUNOFF), allocatable     :: aRoute(:)          ! (nt_window)
@@ -73,5 +80,6 @@ module data_types
   end type domain_data
 
   ! -------------------------------------------------------------------------------------
-  
+
+
 end module data_types
