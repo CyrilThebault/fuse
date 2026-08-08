@@ -3,7 +3,7 @@ module setup_domain_module
   USE nrtype
   USE info_types, only: cli_options
   USE info_types, only: fuse_info
-  USE data_types, only: domain_data
+  USE domain_types, only: domain_data
   USE fuse_globaldata, only: isPrint
 
   implicit none

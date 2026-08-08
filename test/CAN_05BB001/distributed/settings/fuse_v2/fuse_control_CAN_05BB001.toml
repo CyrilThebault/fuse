@@ -25,10 +25,17 @@ temp   = "temp"
 pet    = "pet_oudin"
 qobs   = "runoff_obs"
 
+[mizuRoute]
+
+namelist_path = "test/CAN_05BB001/distributed/settings/mizuRoute/"
+namelist_file = "param.nml.default"
+
+dt = 3600
+
 [hydrofabric]
 
-hfabric_path    = "test/CAN_05BB001/distributed/input/"
-hfabric_file    = "hydrofabric_mizuRoute.nc"
+hfabric_path = "test/CAN_05BB001/distributed/input/"
+hfabric_file = "hydrofabric_mizuRoute.nc"
 
 dname_seg = "seg"
 dname_hru = "hru"

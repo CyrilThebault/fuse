@@ -143,6 +143,7 @@ MIZU_BASE += $(MIZU_DIR)/var_lookup.f90
 MIZU_BASE += $(MIZU_DIR)/nr_utils.f90
 MIZU_BASE += $(MIZU_DIR)/gamma_func.f90
 MIZU_BASE += $(MIZU_DIR)/ncio_utils.f90
+MIZU_BASE += $(MIZU_DIR)/ascii_utils.f90
 
 # Thin FUSE compatibility layer.
 #
@@ -159,6 +160,7 @@ MIZU_TOPO += $(MIZU_DIR)/allocation.f90
 MIZU_TOPO += $(MIZU_DIR)/popMetadat.f90
 MIZU_TOPO += $(MIZU_DIR)/hydraulic.f90
 MIZU_TOPO += $(MIZU_DIR)/network_topo.f90
+MIZU_TOPO += $(MIZU_DIR)/read_param.f90
 MIZU_TOPO += $(MIZU_DIR)/process_param.f90
 MIZU_TOPO += $(MIZU_DIR)/process_ntopo.f90
 MIZU_TOPO += $(MIZU_DIR)/read_streamSeg.f90
@@ -246,7 +248,7 @@ FUSE_TYPES += multiroute_types.f90
 FUSE_TYPES += multistats_types.f90
 FUSE_TYPES += work_types.f90
 FUSE_TYPES += info_types.f90
-FUSE_TYPES += data_types.f90
+FUSE_TYPES += domain_types.f90
 TYPES = $(patsubst %, $(TYPES_DIR)/%, $(FUSE_TYPES))
 
 # combined type+data (mimic legacy code)
@@ -260,7 +262,7 @@ FUSE_SHARE += multiparam_data.f90
 FUSE_SHARE += multistate_data.f90
 FUSE_SHARE += multi_flux_data.f90
 FUSE_SHARE += multiroute_data.f90
-FUSE_SHARE += multistats_data.f90
+FUSE_SHARE += manage_legacy_data.f90
 SHARE = $(patsubst %, $(SHARE_DIR)/%, $(FUSE_SHARE))
 
 # combine data modules together
@@ -368,9 +370,6 @@ PRELIM = $(patsubst %, $(PRELIM_DIR)/%, $(FUSE_PRELIM))
 # FUSE runtime
 FUSE_RUNTIME =
 FUSE_RUNTIME += metrics.f90
-FUSE_RUNTIME += conv_funcs.f90
-FUSE_RUNTIME += clrsky_rad.f90
-FUSE_RUNTIME += getPETgrid.f90
 FUSE_RUNTIME += get_time_windows.f90
 FUSE_RUNTIME += initfluxes.f90
 FUSE_RUNTIME += set_all.f90
@@ -432,10 +431,14 @@ endif
 ifeq ($(FC),gfortran)
   FFLAGS_NORMA = -O3 -ffree-line-length-none -fmax-errors=0 -cpp
   FFLAGS_DEBUG = -O0 -g -fno-omit-frame-pointer \
-               -Wall -Wextra -Wall -Wextra -Wno-unused-parameter -Wno-unused-variable \
-	             -ffree-line-length-none -fmax-errors=0 -cpp \
-               -fbacktrace -fcheck=all -ffpe-trap=invalid,zero,overflow \
-               -finit-real=snan -finit-integer=-999999
+                 -Wall -Wextra -Wimplicit-interface \
+                 -Wsurprising -Wconversion-extra \
+                 -ffree-line-length-none -fmax-errors=0 -cpp \
+                 -fbacktrace \
+                 -fcheck=all \
+                 -ffpe-trap=invalid,zero,overflow \
+                 -finit-real=snan \
+                 -finit-integer=-999999
   FFLAGS_FIXED = -O2 -c -ffixed-form
 endif
 
@@ -445,8 +448,8 @@ INCLUDE_FLAGS = -I$(GENINC) -I$(TOMLF_BUILD)/include
 FFLAGS = $(FFLAGS_NORMA) $(INCLUDE_FLAGS)
 
 # Target-specific flags for 'debug' target
-debug: FFLAGS = $(FFLAGS_NORMA) $(INCLUDE_FLAGS)
-debug: compile
+debug: FFLAGS = $(FFLAGS_DEBUG) $(INCLUDE_FLAGS)
+debug: compile install clean
 
 # Special provision for gcc>13
 ifeq ($(FC),gfortran)

@@ -16,18 +16,11 @@ USE nrtype                                                ! variable types, etc.
 USE info_types, only: cli_options                         ! command line interface options
 USE info_types, only: fuse_info                           ! info structure (includes "everything")
 USE work_types, only: fuse_work                           ! structures that depend on nState/nPar 
-USE data_types, only: domain_data                         ! domain data
-USE multistats, only: PCOUNT                              ! counter 
+USE domain_types, only: domain_data                       ! domain data
 
 ! data
 USE fuse_globaldata, only: isPrint
 USE fuse_globaldata, only: ncid_out
-USE multiparam, only: NUMPAR
-USE multiforce, only: NUMPSET
-USE multiforce, only: SUB_PERIODS_FLAG
-USE multiForce, only: AFORCE, gForce, gForce_3d, aValid
-USE multiState, only: gState, gState_3d
-USE multiRoute, only: aRoute, AROUTE_3d
 
 ! model setup: external subroutines/functions
 USE netcdf                                                       ! NetCDF library
@@ -35,6 +28,7 @@ USE parse_command_args_MODULE, only: parse_command_args          ! parse command
 USE setup_domain_module, only: setup_domain                      ! initialize the model domain
 USE setup_model_definition_module, only: setup_model_definition  ! setup the FUSE model configuration
 USE alloc_scratch_module, only: init_fuse_work                   ! initialze work structure
+USE manage_legacy_data, only: deallocate_legacy_data             ! deallocate legacy data
 
 ! model run: external subroutines/functions
 USE get_fparam_module, only: GET_PRE_PARAM, GET_SCE_PARAM ! read parameters from netcdf file
@@ -112,7 +106,7 @@ if(err/=0) stop trim(message)
 ! ----- initialize model configurations -------------------------------------------------
 
 ! choose model, load parameter metadata, derive parameters, and define NetCDF output files
-call setup_model_definition(cli_opts, info, domain, APAR, BL, BU, err, message)
+call setup_model_definition(cli_opts, info, work, domain, APAR, BL, BU, err, message)
 if(err/=0) stop trim(message)
 
 ! ----- initialize work structures ------------------------------------------------------
@@ -124,8 +118,8 @@ if(err/=0) stop trim(message)
 ! ----- set initial counters ------------------------------------------------------------
 
 ! Define output and parameter files
-ONEMOD=1                 ! one file per model (i.e., model dimension = 1)
-PCOUNT=0                 ! counter for parameter sets evaluated (shared in MODULE multistats)
+ONEMOD=1                      ! one file per model (i.e., model dimension = 1)
+work%run%n_evaluations = 0    ! counter for parameter sets evaluated
 
 ! ---------------------------------------------------------------------------------------
 ! ----- run different FUSE modes --------------------------------------------------------
@@ -142,12 +136,12 @@ select case(trim(cli_opts%runmode))
 
     ! load specific parameter set given index in vector into APAR
     if (cli_opts%runmode=='idx') then
-     CALL GET_PRE_PARAM(cli_opts%sets_file, cli_opts%indx, ONEMOD, NUMPAR, APAR)
+     CALL GET_PRE_PARAM(cli_opts%sets_file, cli_opts%indx, ONEMOD, info%config%nParam, APAR)
     endif
 
     ! load best parameter set from NetCDF file into APAR
     if (cli_opts%runmode=='opt') then
-     CALL GET_SCE_PARAM(cli_opts%sets_file, ONEMOD, NUMPAR, APAR)
+     CALL GET_SCE_PARAM(cli_opts%sets_file, ONEMOD, info%config%nParam, APAR)
     endif
 
     ! run FUSE
@@ -167,15 +161,12 @@ end select ! (FUSE mode)
   
 ! ----- finalize ------------------------------------------------------------------------
   
+call deallocate_legacy_data(err, message)
+if(err/=0) stop trim(message)
+
 ! deallocate space
 DEALLOCATE(APAR, BL, BU, stat=err)
 if(err/=0)then; write(*,*) 'unable to deallocate space for parameter vectors'; stop; endif
-
-DEALLOCATE(aForce, aRoute, aValid, stat=err)
-if(err/=0)then; write(*,*) 'unable to deallocate space for catchment modeling'; stop; endif
-
-DEALLOCATE(gForce_3d, gState_3d, AROUTE_3d, stat=err)
-if(err/=0)then; write(*,*) 'unable to deallocate space for grid modeling'; stop; endif
 
 ! close NetCDF files
 PRINT *, 'Closing forcing file'

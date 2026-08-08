@@ -2,7 +2,7 @@ module alloc_domain_module
 
   USE nrtype
   USE info_types, only: fuse_info
-  USE data_types, only: domain_data
+  USE domain_types, only: domain_data
  
   use fuse_globaldata, only: NVAR_FORC
 
@@ -36,10 +36,6 @@ CONTAINS
   allocate(domain%valid(nx,ny,nt), stat=ierr)
   if(ierr/=0)then; message=trim(message)//"cannot allocate valid"; return; endif
 
-  ! allocate ancillary forcing
-  allocate(domain%ancil(nx,ny), stat=ierr)
-  if(ierr/=0)then; message=trim(message)//"cannot allocate ancil"; return; endif
-
   ! allocate forcing window
   allocate(domain%force(nx,ny,nt), stat=ierr)
   if(ierr/=0)then; message=trim(message)//"cannot allocate force"; return; endif
@@ -51,10 +47,6 @@ CONTAINS
   ! allocate flux window
   allocate(domain%flux(nx,ny,nt), stat=ierr)
   if(ierr/=0)then; message=trim(message)//"cannot allocate flux"; return; endif
-
-  ! allocate basin averages
-  allocate(domain%aForce(nt), domain%aRoute(nt), stat=ierr)
-  if(ierr/=0)then; message=trim(message)//"cannot allocate aForce/aRoute"; return; endif
 
   ! allocate routing if needed
   allocate(domain%route(nx,ny,nt), stat=ierr)
@@ -92,10 +84,8 @@ CONTAINS
   USE multiforce, only: ncid_forc
   use multiforce, only: timeUnits
   use multiforce, only: nInput
-  use multiForce, only: aForce, gForce_3d, ancilF, aValid
-  use multiState, only: gState_3d
-  use multiRoute, only: aRoute, AROUTE_3d
-  use multiBands, only: N_BANDS, MBANDS, MBANDS_INFO_3d, MBANDS_VAR_4d, Z_FORCING_grid, elev_mask
+  use multiForce, only: aValid
+  use multiBands, only: N_BANDS, MBANDS
   implicit none
 
   type(fuse_info),   intent(in)    :: info
@@ -131,50 +121,12 @@ CONTAINS
   allocate(aValid(nx,ny,nt), stat=ierr)
   if(ierr/=0)then; message=trim(message)//"cannot allocate valid"; return; endif
 
-  ! allocate ancillary forcing
-  allocate(ancilF(nx,ny), stat=ierr)
-  if(ierr/=0)then; message=trim(message)//"cannot allocate ancil"; return; endif
-
-  ! allocate forcing window
-  allocate(gForce_3d(nx,ny,nt), stat=ierr)
-  if(ierr/=0)then; message=trim(message)//"cannot allocate force"; return; endif
-
-  ! allocate state window
-  allocate(gState_3d(nx,ny,nt+1), stat=ierr)
-  if(ierr/=0)then; message=trim(message)//"cannot allocate state"; return; endif
-
-  ! allocate flux window
-  !allocate(w_flux_3d(nx,ny,nt), stat=ierr)
-  !if(ierr/=0)then; message=trim(message)//"cannot allocate flux"; return; endif
-
-  ! allocate basin averages
-  allocate(aForce(nt), aRoute(nt), stat=ierr)
-  if(ierr/=0)then; message=trim(message)//"cannot allocate aForce/aRoute"; return; endif
-
-  ! allocate routing if needed
-  allocate(AROUTE_3d(nx,ny,nt), stat=ierr)
-  if(ierr/=0)then; message=trim(message)//"cannot allocate route"; return; endif
-
-  ! allocate elevation grid and mask
-  allocate(Z_FORCING_grid(nx,ny), elev_mask(nx, ny), stat=ierr)
-  if(ierr/=0)then; message=trim(message)//"cannot allocate elev grid"; return; endif
-
   ! allocate elevation bands
-  allocate(MBANDS(nb), MBANDS_INFO_3d(nx,ny,nb), MBANDS_VAR_4d(nx,ny,nb,nt+1), stat=ierr)
+  allocate(MBANDS(nb), stat=ierr)
   if(ierr/=0)then; message=trim(message)//"cannot allocate elev bands"; return; endif
 
   ! copy arrays in the domain structure to legacy arrays
   aValid         = domain%valid      ! validity mask
-  ancilF         = domain%ancil      ! ancillary forcing
-  aForce         = domain%aForce     ! all model forcing data
-  gForce_3d      = domain%force      ! forcing data
-  gState_3d      = domain%state      ! state data
-  aRoute         = domain%aRoute     ! all routing data
-  AROUTE_3d      = domain%route      ! routing data
-  elev_mask      = domain%elev_mask  ! elevation mask
-  Z_FORCING_grid = domain%z_forcing  ! elevation grid
-  MBANDS_INFO_3d = domain%bands_info ! elevation band info
-  MBANDS_VAR_4d  = domain%bands_var  ! elevation band vars
 
   end subroutine set_legacy_arrays
 

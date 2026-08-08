@@ -3,7 +3,8 @@ module setup_model_definition_MODULE
   USE nrtype
   USE info_types, only: fuse_info
   USE info_types, only: cli_options
-  USE data_types, only: domain_data
+  USE work_types, only: fuse_work
+  USE domain_types, only: domain_data
   USE multiparam_types, only: PARATT
 
   implicit none
@@ -13,7 +14,7 @@ module setup_model_definition_MODULE
 
 contains
 
-  subroutine setup_model_definition(opts, info, domain, APAR, BL, BU, err, message)
+  subroutine setup_model_definition(opts, info, work, domain, APAR, BL, BU, err, message)
 
   ! access subroutines
   use uniquemodl_module, only: uniquemodl                   ! Defines unique strings for all FUSE models
@@ -28,7 +29,10 @@ contains
   USE DEF_OUTPUT_MODULE, only: DEF_OUTPUT                   ! define model output
   USE getpar_str_module, only: GETPAR_STR                   ! extracts parameter metadata
 
-  ! data stored in legacy modules
+  ! Legacy model-definition modules.
+  ! These variables are produced by the original FUSE model-definition
+  ! routines and are copied into the explicit FUSE data structures
+  ! (info, work, and domain) during setup.
   USE model_defn, only: NSTATE             ! number of state variables
   USE multiparam, only: NUMPAR             ! number of paramters for the current model
   USE multiparam, only: LPARAM             ! list of model parameters
@@ -40,6 +44,7 @@ contains
   ! input
   type(cli_options)   , intent(in)                  :: opts            ! command line interface options
   type(fuse_info)     , intent(inout)               :: info            ! the fuse info structure that stores "everything"
+  type(fuse_work)     , intent(inout)               :: work            ! structures that depend on nState/nPar
   type(domain_data)   , intent(in)                  :: domain          ! the fuse domain structure that stores data arrays
 
   ! output
@@ -63,15 +68,15 @@ contains
   ! ----- define characteristics of the current model -------------------------------------
 
   ! Define model attributes (valid for all models)
-  CALL UNIQUEMODL(NMOD)            ! get nmod unique models: stored in module model_defn; NMOD is intent(out)
-  CALL GETPARMETA(ERR,CMESSAGE)    ! read parameter metadata from constraints txt file (parameter bounds etc.)
+  CALL UNIQUEMODL(NMOD)                   ! get nmod unique models: stored in module model_defn; NMOD is intent(out)
+  CALL GETPARMETA(work, ERR, CMESSAGE)    ! read parameter metadata from constraints txt file (parameter bounds etc.)
   if (err/=0)then; message=trim(message)//trim(cmessage); err=20; return; endif
 
   ! Identify a single model: FMODEL_ID is read from the control file and used to build string for zDecisions
-  CALL SELECTMODL(FMODEL_ID,ERR=ERR,MESSAGE=CMESSAGE) ! FMODEL_ID is intent(in)
+  CALL SELECTMODL(FMODEL_ID, ERR=ERR, MESSAGE=CMESSAGE) ! FMODEL_ID is intent(in)
   if (err/=0)then; message=trim(message)//trim(cmessage); err=20; return; endif
 
-  ! Define list of states and parameters for the current model
+  ! Define list of states and fluxes for the current model
   ! NOTE: these definitions are global, so OK to be stored in a shared module
   CALL ASSIGN_STT()        ! state definitions are stored in module model_defn
   CALL ASSIGN_FLX()        ! flux definitions are stored in module model_defn
@@ -128,7 +133,7 @@ contains
   ALLOCATE(APAR(NUMPAR),BL(NUMPAR),BU(NUMPAR))
 
   DO IPAR=1,NUMPAR
-   CALL GETPAR_STR(LPARAM(IPAR)%PARNAME,PARAM_META)
+   CALL GETPAR_STR(info%config%listParam(iPar)%parname, PARAM_META)
    BL(IPAR)   = PARAM_META%PARLOW  ! lower boundary
    BU(IPAR)   = PARAM_META%PARUPP  ! upper boundary
    APAR(IPAR) = PARAM_META%PARDEF  ! using default parameter values

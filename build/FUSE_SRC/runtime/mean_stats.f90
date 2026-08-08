@@ -1,4 +1,4 @@
-SUBROUTINE MEAN_STATS()
+SUBROUTINE MEAN_STATS(work,domain)
 ! ---------------------------------------------------------------------------------------
 ! Creator:
 ! --------
@@ -15,17 +15,22 @@ SUBROUTINE MEAN_STATS()
 ! MODULE multistats -- summary statistics stored in MODULE multistats
 ! ---------------------------------------------------------------------------------------
 USE nrtype                                            ! variable types, etc.
-USE metrics                                           ! available metrics and transformations
-USE fuse_fileManager,only:METRIC, TRANSFO             ! metric and transformation requested in the filemanager
+USE work_types, only: fuse_work                       ! structures that depend on nState/nPar
+USE domain_types, only: domain_data                   ! data for the full domain 
+USE fuse_fileManager,only: METRIC, TRANSFO            ! metric and transformation requested in the filemanager
 USE fuse_globaldata, only: isPrint
 ! FUSE modules
-USE multiforce                                        ! model forcing data (obs streamflow)
-USE multiroute                                        ! routed runoff
-USE multi_flux                                        ! fluxes
-USE multistats                                        ! summary statistics
+USE metrics                                           ! available metrics and transformations
+USE multiforce, only: aValid                          ! model forcing data (obs streamflow)
+USE multiforce, only: NA_VALUE                        ! model forcing structure (temporally constant)
+USE multiforce, only: eval_beg, eval_end              ! model forcing structure (temporally constant)
+USE multiforce, only: sim_beg, numtim_sim             ! model forcing structure (temporally constant)
 USE model_numerix                                     ! model numerix parameters and data
 
 IMPLICIT NONE
+! input/output
+type(fuse_work),   intent(inout)       :: work        ! work structures that depend on npar/nState
+type(domain_data), intent(inout)       :: domain      ! data for the full domain
 ! internal
 INTEGER(I4B)                           :: I           ! looping
 INTEGER(I4B)                           :: NS          ! number of samples
@@ -62,7 +67,7 @@ IF (IERR.NE.0) STOP ' PROBLEM ALLOCATING SPACE IN MEAN_STATS.F90 '
 
 ! extract OBS and SIM for evaluation period, note that sim_beg, eval_beg, sim_end,
 ! eval_end are all with respect to julian_day_input
-QSIM = AROUTE_3d(1,1,eval_beg-sim_beg+1:eval_end-sim_beg+1)%Q_ROUTED
+QSIM = domain%route(1,1,eval_beg-sim_beg+1:eval_end-sim_beg+1)%Q_ROUTED
 QOBS = aValid(1,1,eval_beg-sim_beg+1:eval_end-sim_beg+1)%OBSQ
 
 ! check for missing QOBS values
@@ -77,10 +82,10 @@ endif
 IF (NUM_AVAIL.EQ.0) THEN
 
   PRINT *, 'Skiping computation of error statistics because no observed streamflow data'
-  MSTATS%NASH_SUTT=-9999
-  MSTATS%RAW_RMSE=-9999
-  MSTATS%KGE=-9999
-  MSTATS%METRIC_VAL=-9999
+  work%run%stats%NASH_SUTT=-9999
+  work%run%stats%RAW_RMSE=-9999
+  work%run%stats%KGE=-9999
+  work%run%stats%METRIC_VAL=-9999
 
 ELSE
 
@@ -123,45 +128,45 @@ ELSE
   ! (2) COMPUTE ERROR STATISTICS
   ! ---------------------------------------------------------------------------------------
   ! compute the mean
-  MSTATS%QOBS_MEAN = XB_OBS
-  MSTATS%QSIM_MEAN = XB_SIM
+  work%run%stats%QOBS_MEAN = XB_OBS
+  work%run%stats%QSIM_MEAN = XB_SIM
   ! compute the coefficient of variation
-  MSTATS%QOBS_CVAR = SQRT( SS_OBS / INT(NUM_AVAIL-1, KIND(WP)) ) / (XB_OBS+NO_ZERO)
-  MSTATS%QSIM_CVAR = SQRT( SS_SIM / INT(NUM_AVAIL-1, KIND(WP)) ) / (XB_SIM+NO_ZERO)
+  work%run%stats%QOBS_CVAR = SQRT( SS_OBS / INT(NUM_AVAIL-1, KIND(WP)) ) / (XB_OBS+NO_ZERO)
+  work%run%stats%QSIM_CVAR = SQRT( SS_SIM / INT(NUM_AVAIL-1, KIND(WP)) ) / (XB_SIM+NO_ZERO)
   ! compute the lag-1 correlation coefficient
-  MSTATS%QOBS_LAG1 = SS_LOBS / (SQRT(SS_OBS*SS_OBS)+NO_ZERO)
-  MSTATS%QSIM_LAG1 = SS_LSIM / (SQRT(SS_SIM*SS_SIM)+NO_ZERO)
+  work%run%stats%QOBS_LAG1 = SS_LOBS / (SQRT(SS_OBS*SS_OBS)+NO_ZERO)
+  work%run%stats%QSIM_LAG1 = SS_LSIM / (SQRT(SS_SIM*SS_SIM)+NO_ZERO)
   
   ! Compute RMSE using the metrics module
-  MSTATS%RAW_RMSE = get_RMSE(QOBS_AVAIL, QSIM_AVAIL, '1')   ! No transformation
+  work%run%stats%RAW_RMSE = get_RMSE(QOBS_AVAIL, QSIM_AVAIL, '1')   ! No transformation
     
   ! Compute log RMSE using the metrics module
-  MSTATS%LOG_RMSE = get_RMSE(QOBS_AVAIL, QSIM_AVAIL, 'log') ! Log transformation
+  work%run%stats%LOG_RMSE = get_RMSE(QOBS_AVAIL, QSIM_AVAIL, 'log') ! Log transformation
 
   ! Compute NSE using the metrics module
-  MSTATS%NASH_SUTT = get_NSE(QOBS_AVAIL, QSIM_AVAIL, '1')   ! No transformation
+  work%run%stats%NASH_SUTT = get_NSE(QOBS_AVAIL, QSIM_AVAIL, '1')   ! No transformation
   
   ! Compute KGE using the metrics module
-  MSTATS%KGE = get_KGE(QOBS_AVAIL, QSIM_AVAIL, '1')         ! No transformation
+  work%run%stats%KGE = get_KGE(QOBS_AVAIL, QSIM_AVAIL, '1')         ! No transformation
 
   ! Compute KGEp using the metrics module
-  MSTATS%KGEP = get_KGEP(QOBS_AVAIL, QSIM_AVAIL, '1')       ! No transformation
+  work%run%stats%KGEP = get_KGEP(QOBS_AVAIL, QSIM_AVAIL, '1')       ! No transformation
   
   ! Compute MAE using the metrics module
-  MSTATS%MAE = get_MAE(QOBS_AVAIL, QSIM_AVAIL, '1')         ! No transformation
+  work%run%stats%MAE = get_MAE(QOBS_AVAIL, QSIM_AVAIL, '1')         ! No transformation
   
   ! Compute the metric chosen as objective function using the metrics module
  
   IF (METRIC == "KGE") THEN
-    MSTATS%METRIC_VAL = get_KGE(QOBS_AVAIL, QSIM_AVAIL, TRANSFO) 
+    work%run%stats%METRIC_VAL = get_KGE(QOBS_AVAIL, QSIM_AVAIL, TRANSFO) 
   ELSE IF (METRIC == "KGEP") THEN
-    MSTATS%METRIC_VAL = get_KGEP(QOBS_AVAIL, QSIM_AVAIL, TRANSFO) 
+    work%run%stats%METRIC_VAL = get_KGEP(QOBS_AVAIL, QSIM_AVAIL, TRANSFO) 
   ELSE IF (METRIC == "NSE") THEN
-    MSTATS%METRIC_VAL = get_NSE(QOBS_AVAIL, QSIM_AVAIL, TRANSFO) 
+    work%run%stats%METRIC_VAL = get_NSE(QOBS_AVAIL, QSIM_AVAIL, TRANSFO) 
   ELSE IF (METRIC == "RMSE") THEN
-    MSTATS%METRIC_VAL = get_RMSE(QOBS_AVAIL, QSIM_AVAIL, TRANSFO) 
+    work%run%stats%METRIC_VAL = get_RMSE(QOBS_AVAIL, QSIM_AVAIL, TRANSFO) 
   ELSE IF (METRIC == "MAE") THEN
-    MSTATS%METRIC_VAL = get_MAE(QOBS_AVAIL, QSIM_AVAIL, TRANSFO) 
+    work%run%stats%METRIC_VAL = get_MAE(QOBS_AVAIL, QSIM_AVAIL, TRANSFO) 
   ELSE
     STOP 'The requested metric is not available in metrics module'
   END IF
@@ -172,33 +177,26 @@ ELSE
 END IF
 
 if(isPrint)then
-  PRINT *, 'NSE = ',          MSTATS%NASH_SUTT
-  PRINT *, 'KGE = ',          MSTATS%KGE
-  PRINT *, 'KGEP = ',         MSTATS%KGEP
-  PRINT *, 'MAE = ',          MSTATS%MAE
-  PRINT *, 'RAW_RMSE = ',     MSTATS%RAW_RMSE
-  PRINT *, 'LOG_RMSE = ',     MSTATS%LOG_RMSE
-  PRINT *, 'METRIC_VAL [Metric:',METRIC,' / Transfo:',TRANSFO,'] =',   MSTATS%METRIC_VAL
+  PRINT *, 'NSE = ',          work%run%stats%NASH_SUTT
+  PRINT *, 'KGE = ',          work%run%stats%KGE
+  PRINT *, 'KGEP = ',         work%run%stats%KGEP
+  PRINT *, 'MAE = ',          work%run%stats%MAE
+  PRINT *, 'RAW_RMSE = ',     work%run%stats%RAW_RMSE
+  PRINT *, 'LOG_RMSE = ',     work%run%stats%LOG_RMSE
+  PRINT *, 'METRIC_VAL [Metric:',METRIC,' / Transfo:',TRANSFO,'] =',   work%run%stats%METRIC_VAL
 endif
 
 ! ---------------------------------------------------------------------------------------
 ! (3§) COMPUTE STATISTICS ON NUMERICAL ACCURACY AND EFFICIENCY
 ! ---------------------------------------------------------------------------------------
 ! compute RMSE between "more accurate" and "less accurate" solutions
-! NA: note that this section uses only simulated discharge, hence uses NS, QSIM and QOBS
-! instead of NUM_AVAIL, QOBS_AVAIL and QSIM_AVAIL, respectively
-!QOBS = AROUTE(ISTART:NUMTIM_SIM)%Q_ACCURATE ! TODO: MISSING AT THE MOMENT
-!RAWD(:) = QSIM(:) - QOBS(:)
-!SS_RAW  = DOT_PRODUCT(RAWD,RAWD)    ! = SUM( RAWD(:)*RAWD(:) )
-!MSTATS%NUM_RMSE = SQRT( SS_RAW / REAL(NS, KIND(WP)) )
-! compute summary statistics for efficiency
-MSTATS%NUM_FUNCS     = MSTATS%NUM_FUNCS     / REAL(NUMTIM_SIM, KIND(WP)) ! number of function calls
-MSTATS%NUM_JACOBIAN  = MSTATS%NUM_JACOBIAN  / REAL(NUMTIM_SIM, KIND(WP)) ! number of times Jacobian is calculated
-MSTATS%NUMSUB_ACCEPT = MSTATS%NUMSUB_ACCEPT / REAL(NUMTIM_SIM, KIND(WP)) ! number of sub-steps accepted (taken)
-MSTATS%NUMSUB_REJECT = MSTATS%NUMSUB_REJECT / REAL(NUMTIM_SIM, KIND(WP)) ! number of sub-steps tried but rejected
-MSTATS%NUMSUB_NOCONV = MSTATS%NUMSUB_NOCONV / REAL(NUMTIM_SIM, KIND(WP)) ! number of sub-steps tried that did not converge
+work%run%stats%NUM_FUNCS     = work%run%stats%NUM_FUNCS     / REAL(NUMTIM_SIM, KIND(WP)) ! number of function calls
+work%run%stats%NUM_JACOBIAN  = work%run%stats%NUM_JACOBIAN  / REAL(NUMTIM_SIM, KIND(WP)) ! number of times Jacobian is calculated
+work%run%stats%NUMSUB_ACCEPT = work%run%stats%NUMSUB_ACCEPT / REAL(NUMTIM_SIM, KIND(WP)) ! number of sub-steps accepted (taken)
+work%run%stats%NUMSUB_REJECT = work%run%stats%NUMSUB_REJECT / REAL(NUMTIM_SIM, KIND(WP)) ! number of sub-steps tried but rejected
+work%run%stats%NUMSUB_NOCONV = work%run%stats%NUMSUB_NOCONV / REAL(NUMTIM_SIM, KIND(WP)) ! number of sub-steps tried that did not converge
 ! compute cumulative probability distributions
-MSTATS%NUMSUB_PROB   = REAL(PRB_NSUBS(:), KIND(WP)) / REAL(NUMTIM_SIM, KIND(WP))
+work%run%stats%NUMSUB_PROB   = REAL(PRB_NSUBS(:), KIND(WP)) / REAL(NUMTIM_SIM, KIND(WP))
 
 ! ---------------------------------------------------------------------------------------
 END SUBROUTINE MEAN_STATS

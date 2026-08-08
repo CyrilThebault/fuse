@@ -7,7 +7,7 @@ module GETPARMETA_module
 
 contains
 
-  SUBROUTINE GETPARMETA(err,message)
+  SUBROUTINE GETPARMETA(work, ierr, message)
   ! ---------------------------------------------------------------------------------------
   ! Creator:
   ! --------
@@ -17,52 +17,65 @@ contains
   ! --------
   ! Reads parameter metadata from the parameter constraints file
   ! ---------------------------------------------------------------------------------------
-  ! Modules Modified:
-  ! -----------------
-  ! MODULE multiparam -- model parameters stored in MODULE multiparam
-  ! ---------------------------------------------------------------------------------------
+  ! data types
   USE nrtype                                            ! variable types, etc.
-  USE fuse_fileManager,only:SETNGS_PATH,CONSTRAINTS     ! defines data directory
+  use work_types, only: fuse_work                       ! structures that depend on nState/nPar
   USE multiparam_types, only: PARATT                    ! parameter attribute structure
+  ! shared data 
+  USE fuse_fileManager, only: SETNGS_PATH, CONSTRAINTS  ! defines data directory
+  USE multiparam, only: MPARAM, DPARAM, PARMETA         ! legacy data structures -- copy after populating FUSE structures
+  ! external subroutines
   USE putpar_str_module                                 ! provide access to SUBROUTINE putpar_str
   USE par_insert_module                                 ! provide access to SUBROUTINE par_insert
+  
   IMPLICIT NONE
   ! dummies
-  integer(i4b),intent(out)::err
-  character(*),intent(out)::message
+  type(fuse_work)        , intent(inout) :: work
+  integer(i4b)           , intent(out)   :: ierr
+  character(*)           , intent(out)   :: message
   ! locals
   INTEGER(I4B)                           :: IUNIT       ! file unit
-  INTEGER(I4B)                           :: IERR        ! error code for read statement
+  INTEGER(I4B)                           :: io_err      ! error code for read statement
   CHARACTER(LEN=1024)                    :: CFILE       ! name of constraints file
   LOGICAL(LGT)                           :: LEXIST      ! .TRUE. if file exists
   CHARACTER(LEN=256)                     :: KEY         ! format code
   TYPE(PARATT)                           :: PARAM_META  ! parameter metadata
   INTEGER(I4B)                           :: IPOS,JPOS   ! indices of string
   INTEGER(I4B)                           :: ICH         ! looping variable (do loop)
+  CHARACTER(LEN=256)                     :: cmessage    ! downwind errir message
   ! ---------------------------------------------------------------------------------------
+ 
+  ! initialoize errors
+  ierr    = 0
+  message = "getparmeta/"
+
   ! read in control file
-  err=0
   IUNIT = 21  ! file unit
   CFILE = TRIM(SETNGS_PATH) // TRIM(CONSTRAINTS)      ! control file info shared in MODULE ddirectory
   INQUIRE(FILE=CFILE,EXIST=LEXIST)  ! check that control file exists
   print *,'Parameter constraints file:', TRIM(CFILE)
   IF (.not.LEXIST) THEN
-   message="f-GETPARMETA/parameter constraints file '"//trim(CFILE)//"' does not exist "
-   err=100; return
+   message=trim(message)//"parameter constraints file '"//trim(CFILE)//"' does not exist "
+   ierr=100; return
   ENDIF
+  
   ! initialize parameter strings
   DO ICH=1,LEN(PARAM_META%P_NAME); PARAM_META%P_NAME(ICH:ICH)=' '; END DO
   DO ICH=1,LEN(PARAM_META%CHILD1); PARAM_META%CHILD1(ICH:ICH)=' '; END DO
   DO ICH=1,LEN(PARAM_META%CHILD2); PARAM_META%CHILD2(ICH:ICH)=' '; END DO
+  
   ! open up parameter metadata file
   OPEN(IUNIT,FILE=CFILE,STATUS='old')
+  
   ! read format key (and strip out descriptive text)
   READ(IUNIT,'(a256)') KEY
   IPOS = INDEX(KEY,'!'); DO JPOS=IPOS,LEN(KEY); KEY(JPOS:JPOS)=' '; END DO
   !PRINT *, TRIM(KEY), len_trim(key)
+  
   DO
+   
    ! read parameter constraints
-   READ(IUNIT,TRIM(KEY), IOSTAT=IERR) &
+   READ(IUNIT,TRIM(KEY), IOSTAT=io_err) &
     PARAM_META%PARFIT,  &  ! 'fit' (T/F) [T=parameter is fitted, F=parameter is fixed at the default value)
     PARAM_META%PARSTK,  &  ! flag (0=deterministic, 1=stochastic)
     PARAM_META%PARDEF,  &  ! default parameter set
@@ -79,14 +92,25 @@ contains
     PARAM_META%P_NAME,  &  ! parameter name
     PARAM_META%CHILD1,  &  ! name of 1st parameter child
     PARAM_META%CHILD2      ! name of 2nd parameter child
-   IF (IERR.NE.0) EXIT
+   IF (io_err.NE.0) EXIT
    !WRITE(*,TRIM(KEY)) PARAM_META
+   
    ! put parameters in data structures
-   CALL PUTPAR_STR(PARAM_META, PARAM_META%P_NAME)
+   CALL PUTPAR_STR(PARAM_META, PARAM_META%P_NAME, work%par%param_meta, ierr, cmessage)
+   if (ierr /= 0) then; ierr=20; message=trim(cmessage); return; end if
+
    ! populate the model parameter structure with default values
-   CALL PAR_INSERT(PARAM_META%PARDEF,PARAM_META%P_NAME)
+   CALL PAR_INSERT(PARAM_META%PARDEF,PARAM_META%P_NAME, work%par, ierr, cmessage)
+   if (ierr /= 0) then; ierr=20; message=trim(cmessage); return; end if
+  
   END DO
   CLOSE(IUNIT)
+
+  ! populate legacy structures
+  MPARAM  = work%par%param_adjust
+  DPARAM  = work%par%param_derive
+  PARMETA = work%par%param_meta
+
   END SUBROUTINE GETPARMETA
 
 end module GETPARMETA_module

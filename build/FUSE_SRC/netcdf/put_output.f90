@@ -1,7 +1,7 @@
 module put_output_module
 
   use nrtype
-  use work_types, only: fuse_work
+  use domain_types, only: domain_data
   use iso_fortran_env, only: real32
 
   use netcdf, only: &
@@ -14,14 +14,14 @@ module put_output_module
 
 contains
 
-  subroutine put_output(fuseStruct, istart_sim, istart_in, numtim)
+  subroutine put_output(domain, istart_sim, istart_in, numtim)
 
   ! -------------------------------------------------------------------------------------
   ! Creator:
   ! --------
   ! Nans Addor, based on Martyn Clark's 2007 PUT_OUTPUT
   ! Modified by Martyn Clark to use the elevation band dimension and add parameter derivatives, 12/2025
-  ! Modified by Martyn Clark to use output buffers in fuseStruct
+  ! Modified by Martyn Clark to use output buffers in the domain structure
   ! -------------------------------------------------------------------------------------
   ! Purpose:
   ! --------
@@ -35,7 +35,7 @@ contains
   use model_defn,    only: fname_netcdf_runs
   use metaoutput,    only: noutvar, vname, isband
   use multiparam,    only: numpar
-  use multibands,    only: mbands_var_4d, n_bands
+  use multibands,    only: n_bands
   use multiforce,    only: time_steps, nspat1, nspat2
   use fuse_filemanager, only: q_only
 
@@ -45,10 +45,10 @@ contains
   implicit none
 
   ! input
-  type(fuse_work), intent(in) :: fuseStruct
-  integer(i4b),    intent(in) :: istart_sim
-  integer(i4b),    intent(in) :: istart_in
-  integer(i4b),    intent(in) :: numtim
+  type(domain_data), intent(in) :: domain
+  integer(i4b),      intent(in) :: istart_sim
+  integer(i4b),      intent(in) :: istart_in
+  integer(i4b),      intent(in) :: numtim
 
   ! locals
   logical(lgt) :: write_var
@@ -105,19 +105,19 @@ contains
 
     if (.not. isband(ivar)) then
 
-      ! 3-d variable -- extract from the output buffers in fuseStruct%chunk
-      call varextract_3d(fuseStruct%chunk, vname(ivar), nspat1, nspat2, numtim, avar_3d)
+      ! 3-d variable -- extract from the output buffers in the domain structure
+      call varextract_3d(domain, vname(ivar), nspat1, nspat2, numtim, avar_3d)
 
       ierr = nf90_put_var(ncid_out, ivar_id, avar_3d, start=start3, count=count3)
       call handle_err(ierr, trim(subname)//":nf90_put_var(3d):"//trim(vname(ivar)))
 
     else
 
-      ! 4-d elevation band variable (stored in MBANDS_VAR_4d)
+      ! 4-d elevation band variable (stored in domain%bands_var)
       select case (trim(vname(ivar)))
-        case ('swe_z');     avar_4d_band = mbands_var_4d(:,:,:,1:numtim)%swe
-        case ('snwacml_z'); avar_4d_band = mbands_var_4d(:,:,:,1:numtim)%snowaccmltn
-        case ('snwmelt_z'); avar_4d_band = mbands_var_4d(:,:,:,1:numtim)%snowmelt
+        case ('swe_z');     avar_4d_band = domain%bands_var(:,:,:,1:numtim)%swe
+        case ('snwacml_z'); avar_4d_band = domain%bands_var(:,:,:,1:numtim)%snowaccmltn
+        case ('snwmelt_z'); avar_4d_band = domain%bands_var(:,:,:,1:numtim)%snowmelt
         case default;       stop trim(subname)//":unknown band var:"//trim(vname(ivar))
       end select
 

@@ -7,13 +7,10 @@ MODULE multiroute
  private
 
  public :: FUTURE
- public :: AROUTE, AROUTE_3d
  public :: MROUTE
 
  REAL(WP), ALLOCATABLE                        :: FUTURE(:)  ! runoff placed in future time steps
 
- TYPE(RUNOFF), DIMENSION(:), POINTER          :: AROUTE     ! runoff for all time steps
- TYPE(RUNOFF),dimension(:,:,:), allocatable   :: AROUTE_3d  ! runoff for all time steps on a grid
  TYPE(RUNOFF)                                 :: MROUTE     ! runoff for one time step
 
 END MODULE multiroute

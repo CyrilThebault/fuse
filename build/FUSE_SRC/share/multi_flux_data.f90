@@ -7,7 +7,7 @@ MODULE multi_flux
  implicit none
  private
 
- public :: M_FLUX, FLUX_0, FLUX_1, FDFLUX, W_FLUX, W_FLUX_3d
+ public :: M_FLUX, FLUX_0, FLUX_1, FDFLUX, W_FLUX
  public :: CURRENT_DT
 
  TYPE(FLUXES)                          :: M_FLUX      ! model fluxes
@@ -15,7 +15,6 @@ MODULE multi_flux
  TYPE(FLUXES)                          :: FLUX_1      ! model fluxes at end of step
  TYPE(FLUXES), DIMENSION(:), POINTER   :: FDFLUX=>NULL() ! finite difference fluxes
  TYPE(FLUXES)                          :: W_FLUX      ! weighted sum of model fluxes over a time step
- TYPE(FLUXES), dimension(:,:,:), allocatable  :: W_FLUX_3d   ! weighted sum of model fluxes over a time step for several time steps
  
  REAL(WP)                              :: CURRENT_DT  ! current time step (days)
 

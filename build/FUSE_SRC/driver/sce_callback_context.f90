@@ -1,7 +1,7 @@
 module sce_callback_context
   use nrtype,      only: I4B
   use info_types,  only: fuse_info
-  use data_types,  only: domain_data
+  use domain_types,  only: domain_data
   use work_types,  only: fuse_work
   implicit none
   private

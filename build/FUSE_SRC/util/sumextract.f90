@@ -3,7 +3,7 @@ IMPLICIT NONE
 CONTAINS
 ! ---------------------------------------------------------------------------------------
 ! ---------------------------------------------------------------------------------------
-PURE FUNCTION SUMEXTRACT(STATNAME)
+PURE FUNCTION SUMEXTRACT(stats, STATNAME)
 ! ---------------------------------------------------------------------------------------
 ! Creator:
 ! --------
@@ -14,10 +14,11 @@ PURE FUNCTION SUMEXTRACT(STATNAME)
 ! --------
 ! Extracts variable "VNAME(IVAR)" from relevant data structures
 ! ---------------------------------------------------------------------------------------
-USE nrtype                                            ! variable types, etc.
-USE multistats                                        ! summary statistics
+USE nrtype
+USE multistats_types, only: SUMMARY
 IMPLICIT NONE
 ! input
+type(SUMMARY), intent(in)              :: stats       ! structures that depend on nState/nPar
 CHARACTER(*), INTENT(IN)               :: STATNAME    ! variable name
 ! internal
 REAL(WP)                               :: XVAR        ! variable
@@ -27,27 +28,27 @@ REAL(WP)                               :: SUMEXTRACT  ! FUNCTION name
 ! initialize XVAR
 XVAR=-9999._wp
 ! extract summary statistics
-IF (TRIM(STATNAME).EQ.'qobs_mean')   XVAR = MSTATS%QOBS_MEAN
-IF (TRIM(STATNAME).EQ.'qsim_mean')   XVAR = MSTATS%QSIM_MEAN 
-IF (TRIM(STATNAME).EQ.'qobs_cvar')   XVAR = MSTATS%QOBS_CVAR
-IF (TRIM(STATNAME).EQ.'qsim_cvar')   XVAR = MSTATS%QSIM_CVAR
-IF (TRIM(STATNAME).EQ.'qobs_lag1')   XVAR = MSTATS%QOBS_LAG1
-IF (TRIM(STATNAME).EQ.'qsim_lag1')   XVAR = MSTATS%QSIM_LAG1
-IF (TRIM(STATNAME).EQ.'raw_rmse')    XVAR = MSTATS%RAW_RMSE
-IF (TRIM(STATNAME).EQ.'log_rmse')    XVAR = MSTATS%LOG_RMSE
-IF (TRIM(STATNAME).EQ.'nash_sutt')   XVAR = MSTATS%NASH_SUTT
-IF (TRIM(STATNAME).EQ.'kge')         XVAR = MSTATS%KGE
-IF (TRIM(STATNAME).EQ.'kgep')        XVAR = MSTATS%KGEP
-IF (TRIM(STATNAME).EQ.'mae')         XVAR = MSTATS%MAE
-IF (TRIM(STATNAME).EQ.'metric_val')  XVAR = MSTATS%METRIC_VAL
+IF (TRIM(STATNAME).EQ.'qobs_mean')   XVAR = stats%QOBS_MEAN
+IF (TRIM(STATNAME).EQ.'qsim_mean')   XVAR = stats%QSIM_MEAN 
+IF (TRIM(STATNAME).EQ.'qobs_cvar')   XVAR = stats%QOBS_CVAR
+IF (TRIM(STATNAME).EQ.'qsim_cvar')   XVAR = stats%QSIM_CVAR
+IF (TRIM(STATNAME).EQ.'qobs_lag1')   XVAR = stats%QOBS_LAG1
+IF (TRIM(STATNAME).EQ.'qsim_lag1')   XVAR = stats%QSIM_LAG1
+IF (TRIM(STATNAME).EQ.'raw_rmse')    XVAR = stats%RAW_RMSE
+IF (TRIM(STATNAME).EQ.'log_rmse')    XVAR = stats%LOG_RMSE
+IF (TRIM(STATNAME).EQ.'nash_sutt')   XVAR = stats%NASH_SUTT
+IF (TRIM(STATNAME).EQ.'kge')         XVAR = stats%KGE
+IF (TRIM(STATNAME).EQ.'kgep')        XVAR = stats%KGEP
+IF (TRIM(STATNAME).EQ.'mae')         XVAR = stats%MAE
+IF (TRIM(STATNAME).EQ.'metric_val')  XVAR = stats%METRIC_VAL
 ! extract numerix stats
-IF (TRIM(STATNAME).EQ.'numerx_rmse') XVAR = MSTATS%NUM_RMSE      
-IF (TRIM(STATNAME).EQ.'mean_nfuncs') XVAR = MSTATS%NUM_FUNCS
-IF (TRIM(STATNAME).EQ.'mean_njacob') XVAR = MSTATS%NUM_JACOBIAN
-IF (TRIM(STATNAME).EQ.'mean_accept') XVAR = MSTATS%NUMSUB_ACCEPT
-IF (TRIM(STATNAME).EQ.'mean_reject') XVAR = MSTATS%NUMSUB_REJECT
-IF (TRIM(STATNAME).EQ.'mean_noconv') XVAR = MSTATS%NUMSUB_NOCONV
-IF (TRIM(STATNAME).EQ.'maxnum_iter') XVAR = REAL(MSTATS%MAXNUM_ITERNS, KIND(WP))
+IF (TRIM(STATNAME).EQ.'numerx_rmse') XVAR = stats%NUM_RMSE      
+IF (TRIM(STATNAME).EQ.'mean_nfuncs') XVAR = stats%NUM_FUNCS
+IF (TRIM(STATNAME).EQ.'mean_njacob') XVAR = stats%NUM_JACOBIAN
+IF (TRIM(STATNAME).EQ.'mean_accept') XVAR = stats%NUMSUB_ACCEPT
+IF (TRIM(STATNAME).EQ.'mean_reject') XVAR = stats%NUMSUB_REJECT
+IF (TRIM(STATNAME).EQ.'mean_noconv') XVAR = stats%NUMSUB_NOCONV
+IF (TRIM(STATNAME).EQ.'maxnum_iter') XVAR = REAL(stats%MAXNUM_ITERNS, KIND(WP))
 ! and, save the output
 SUMEXTRACT = XVAR
 ! ---------------------------------------------------------------------------------------

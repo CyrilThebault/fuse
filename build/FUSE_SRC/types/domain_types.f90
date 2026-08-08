@@ -1,4 +1,4 @@
-module data_types
+module domain_types
 
  use nrtype
 
@@ -73,13 +73,9 @@ module data_types
     type(river_network_data)      :: river_network      ! river_network%topology, river_network%runoff, ...
     type(spatial_remap_data)      :: remap              ! remap%forcing, remap%routing
 
-    ! basin-average time series for output convenience
-    type(FDATA), allocatable      :: aForce(:)          ! (nt_window)
-    type(RUNOFF), allocatable     :: aRoute(:)          ! (nt_window)
-
   end type domain_data
 
   ! -------------------------------------------------------------------------------------
 
 
-end module data_types
+end module domain_types

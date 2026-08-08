@@ -8,18 +8,12 @@ MODULE multistate
 
  public :: STATEV, M_TIME
 
- public :: gState, gState_3d
-
  public :: ASTATE, FSTATE, MSTATE, TSTATE, BSTATE, ESTATE, DSTATE
  public :: DYDT_0, DYDT_1, DY_DT, DYDT_OLD
  public :: HSTATE
 
  public :: ncid_out
  public :: fracState0
-
- ! variable definitions (grid)
- type(statev),dimension(:,:),pointer   :: gState     ! (grid of model states)
- type(statev),dimension(:,:,:),pointer :: gState_3d  ! (grid of model states with a time dimension)
 
  ! variable definitions (one cell)
  TYPE(STATEV)                          :: ASTATE     ! (model states at the start of full timestep)

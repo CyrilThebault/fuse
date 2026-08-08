@@ -2,6 +2,7 @@ module get_gforce_module
 
 use nrtype
 use info_types, only: fuse_info
+use domain_types, only: domain_data
 
 use netcdf
 
@@ -27,7 +28,7 @@ contains
   use netcdf
   use nrtype
   use info_types, only: fuse_info
-  use data_types, only: coord_data
+  use domain_types, only: coord_data
   implicit none
 
   integer(i4b),    intent(in)    :: ncid
@@ -302,186 +303,11 @@ contains
 
    end subroutine lookup_varid
 
-   subroutine get_input_flux_multiplier(cunits, amult, ierr, message)
-
-    character(len=*), intent(in)    :: cunits
-    real(wp),         intent(out)   :: amult
-    integer(i4b),     intent(inout) :: ierr
-    character(*),     intent(inout) :: message
-
-    character(len=128) :: units_lc
-    character(len=32)  :: length_unit
-    character(len=32)  :: time_unit
-    real(wp)           :: length_to_mm
-    real(wp)           :: units_per_day
-    integer(i4b)       :: ipos
-    integer(i4b)       :: i
-    integer(i4b)       :: ichar_value
-
-    integer(i4b), parameter :: syntax_unknown = 0
-    integer(i4b), parameter :: syntax_slash   = 1
-    integer(i4b), parameter :: syntax_per     = 2
-    integer(i4b), parameter :: syntax_inverse = 3
-
-    integer(i4b) :: syntax_type
-    integer(i4b) :: delimiter_len
-    integer(i4b) :: ispace
-
-    character(len=:), allocatable :: delimiter
-
-    ierr  = 0
-    amult = -1._wp
-
-    units_lc = adjustl(trim(cunits))
-
-    ! Convert ASCII upper case to lower case
-    do i = 1, len_trim(units_lc)
-      ichar_value = iachar(units_lc(i:i))
-
-      if (ichar_value >= iachar("A") .and. &
-          ichar_value <= iachar("Z")) then
-        units_lc(i:i) = achar(ichar_value + 32)
-      end if
-    end do
-
-    ! Current supported syntax: length/time, length per time and length time-1
-    syntax_type  = syntax_unknown
-    delimiter_len = 0
-    ipos = 0
-
-    ! Identify the unit syntax.
-    if (index(units_lc, " per ") > 0) then
-      syntax_type = syntax_per
-
-    else if (index(units_lc, "/") > 0) then
-      syntax_type = syntax_slash
-
-    else if (index(units_lc, "-1") > 0) then
-      syntax_type = syntax_inverse
-    end if
-
-    select case (syntax_type)
-
-      case (syntax_per)
-
-        delimiter = " per "
-        delimiter_len = len(delimiter)
-        ipos = index(units_lc, delimiter)
-
-        if (ipos <= 1 .or. &
-            ipos + delimiter_len > len_trim(units_lc)) then
-          ierr = 20
-          message = trim(message)// &
-            "unsupported flux units '"//trim(cunits)//"': empty length or time unit"
-          return
-        end if
-
-        length_unit = adjustl(trim(units_lc(:ipos-1)))
-        time_unit = adjustl(trim( &
-          units_lc(ipos+delimiter_len:len_trim(units_lc)) ))
-
-      case (syntax_slash)
-
-        delimiter = "/"
-        delimiter_len = len(delimiter)
-        ipos = index(units_lc, delimiter)
-
-        if (ipos <= 1 .or. &
-            ipos + delimiter_len > len_trim(units_lc)) then
-          ierr = 20
-          message = trim(message)//"unsupported flux units '"//trim(cunits)// "': empty length or time unit"
-          return
-        end if
-
-        length_unit = adjustl(trim(units_lc(:ipos-1)))
-        time_unit = adjustl(trim( &
-          units_lc(ipos+delimiter_len:len_trim(units_lc)) ))
-
-      case (syntax_inverse)
-
-        ! Expected syntax: length time-1
-        ispace = index(trim(units_lc), " ")
-
-        if (ispace <= 1) then
-          ierr = 20
-          message = trim(message)// &
-            "unsupported flux units '"//trim(cunits)//"': expected length time-1"
-          return
-        end if
-
-        length_unit = adjustl(trim(units_lc(:ispace-1)))
-        time_unit = adjustl(trim(units_lc(ispace+1:)))
-
-        if (len_trim(time_unit) <= 2) then
-          ierr = 20
-          message = trim(message)// "unsupported inverse-time unit '"//trim(time_unit)//"' in '"//trim(cunits)//"'"
-          return
-        end if
-
-        if (time_unit(len_trim(time_unit)-1:len_trim(time_unit)) /= "-1") then
-          ierr = 20
-          message = trim(message)// &
-            "unsupported inverse-time unit '"//trim(time_unit)// "' in '"//trim(cunits)//"'"
-          return
-        end if
-
-        ! Remove the trailing "-1".
-        time_unit = trim(time_unit(:len_trim(time_unit)-2))
-
-      case default
-
-        ierr = 20
-        message = trim(message)// "unsupported flux units '"//trim(cunits)// "': expected length/time, length per time, or length time-1"
-        return
-
-    end select
-
-    ! Convert the numerator to millimetres
-    select case (trim(length_unit))
-
-      case ("mm", "millimeter", "millimeters", "millimetre", "millimetres")
-        length_to_mm = 1._wp
-
-      case ("m", "meter", "meters", "metre", "metres")
-        length_to_mm = 1000._wp
-
-      case default
-        ierr = 20
-        message = trim(message)// "unsupported length unit '"//trim(length_unit)// "' in '"//trim(cunits)//"'. Supported length units are: mm or m."
-        return
-
-    end select
-
-    ! Convert the denominator to units per day
-    select case (trim(time_unit))
-
-      case ("s", "sec", "secs", "second", "seconds")
-        units_per_day = 86400._wp
-
-      case ("min", "mins", "minute", "minutes")
-        units_per_day = 1440._wp
-
-      case ("h", "hr", "hrs", "hour", "hours")
-        units_per_day = 24._wp
-
-      case ("d", "day", "days")
-        units_per_day = 1._wp
-
-      case default
-        ierr = 20
-        message = trim(message)// "unsupported time unit '"//trim(time_unit)// "' in '"//trim(cunits)//"'. Supported time units are: s, min, h, d."
-        return
-
-    end select
-
-    amult = length_to_mm * units_per_day
-
-   end subroutine get_input_flux_multiplier
-
   end subroutine get_forcing_metadata
 
 
-  SUBROUTINE get_gforce_3d(info, itim_start, numtim, ierr, message)
+  SUBROUTINE get_gforce_3d(info, itim_start, numtim, &
+                           domain, ierr, message)
   ! ---------------------------------------------------------------------------------------
   ! Creator:
   ! --------
@@ -492,23 +318,19 @@ contains
   ! --------
   ! Read NetCDF gridded forcing data for a range of time steps
   ! ---------------------------------------------------------------------------------------
-  ! Modules Modified:
-  ! -----------------
-  ! MODULE multiforce -- populate structure GFORCE_3d(*,*)%(*)
-  ! ---------------------------------------------------------------------------------------
-  USE multiforce,only:gForce_3d                          ! gridded forcing data
   USE multiforce,only:aValid                             ! time series of lumped forcing/response data
 
   IMPLICIT NONE
 
   ! input
-  type(fuse_info), intent(in)             :: info        ! info data structure that holds spatial indices
-  integer(i4b),    intent(in)             :: itim_start  ! index of model time step - start of the period to extract
-  integer(i4b),    intent(in)             :: numtim      ! number of model time steps to extract
+  type(fuse_info),   intent(in)             :: info        ! info data structure that holds spatial indices
+  integer(i4b),      intent(in)             :: itim_start  ! index of model time step - start of the period to extract
+  integer(i4b),      intent(in)             :: numtim      ! number of model time steps to extract
 
   ! output
-  integer(i4b),    intent(out)            :: ierr        ! error code
-  character(*),    intent(out)            :: message     ! error message
+  type(domain_data), intent(inout)          :: domain      ! domain data structure that holds 3-d arrays
+  integer(i4b),      intent(out)            :: ierr        ! error code
+  character(*),      intent(out)            :: message     ! error message
 
   ! internal
   integer(i4b)                            :: iVar        ! loop through forcing data
@@ -548,13 +370,13 @@ contains
    select case(ivar)
 
     case (iPRECIP)
-      gForce_3d(:,:,1:numtim)%ppt = gTemp(:,:,:) * info%files%forc%multiplier(iPRECIP)
+      domain%force(:,:,1:numtim)%ppt  = gTemp(:,:,:) * info%files%forc%multiplier(iPRECIP)
 
     case (iTEMP)
-      gForce_3d(:,:,1:numtim)%temp = gTemp(:,:,:)
+      domain%force(:,:,1:numtim)%temp = gTemp(:,:,:)
 
     case (iPET)
-      gForce_3d(:,:,1:numtim)%pet = gTemp(:,:,:) * info%files%forc%multiplier(iPET)
+      domain%force(:,:,1:numtim)%pet  = gTemp(:,:,:) * info%files%forc%multiplier(iPET)
 
     case (iQOBS)
       aValid(:,:,1:numtim)%obsq = gTemp(:,:,:) * info%files%forc%multiplier(iQOBS)   ! TODO: check dimensions (works for nx=1, ny=1)
@@ -571,5 +393,192 @@ contains
   if(ierr/=0)then; message=trim(message)//'problem deallocating space for gTemp'; return; endif
 
   end subroutine get_gforce_3d
+
+  ! -------------------------------------------------------------------------------------
+  ! -------------------------------------------------------------------------------------
+  ! -------------------------------------------------------------------------------------
+  ! -------------------------------------------------------------------------------------
+  ! -------------------------------------------------------------------------------------
+
+  subroutine get_input_flux_multiplier(cunits, amult, ierr, message)
+
+   character(len=*), intent(in)    :: cunits
+   real(wp),         intent(out)   :: amult
+   integer(i4b),     intent(inout) :: ierr
+   character(*),     intent(inout) :: message
+
+   character(len=128) :: units_lc
+   character(len=32)  :: length_unit
+   character(len=32)  :: time_unit
+   real(wp)           :: length_to_mm
+   real(wp)           :: units_per_day
+   integer(i4b)       :: ipos
+   integer(i4b)       :: i
+   integer(i4b)       :: ichar_value
+
+   integer(i4b), parameter :: syntax_unknown = 0
+   integer(i4b), parameter :: syntax_slash   = 1
+   integer(i4b), parameter :: syntax_per     = 2
+   integer(i4b), parameter :: syntax_inverse = 3
+
+   integer(i4b) :: syntax_type
+   integer(i4b) :: delimiter_len
+   integer(i4b) :: ispace
+
+   character(len=:), allocatable :: delimiter
+
+   ierr  = 0
+   amult = -1._wp
+
+   units_lc = adjustl(trim(cunits))
+
+   ! Convert ASCII upper case to lower case
+   do i = 1, len_trim(units_lc)
+     ichar_value = iachar(units_lc(i:i))
+
+     if (ichar_value >= iachar("A") .and. &
+         ichar_value <= iachar("Z")) then
+       units_lc(i:i) = achar(ichar_value + 32)
+     end if
+   end do
+
+   ! Current supported syntax: length/time, length per time and length time-1
+   syntax_type  = syntax_unknown
+   delimiter_len = 0
+   ipos = 0
+
+   ! Identify the unit syntax.
+   if (index(units_lc, " per ") > 0) then
+     syntax_type = syntax_per
+
+   else if (index(units_lc, "/") > 0) then
+     syntax_type = syntax_slash
+
+   else if (index(units_lc, "-1") > 0) then
+     syntax_type = syntax_inverse
+   end if
+
+   select case (syntax_type)
+
+     case (syntax_per)
+
+       delimiter = " per "
+       delimiter_len = len(delimiter)
+       ipos = index(units_lc, delimiter)
+
+       if (ipos <= 1 .or. &
+           ipos + delimiter_len > len_trim(units_lc)) then
+         ierr = 20
+         message = trim(message)// &
+           "unsupported flux units '"//trim(cunits)//"': empty length or time unit"
+         return
+       end if
+
+       length_unit = adjustl(trim(units_lc(:ipos-1)))
+       time_unit = adjustl(trim( &
+         units_lc(ipos+delimiter_len:len_trim(units_lc)) ))
+
+     case (syntax_slash)
+
+       delimiter = "/"
+       delimiter_len = len(delimiter)
+       ipos = index(units_lc, delimiter)
+
+       if (ipos <= 1 .or. &
+           ipos + delimiter_len > len_trim(units_lc)) then
+         ierr = 20
+         message = trim(message)//"unsupported flux units '"//trim(cunits)// "': empty length or time unit"
+         return
+       end if
+
+       length_unit = adjustl(trim(units_lc(:ipos-1)))
+       time_unit = adjustl(trim( &
+         units_lc(ipos+delimiter_len:len_trim(units_lc)) ))
+
+     case (syntax_inverse)
+
+       ! Expected syntax: length time-1
+       ispace = index(trim(units_lc), " ")
+
+       if (ispace <= 1) then
+         ierr = 20
+         message = trim(message)// &
+           "unsupported flux units '"//trim(cunits)//"': expected length time-1"
+         return
+       end if
+
+       length_unit = adjustl(trim(units_lc(:ispace-1)))
+       time_unit = adjustl(trim(units_lc(ispace+1:)))
+
+       if (len_trim(time_unit) <= 2) then
+         ierr = 20
+         message = trim(message)// "unsupported inverse-time unit '"//trim(time_unit)//"' in '"//trim(cunits)//"'"
+         return
+       end if
+
+       if (time_unit(len_trim(time_unit)-1:len_trim(time_unit)) /= "-1") then
+         ierr = 20
+         message = trim(message)// &
+           "unsupported inverse-time unit '"//trim(time_unit)// "' in '"//trim(cunits)//"'"
+         return
+       end if
+
+       ! Remove the trailing "-1".
+       time_unit = trim(time_unit(:len_trim(time_unit)-2))
+
+     case default
+
+       ierr = 20
+       message = trim(message)// "unsupported flux units '"//trim(cunits)// "': expected length/time, length per time, or length time-1"
+       return
+
+   end select
+
+   ! Convert the numerator to millimetres
+   select case (trim(length_unit))
+
+     case ("mm", "millimeter", "millimeters", "millimetre", "millimetres")
+       length_to_mm = 1._wp
+
+     case ("m", "meter", "meters", "metre", "metres")
+       length_to_mm = 1000._wp
+
+     case default
+       ierr = 20
+       message = trim(message)// "unsupported length unit '"//trim(length_unit)// "' in '"//trim(cunits)//"'. Supported length units are: mm or m."
+       return
+
+   end select
+
+   ! Convert the denominator to units per day
+   select case (trim(time_unit))
+
+     case ("s", "sec", "secs", "second", "seconds")
+       units_per_day = 86400._wp
+
+     case ("min", "mins", "minute", "minutes")
+       units_per_day = 1440._wp
+
+     case ("h", "hr", "hrs", "hour", "hours")
+       units_per_day = 24._wp
+
+     case ("d", "day", "days")
+       units_per_day = 1._wp
+
+     case default
+       ierr = 20
+       message = trim(message)// "unsupported time unit '"//trim(time_unit)// "' in '"//trim(cunits)//"'. Supported time units are: s, min, h, d."
+       return
+
+   end select
+
+   amult = length_to_mm * units_per_day
+
+  end subroutine get_input_flux_multiplier
+
+
+
+
+
 
 end module get_gforce_module
