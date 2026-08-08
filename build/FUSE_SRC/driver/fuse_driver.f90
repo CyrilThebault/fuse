@@ -16,7 +16,7 @@ USE nrtype                                                ! variable types, etc.
 USE info_types, only: cli_options                         ! command line interface options
 USE info_types, only: fuse_info                           ! info structure (includes "everything")
 USE work_types, only: fuse_work                           ! structures that depend on nState/nPar 
-USE domain_types, only: domain_data                         ! domain data
+USE domain_types, only: domain_data                       ! domain data
 
 ! data
 USE fuse_globaldata, only: isPrint
@@ -106,7 +106,7 @@ if(err/=0) stop trim(message)
 ! ----- initialize model configurations -------------------------------------------------
 
 ! choose model, load parameter metadata, derive parameters, and define NetCDF output files
-call setup_model_definition(cli_opts, info, domain, APAR, BL, BU, err, message)
+call setup_model_definition(cli_opts, info, work, domain, APAR, BL, BU, err, message)
 if(err/=0) stop trim(message)
 
 ! ----- initialize work structures ------------------------------------------------------

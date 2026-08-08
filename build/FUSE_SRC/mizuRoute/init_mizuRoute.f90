@@ -59,7 +59,9 @@ CONTAINS
 
   ! external subroutines
   use popMetadat_module,   only: popMetadat           ! populate metadata
+  use read_param_module,   only: read_param           ! read the routing parameters
   use read_remap,          only: get_remap_data       ! read remap data
+
 
   implicit none
 
@@ -72,7 +74,14 @@ CONTAINS
   character(len=strLen)            :: cmessage
 
   ierr = 0
-  message = 'init_mizuroute_topology/'
+  message = 'init_mizuroute_domain/'
+
+  !---------------------------------------------------------------------
+  ! Read the mizuRoute namelist
+  !---------------------------------------------------------------------
+
+  call read_param(trim(info%mrout%namelist_path)//trim(info%mrout%namelist_file), ierr, cmessage)
+  if(ierr/=0)then; message=trim(message)//trim(cmessage); return; endif
 
   !---------------------------------------------------------------------
   ! Initialize mizuRoute metadata
@@ -80,10 +89,7 @@ CONTAINS
   
   ! Populate the default metadata structures
   call popMetadat(ierr, cmessage)
-  if (ierr /= 0) then
-    message = trim(message)//trim(cmessage)
-    return
-  end if
+  if(ierr/=0)then; message=trim(message)//trim(cmessage); return; endif
 
   !---------------------------------------------------------------------
   ! Configure the FUSE–mizuRoute interface
@@ -212,6 +218,9 @@ CONTAINS
   use public_var, only: idSegOut
   use public_var, only: ntopAugmentMode
 
+  ! time step
+  use public_var, only: dt
+
   implicit none
 
   type(fuse_info),   intent(in)    :: info
@@ -258,6 +267,9 @@ CONTAINS
 
   ! network topology
   idSegOut = info%ntopo%idSegOut
+
+  ! time step
+  dt = info%mrout%dt
 
  end subroutine populate_mizu_modules
 

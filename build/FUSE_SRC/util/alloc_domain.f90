@@ -36,10 +36,6 @@ CONTAINS
   allocate(domain%valid(nx,ny,nt), stat=ierr)
   if(ierr/=0)then; message=trim(message)//"cannot allocate valid"; return; endif
 
-  ! allocate ancillary forcing
-  allocate(domain%ancil(nx,ny), stat=ierr)
-  if(ierr/=0)then; message=trim(message)//"cannot allocate ancil"; return; endif
-
   ! allocate forcing window
   allocate(domain%force(nx,ny,nt), stat=ierr)
   if(ierr/=0)then; message=trim(message)//"cannot allocate force"; return; endif
@@ -88,10 +84,8 @@ CONTAINS
   USE multiforce, only: ncid_forc
   use multiforce, only: timeUnits
   use multiforce, only: nInput
-  use multiForce, only: ancilF, aValid
-  use multiState, only: gState_3d
-  use multiRoute, only: aRoute, AROUTE_3d
-  use multiBands, only: N_BANDS, MBANDS, MBANDS_INFO_3d, MBANDS_VAR_4d, Z_FORCING_grid, elev_mask
+  use multiForce, only: aValid
+  use multiBands, only: N_BANDS, MBANDS
   implicit none
 
   type(fuse_info),   intent(in)    :: info
@@ -127,35 +121,12 @@ CONTAINS
   allocate(aValid(nx,ny,nt), stat=ierr)
   if(ierr/=0)then; message=trim(message)//"cannot allocate valid"; return; endif
 
-  ! allocate ancillary forcing
-  allocate(ancilF(nx,ny), stat=ierr)
-  if(ierr/=0)then; message=trim(message)//"cannot allocate ancil"; return; endif
-
-  ! allocate state window
-  allocate(gState_3d(nx,ny,nt+1), stat=ierr)
-  if(ierr/=0)then; message=trim(message)//"cannot allocate state"; return; endif
-
-  ! allocate routing if needed
-  allocate(AROUTE_3d(nx,ny,nt), stat=ierr)
-  if(ierr/=0)then; message=trim(message)//"cannot allocate route"; return; endif
-
-  ! allocate elevation grid and mask
-  allocate(Z_FORCING_grid(nx,ny), elev_mask(nx, ny), stat=ierr)
-  if(ierr/=0)then; message=trim(message)//"cannot allocate elev grid"; return; endif
-
   ! allocate elevation bands
-  allocate(MBANDS(nb), MBANDS_INFO_3d(nx,ny,nb), MBANDS_VAR_4d(nx,ny,nb,nt+1), stat=ierr)
+  allocate(MBANDS(nb), stat=ierr)
   if(ierr/=0)then; message=trim(message)//"cannot allocate elev bands"; return; endif
 
   ! copy arrays in the domain structure to legacy arrays
   aValid         = domain%valid      ! validity mask
-  ancilF         = domain%ancil      ! ancillary forcing
-  gState_3d      = domain%state      ! state data
-  AROUTE_3d      = domain%route      ! routing data
-  elev_mask      = domain%elev_mask  ! elevation mask
-  Z_FORCING_grid = domain%z_forcing  ! elevation grid
-  MBANDS_INFO_3d = domain%bands_info ! elevation band info
-  MBANDS_VAR_4d  = domain%bands_var  ! elevation band vars
 
   end subroutine set_legacy_arrays
 

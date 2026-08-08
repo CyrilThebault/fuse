@@ -25,8 +25,6 @@ MODULE multiforce
 
  public :: timDat, valDat, aValid
  public :: AFORCE, CFORCE, MFORCE
- public :: ancilF, ancilF_3d
- public :: gForce!, gForce_3d
  
  public :: date_start_input, date_end_input
  public :: numtim_in, numtim_sim, numtim_sub
@@ -67,10 +65,6 @@ MODULE multiforce
  TYPE(FDATA), allocatable              :: AFORCE(:)         ! all model forcing data
  TYPE(FDATA), allocatable              :: CFORCE(:)         ! COPY of model forcing data
  TYPE(FDATA)                           :: MFORCE            ! model forcing data for a single time step
-
- TYPE(aData), allocatable              :: ancilF(:,:)       ! ancillary forcing data for the 2-d grid
- TYPE(fData), allocatable              :: gForce(:,:)       ! model forcing data for a 2-d grid
- TYPE(aData), allocatable              :: ancilF_3d(:,:,:)  ! ancillary forcing data for the 3-d grid
 
  ! NetCDF
 

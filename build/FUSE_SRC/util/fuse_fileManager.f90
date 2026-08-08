@@ -170,6 +170,13 @@ contains
         case ("forcing_vars.pet"             ); call get_value(subtable, trim(keys(j)%key), info%files%pet_name         , stat=istat)
         case ("forcing_vars.qobs"            ); call get_value(subtable, trim(keys(j)%key), info%files%qobs_name        , stat=istat)
 
+        ! ---- mizuRoute: namelist path/filenames ----
+        case ("mizuRoute.namelist_path"      ); call get_value(subtable, trim(keys(j)%key), info%mrout%namelist_path    , stat=istat)
+        case ("mizuRoute.namelist_file"      ); call get_value(subtable, trim(keys(j)%key), info%mrout%namelist_file    , stat=istat)
+
+        ! ---- mizuRoute: runtime ----
+        case ("mizuRoute.dt"                 ); call get_value(subtable, trim(keys(j)%key), info%mrout%dt               , stat=istat)
+        
         ! ---- hydrofabric: path/filenames ----
         case ("hydrofabric.hfabric_path"     ); call get_value(subtable, trim(keys(j)%key), info%ntopo%hfabric_path     , stat=istat)
         case ("hydrofabric.hfabric_file"     ); call get_value(subtable, trim(keys(j)%key), info%ntopo%hfabric_file     , stat=istat)

@@ -148,6 +148,18 @@ module info_types
 
  end type file_info
 
+ 
+ ! -------------------------------------------------------------------------------------
+
+ type :: mizu_info
+
+   character(len=:), allocatable :: namelist_path       ! namelist path
+   character(len=:), allocatable :: namelist_file       ! namelist file
+
+   real(wp)                      :: dt = 3600._wp       ! routing time step (s)
+
+ end type mizu_info
+
  ! -------------------------------------------------------------------------------------
 
  type :: topo_info
@@ -175,7 +187,6 @@ module info_types
    integer(i4b)                  :: idSegOut = -9999   ! ID of outlet segment
 
  end type topo_info
-
 
  ! -------------------------------------------------------------------------------------
 
@@ -261,6 +272,7 @@ module info_types
    type(space_info) :: space
    type(time_info)  :: time
    type(snow_info)  :: snow
+   type(mizu_info)  :: mrout
    type(topo_info)  :: ntopo
    type(remap_info) :: remap
    type(file_info)  :: files

@@ -35,7 +35,7 @@ contains
   use model_defn,    only: fname_netcdf_runs
   use metaoutput,    only: noutvar, vname, isband
   use multiparam,    only: numpar
-  use multibands,    only: mbands_var_4d, n_bands
+  use multibands,    only: n_bands
   use multiforce,    only: time_steps, nspat1, nspat2
   use fuse_filemanager, only: q_only
 
@@ -113,11 +113,11 @@ contains
 
     else
 
-      ! 4-d elevation band variable (stored in MBANDS_VAR_4d)
+      ! 4-d elevation band variable (stored in domain%bands_var)
       select case (trim(vname(ivar)))
-        case ('swe_z');     avar_4d_band = mbands_var_4d(:,:,:,1:numtim)%swe
-        case ('snwacml_z'); avar_4d_band = mbands_var_4d(:,:,:,1:numtim)%snowaccmltn
-        case ('snwmelt_z'); avar_4d_band = mbands_var_4d(:,:,:,1:numtim)%snowmelt
+        case ('swe_z');     avar_4d_band = domain%bands_var(:,:,:,1:numtim)%swe
+        case ('snwacml_z'); avar_4d_band = domain%bands_var(:,:,:,1:numtim)%snowaccmltn
+        case ('snwmelt_z'); avar_4d_band = domain%bands_var(:,:,:,1:numtim)%snowmelt
         case default;       stop trim(subname)//":unknown band var:"//trim(vname(ivar))
       end select
 

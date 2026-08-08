@@ -16,7 +16,7 @@ module work_types
  private
 
  public :: bands_var_diff, ebands
- public :: fuse_chunk
+ public :: fuse_param
  public :: fuse_work
 
  ! --------------------------------------------------------------------------------------

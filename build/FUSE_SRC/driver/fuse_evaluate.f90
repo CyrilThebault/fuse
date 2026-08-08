@@ -35,8 +35,6 @@ MODULE fuse_evaluate_module
     use model_defn,only: NSTATE
     use multiforce,only: nspat1, nspat2, numtim_sub
     use multibands,only: N_BANDS, n_bands
-    use multistats,only: MSTATS
-    use multi_flux,only: W_FLUX_3d
 
     IMPLICIT NONE
 
@@ -59,20 +57,16 @@ MODULE fuse_evaluate_module
 
     ! ---------------------------------------------------------------------------------------
 
-    ! allocate 3d data structure for fluxes
-    allocate(w_flux_3d(nspat1, nspat2, numtim_sub), stat=ierr)
-    if (ierr /= 0) stop "problem allocating w_flux_3d in fuse_evaluate"
-
     ! populate parameter structures and initialize states
-    call initialize_run(info, XPAR, work, ierr, message)
+    call initialize_run(info, XPAR, work, domain, ierr, message)
     if (ierr /= 0) stop trim(message)
     
     ! initialize timing
     CALL CPU_TIME(T1)
 
     ! run fuse for the entire time series
-    call run_time_loop(info, work, domain, OUTPUT_FLAG, err, message)
-    if (err /= 0) stop trim(message)
+    call run_time_loop(info, work, domain, OUTPUT_FLAG, ierr, message)
+    if (ierr /= 0) stop trim(message)
 
     ! get timing information
     CALL CPU_TIME(T2)
@@ -83,8 +77,8 @@ MODULE fuse_evaluate_module
     if( .not. info%space%grid_flag)then
 
       if(isPrint) PRINT *, 'Calculating performance metrics...'
-      CALL MEAN_STATS()
-      METRIC_VAL = MSTATS%METRIC_VAL
+      CALL MEAN_STATS(work, domain)
+      metric_val = work%run%stats%metric_val
 
       write(*,'(i6,1x,a11,1x,f12.6,1x,a20,1x,f12.6)') nFUSE_eval, "OBJ FUNC = ", METRIC_VAL, "; TIME ELAPSED = ", t2-t1
       !if(nFUSE_eval > 10) stop "checking results"
@@ -92,10 +86,7 @@ MODULE fuse_evaluate_module
     endif ! if catchment mode (lumped or distributed)
 
     if(isPrint) PRINT *, 'Writing model statistics...'
-    CALL PUT_SSTATS(work%run%n_evaluations)
-
-    ! deallocate output buffer
-    DEALLOCATE(W_FLUX_3d); IF (IERR.NE.0) STOP ' problem deallocating W_FLUX_3d in fuse_metric '
+    CALL PUT_SSTATS(work%run%stats, work%run%n_evaluations)
 
   END SUBROUTINE fuse_evaluate
 
@@ -106,57 +97,58 @@ MODULE fuse_evaluate_module
   ! ----- private subroutine initialize_run: populate param sets and initialize states  -------------------------------
   ! -------------------------------------------------------------------------------------------------------------------
 
-  subroutine initialize_run(info, xpar, work, err, message)
+  subroutine initialize_run(info, xpar, work, domain, ierr, message)
   
   use fuse_globaldata,  only: isPrint, fracstate0
   use model_defn,  only: SMODL
   use model_defnames
   
   use multiforce,  only: nspat1, nspat2
-  use multistate,  only: FSTATE, gState_3d
+  use multistate,  only: FSTATE
   use multibands
  
+  use par_insert_module, only: put_parset
   use par_derive_module, only: par_derive 
   use par_insert_module
   use str_2_xtry_module
   use xtry_2_str_module
   use put_params_module, only: put_params
 
-  use info_types, only: fuse_info
   implicit none
 
   type(fuse_info)        , intent(in)      :: info
   real(wp), dimension(:) , intent(in)      :: xpar
   type(fuse_work)        , intent(inout)   :: work
 
-  integer(i4b)           , intent(out)     :: err
+  type(domain_data)      , intent(inout)   :: domain
+  integer(i4b)           , intent(out)     :: ierr
   character(len=*)       , intent(out)     :: message
 
-  integer(i4b) :: iSpat1, iSpat2, iBands
+  integer(i4b)                             :: iSpat1, iSpat2, iBands
+  character(len=256)                       :: cmessage  ! error message of downwind routine
 
-  err = 0
-  message = ""
+  ierr    = 0
+  message = "initialize_run/"
 
   ! increment parameter counter for model output
   work%run%n_evaluations = work%run%n_evaluations + 1
 
   ! add parameter set to the data structure
-  call put_parset(xpar)
+  call put_parset(xpar, info%config%listParam, work%par, ierr, cmessage)
+  if(ierr/=0)then; message=trim(message)//trim(cmessage); return; endif
+
   if (isPrint) then
     print *, 'Parameter set added to data structure:'
     print *, xpar
   end if
 
   ! compute derived model parameters (bucket sizes, etc.)
-  call par_derive(info, err, message)
-  if (err /= 0) then
-    write(*,*) trim(message)
-    stop
-  end if
+  call par_derive(info, ierr, cmessage)
+  if(ierr/=0)then; message=trim(message)//trim(cmessage); return; endif
 
   ! get elevation bands (if catchment)
-  Z_FORCING      = Z_FORCING_grid(1,1)
-  MBANDS(:)%info = MBANDS_INFO_3d(1,1,:)
+  Z_FORCING      = domain%z_forcing(1,1)
+  MBANDS(:)%info = domain%bands_info(1,1,:)
 
   if (isPrint) print *, 'Writing parameter values...'
   call put_params(work%run%n_evaluations)
@@ -167,7 +159,7 @@ MODULE fuse_evaluate_module
       call init_state(fracstate0)
       call str_2_xtry(FSTATE, work%num%x0)
       call xtry_2_str(work%num%x0, FSTATE)
-      gState_3d(iSpat1, iSpat2, 1) = FSTATE
+      domain%state(iSpat1, iSpat2, 1) = FSTATE
     end do
   end do
   if (isPrint) print *, 'Model states initialized over the 2D gridded domain'
@@ -176,26 +168,19 @@ MODULE fuse_evaluate_module
   if (isPrint) print *, 'N_BANDS =', N_BANDS
   if (SMODL%iSNOWM == iopt_temp_index) then
 
-    ! initialize template once
-    work%snow%sbands(:)%var%SWE         = 0._wp
-    work%snow%sbands(:)%var%SNOWACCMLTN = 0._wp
-    work%snow%sbands(:)%var%SNOWMELT    = 0._wp
-    work%snow%sbands(:)%var%DSWE_DT     = 0._wp
+    ! initialize template once (spat1, spat2, bands, first time index)
+    domain%bands_var(:,:,:,1)%SWE         = 0._wp
+    domain%bands_var(:,:,:,1)%SNOWACCMLTN = 0._wp
+    domain%bands_var(:,:,:,1)%SNOWMELT    = 0._wp
+    domain%bands_var(:,:,:,1)%DSWE_DT     = 0._wp
+   
+    ! get work array foor the bands
+    work%snow%sbands(:)%var%bands_var = domain%bands_var(1,1,:,1)
 
-    ! copy to every grid cell (legacy staging)
-    do iSpat2 = 1, nSpat2
-      do iSpat1 = 1, nSpat1
-        do iBands = 1, n_bands
-          MBANDS_VAR_4d(iSpat1, iSpat2, iBands, 1) = work%snow%sbands(iBands)%var%bands_var
-        end do
-      end do
-    end do
-
-    if (isPrint) print *, 'Snow states initialized over the 2D gridded domain'
-  end if
+  end if ! if (SMODL%iSNOWM == iopt_temp_index)
 
   ! initialize summary statistics + timer
-  call init_stats()
+  call init_stats(work)
 
   end subroutine initialize_run
 
@@ -209,10 +194,8 @@ MODULE fuse_evaluate_module
   subroutine run_time_loop(info, work, domain, output_flag, ierr, message)
 
   use fuse_globaldata, only: isPrint
-  use multiforce, only: timDat  ! NOTE: used in legacy cides
+  use multiforce, only: timDat  ! NOTE: used in legacy codes
   use multiforce, only: nspat1, nspat2, DELTIM, sim_beg, sim_end, numtim_sub
-  use multistate, only: gState_3d
-  use multibands, only: MBANDS_VAR_4d
   use time_utils,        only: caldatss
   use get_gforce_module, only: get_gforce_3d
   use put_output_module, only: put_output
@@ -339,11 +322,11 @@ MODULE fuse_evaluate_module
       if(isPrint) PRINT *, 'OUTPUT_FLAG is set on FALSE, no output written'
     END IF
 
-    ! TODO: set gState_3d and MBANDS_VAR_4d to NA
+    ! TODO: set domain%state and domain%bands_var to NA
 
     ! reinitialize states for next subperiod using last time step
-    gState_3d(:,:,1)       = gState_3d(:,:,chunk_len+1)
-    MBANDS_VAR_4d(:,:,:,1) = MBANDS_VAR_4d(:,:,:,chunk_len+1)
+    domain%state(:,:,1)       = domain%state(:,:,chunk_len+1)
+    domain%bands_var(:,:,:,1) = domain%bands_var(:,:,:,chunk_len+1)
 
     ! -----------------------------------------------------------------------------------------------------------------
 
@@ -361,17 +344,17 @@ MODULE fuse_evaluate_module
   ! ----- private subroutine advance_one_cell: run fuse for one grid cell ---------------------------------------------
   ! -------------------------------------------------------------------------------------------------------------------
 
-  subroutine advance_one_cell(work, domain, sub_idx, iSpat1, iSpat2, dt_sub, dt_full, err, message)
+  subroutine advance_one_cell(work, domain, sub_idx, iSpat1, iSpat2, dt_sub, dt_full, ierr, message)
 
   ! switches / options
   use fuse_globaldata,   only: NA_VALUE_SP
   use model_defn,   only: SMODL, NSTATE
   use model_defnames
   use multiforce,   only: DELTIM, MFORCE, nspat1, nspat2
-  use multistate,   only: gState_3d, FSTATE, MSTATE
-  use multiroute,   only: MROUTE, AROUTE_3d
-  use multibands
-  use multi_flux,   only: W_FLUX, W_FLUX_3d, M_FLUX
+  use multistate,   only: FSTATE, MSTATE
+  use multiroute,   only: MROUTE
+  use multibands,   only: MBANDS, Z_FORCING 
+  use multi_flux,   only: W_FLUX, M_FLUX
   use set_all_module, only: SET_STATE, SET_FLUXES, SET_ROUTE
 
   ! state vector conversions
@@ -396,49 +379,46 @@ MODULE fuse_evaluate_module
   type(domain_data)     , intent(inout) :: domain         ! domain structures that hold 3-d data 
   integer(i4b)          , intent(in)    :: sub_idx, iSpat1, iSpat2
   real(wp)              , intent(inout) :: dt_sub, dt_full
-  integer(i4b)          , intent(out)   :: err
+  integer(i4b)          , intent(out)   :: ierr
   character(len=*)      , intent(out)   :: message
 
   ! locals
-  integer(i4b)              :: ierr
   character(len=1024)       :: cmessage
 
-  err = 0
-  message = "advance_one_cell/"
   ierr = 0
-  cmessage = ""
+  message = "advance_one_cell/"
 
   ! ---------------------------------------------------------------------------
   ! only run FUSE for grid points within domain defined by elev_mask
   ! NOTE: you currently run when elev_mask is FALSE (keep as-is for BFB)
   ! ---------------------------------------------------------------------------
-  if (.not. elev_mask(iSpat1,iSpat2)) then
+  if (.not. domain%elev_mask(iSpat1,iSpat2)) then
 
     ! extract forcing for this grid cell and time step
     MFORCE = domain%force(iSpat1,iSpat2,sub_idx)
 
     ! forcing sanity checks (keep behavior; convert STOP -> error return)
     if (MFORCE%PPT < 0.0_wp) then
-      err=1; message='Negative precipitation in input file'; return
+      ierr=1; message='Negative precipitation in input file'; return
     end if
     if (MFORCE%PPT > 5000.0_wp) then
-      err=1; message='Precipitation greater than 5000 in input file'; return
+      ierr=1; message='Precipitation greater than 5000 in input file'; return
     end if
     if (MFORCE%PET < 0.0_wp) then
-      err=1; message='Negative PET in input file'; return
+      ierr=1; message='Negative PET in input file'; return
     end if
     if (MFORCE%PET > 100.0_wp) then
-      err=1; message='PET greater than 100 in input file'; return
+      ierr=1; message='PET greater than 100 in input file'; return
     end if
     if (MFORCE%TEMP < -100.0_wp) then
-      err=1; message='Temperature lower than -100 in input file'; return
+      ierr=1; message='Temperature lower than -100 in input file'; return
     end if
     if (MFORCE%TEMP > 100.0_wp) then
-      err=1; message='Temperature greater than 100 in input file'; return
+      ierr=1; message='Temperature greater than 100 in input file'; return
     end if
 
     ! extract model states for this grid cell and time step
-    FSTATE = gState_3d(iSpat1,iSpat2,sub_idx)
+    FSTATE = domain%state(iSpat1,iSpat2,sub_idx)
     MSTATE = FSTATE
     call STR_2_XTRY(FSTATE, work%num%x0)
 
@@ -456,9 +436,9 @@ MODULE fuse_evaluate_module
 
       case(iopt_temp_index)
 
-        Z_FORCING      = Z_FORCING_grid(iSpat1,iSpat2)
-        MBANDS(:)%info = MBANDS_INFO_3d(iSpat1,iSpat2,:)
-        MBANDS(:)%var  = MBANDS_VAR_4d(iSpat1,iSpat2,:,sub_idx)
+        Z_FORCING      = domain%z_forcing (iSpat1,iSpat2)
+        MBANDS(:)%info = domain%bands_info(iSpat1,iSpat2,:)
+        MBANDS(:)%var  = domain%bands_var (iSpat1,iSpat2,:,sub_idx)
 
         if (diff_mode == differentiable) then
           work%snow%z_forcing               = Z_FORCING
@@ -472,14 +452,14 @@ MODULE fuse_evaluate_module
           case(differentiable)
             call UPDATE_SWE_DIFF(work, DELTIM)
           case default
-            err=1; message='advance_one_cell: cannot identify diff_mode (snow)'; return
+            ierr=1; message='advance_one_cell: cannot identify diff_mode (snow)'; return
         end select
 
       case(iopt_no_snowmod)
         call QRAINERROR()
 
       case default
-        err=1; message='advance_one_cell: unknown SMODL%iSNOWM option'; return
+        ierr=1; message='advance_one_cell: unknown SMODL%iSNOWM option'; return
 
     end select
 
@@ -491,24 +471,17 @@ MODULE fuse_evaluate_module
       case(original)
         M_FLUX%PIN0 = M_FLUX%EFF_PPT
         call UPDATE_INTERCEPTION(DELTIM, ierr, cmessage)
-
-      if (ierr /= 0) then
-        err = 1
-        message = trim(cmessage)
-        return
-      end if
+        if (ierr /= 0) then; message = trim(message)//trim(cmessage); return; end if
 
       case(differentiable)
         if (SMODL%iINTRC /= iopt_no_intrcep) then
-          err = 1
-          message = 'advance_one_cell: interception not yet implemented for differentiable mode'
-          return
+          message = 'interception not yet implemented for differentiable mode'
+          ierr = 1; return
         end if
 
       case default
-        err = 1
-        message = 'advance_one_cell: cannot identify diff_mode (interception)'
-        return
+        message = 'cannot identify diff_mode (interception)'
+        ierr = 1; return
 
     end select
     ! -------------------------
@@ -518,37 +491,35 @@ MODULE fuse_evaluate_module
 
       case(original)
         call ODE_INT(FUSE_SOLVE, work%num%x0, work%num%x1, dt_sub, dt_full, ierr, cmessage)
-        if (ierr /= 0) then
-          err=1; message=trim(cmessage); return
-        end if
-        !print*, 'original = ', mstate%watr_1, mstate%watr_2, w_flux%QSURF, w_flux%QBASE_2
+        if (ierr /= 0) then; message=trim(message)//trim(cmessage); return; end if
 
       case(differentiable)
         call implicit_solve(work, work%num%x0, work%num%x1, nState, ierr, cmessage)
-        if (ierr /= 0) then
-          err=1; message=trim(cmessage); return
-        end if
+        if (ierr /= 0) then; message=trim(message)//trim(cmessage); return; end if
         W_FLUX = work%step%flux
 
       case default
-        err=1; message='advance_one_cell: cannot identify diff_mode (soil)'; return
+         message=trim(message)//'cannot identify diff_mode (soil)'
+         ierr=1; return
 
     end select
 
     ! routing
     call Q_OVERLAND()
     if (MROUTE%Q_ROUTED < 0._wp) then
-      err=1; message='Q_ROUTED is less than zero'; return
+      message=trim(message)//'Q_ROUTED is less than zero'
+      ierr=1; return
     end if
     if (MROUTE%Q_ROUTED > 1000._wp) then
-      err=1; message='Q_ROUTED is enormous'; return
+      message=trim(message)//'Q_ROUTED is enormous'
+      ierr=1; return
     end if
 
     ! write back to 3D buffers
     call XTRY_2_STR(work%num%x1, FSTATE)
-    gState_3d(iSpat1,iSpat2,sub_idx+1) = FSTATE
-    W_FLUX_3d(iSpat1,iSpat2,sub_idx)   = W_FLUX
-    AROUTE_3d(iSpat1,iSpat2,sub_idx)   = MROUTE
+    domain%state(iSpat1,iSpat2,sub_idx+1) = FSTATE
+    domain%flux (iSpat1,iSpat2,sub_idx)   = W_FLUX
+    domain%route(iSpat1,iSpat2,sub_idx)   = MROUTE
 
     if (SMODL%iSNOWM == iopt_temp_index) then
 
@@ -558,24 +529,24 @@ MODULE fuse_evaluate_module
         MBANDS(:)%var  = work%snow%sbands(:)%var%bands_var
       end if
 
-      gState_3d(iSpat1,iSpat2,sub_idx+1)%SWE_TOT = sum(MBANDS(:)%var%SWE * MBANDS(:)%info%AF)
-      MBANDS_VAR_4d(iSpat1,iSpat2,:,sub_idx+1)   = MBANDS(:)%var
+      domain%state(iSpat1,iSpat2,sub_idx+1)%SWE_TOT = sum(MBANDS(:)%var%SWE * MBANDS(:)%info%AF)
+      domain%bands_var(iSpat1,iSpat2,:,sub_idx+1)   = MBANDS(:)%var
 
     end if
 
     ! stats
-    call COMP_STATS()
+    call COMP_STATS(work)
 
   else
     ! outside mask: NA fill
     call SET_STATE(NA_VALUE_SP)
-    gState_3d(iSpat1,iSpat2,sub_idx) = FSTATE
+    domain%state(iSpat1,iSpat2,sub_idx) = FSTATE
 
     call SET_FLUXES(NA_VALUE_SP)
-    W_FLUX_3d(iSpat1,iSpat2,sub_idx) = W_FLUX
+    domain%flux(iSpat1,iSpat2,sub_idx) = W_FLUX
 
     call SET_ROUTE(NA_VALUE_SP)
-    AROUTE_3d(iSpat1,iSpat2,sub_idx) = MROUTE
+    domain%route(iSpat1,iSpat2,sub_idx) = MROUTE
   end if
 
   end subroutine advance_one_cell

@@ -143,6 +143,7 @@ MIZU_BASE += $(MIZU_DIR)/var_lookup.f90
 MIZU_BASE += $(MIZU_DIR)/nr_utils.f90
 MIZU_BASE += $(MIZU_DIR)/gamma_func.f90
 MIZU_BASE += $(MIZU_DIR)/ncio_utils.f90
+MIZU_BASE += $(MIZU_DIR)/ascii_utils.f90
 
 # Thin FUSE compatibility layer.
 #
@@ -159,6 +160,7 @@ MIZU_TOPO += $(MIZU_DIR)/allocation.f90
 MIZU_TOPO += $(MIZU_DIR)/popMetadat.f90
 MIZU_TOPO += $(MIZU_DIR)/hydraulic.f90
 MIZU_TOPO += $(MIZU_DIR)/network_topo.f90
+MIZU_TOPO += $(MIZU_DIR)/read_param.f90
 MIZU_TOPO += $(MIZU_DIR)/process_param.f90
 MIZU_TOPO += $(MIZU_DIR)/process_ntopo.f90
 MIZU_TOPO += $(MIZU_DIR)/read_streamSeg.f90
@@ -260,7 +262,6 @@ FUSE_SHARE += multiparam_data.f90
 FUSE_SHARE += multistate_data.f90
 FUSE_SHARE += multi_flux_data.f90
 FUSE_SHARE += multiroute_data.f90
-FUSE_SHARE += multistats_data.f90
 FUSE_SHARE += manage_legacy_data.f90
 SHARE = $(patsubst %, $(SHARE_DIR)/%, $(FUSE_SHARE))
 
@@ -430,10 +431,14 @@ endif
 ifeq ($(FC),gfortran)
   FFLAGS_NORMA = -O3 -ffree-line-length-none -fmax-errors=0 -cpp
   FFLAGS_DEBUG = -O0 -g -fno-omit-frame-pointer \
-               -Wall -Wextra -Wall -Wextra -Wno-unused-parameter -Wno-unused-variable \
-	             -ffree-line-length-none -fmax-errors=0 -cpp \
-               -fbacktrace -fcheck=all -ffpe-trap=invalid,zero,overflow \
-               -finit-real=snan -finit-integer=-999999
+                 -Wall -Wextra -Wimplicit-interface \
+                 -Wsurprising -Wconversion-extra \
+                 -ffree-line-length-none -fmax-errors=0 -cpp \
+                 -fbacktrace \
+                 -fcheck=all \
+                 -ffpe-trap=invalid,zero,overflow \
+                 -finit-real=snan \
+                 -finit-integer=-999999
   FFLAGS_FIXED = -O2 -c -ffixed-form
 endif
 
@@ -443,8 +448,8 @@ INCLUDE_FLAGS = -I$(GENINC) -I$(TOMLF_BUILD)/include
 FFLAGS = $(FFLAGS_NORMA) $(INCLUDE_FLAGS)
 
 # Target-specific flags for 'debug' target
-debug: FFLAGS = $(FFLAGS_NORMA) $(INCLUDE_FLAGS)
-debug: compile
+debug: FFLAGS = $(FFLAGS_DEBUG) $(INCLUDE_FLAGS)
+debug: compile install clean
 
 # Special provision for gcc>13
 ifeq ($(FC),gfortran)

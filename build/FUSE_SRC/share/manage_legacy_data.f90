@@ -13,8 +13,6 @@ contains
 subroutine deallocate_legacy_data(ierr, message)
 
   use multiforce, only: aValid
-  use multistate, only: gState_3d
-  use multiroute, only: aRoute, AROUTE_3d
 
   implicit none
 
@@ -24,15 +22,9 @@ subroutine deallocate_legacy_data(ierr, message)
   ierr    = 0
   message = 'deallocate_legacy_data/'
 
-  DEALLOCATE(aRoute, aValid, stat=ierr)
+  DEALLOCATE(aValid, stat=ierr)
   if(ierr/=0)then
     message=trim(message)//'unable to deallocate space for catchment modeling'
-    return
-  endif
-
-  DEALLOCATE(gState_3d, AROUTE_3d, stat=ierr)
-  if(ierr/=0)then
-    message=trim(message)//'unable to deallocate space for grid modeling'
     return
   endif
 
