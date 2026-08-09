@@ -1,6 +1,7 @@
 MODULE DEF_OUTPUT_MODULE
   USE nrtype
   USE netcdf
+  USE info_types, only: fuse_info
   use domain_types, only: coord_data
   use iso_fortran_env, only: real32
   implicit none
@@ -9,7 +10,7 @@ MODULE DEF_OUTPUT_MODULE
 
 contains
 
-  SUBROUTINE DEF_OUTPUT(coords,nSpat1,nSpat2,n_bands,NUMPAR)
+  SUBROUTINE DEF_OUTPUT(info, coords)
 
     USE metaoutput, only: VARDESCRIBE
     USE fuse_globaldata, only: FUSE_VERSION, FUSE_BUILDTIME, FUSE_GITBRANCH, FUSE_GITHASH
@@ -21,25 +22,38 @@ contains
 
     implicit none
 
+    type(fuse_info),  intent(in) :: info
     type(coord_data), intent(in) :: coords
-    integer(i4b),     intent(in) :: nSpat1, nSpat2, n_bands, NUMPAR
 
     ! locals
+    integer(i4b) :: nPar, nObs, nSpat1, nSpat2, n_bands
     integer(i4b) :: ierr, ivar, varid, varid_time, varid_lat, varid_lon, varid_band, varid_param
-    integer(i4b) :: dim_time, dim_x, dim_y, dim_band, dim_par
+    integer(i4b) :: dim_time, dim_x, dim_y, dim_band, dim_par, dim_obs
     integer(i4b), dimension(3) :: dimids_3
     integer(i4b), dimension(4) :: dimids_band
     integer(i4b), dimension(4) :: dimids_par
+    integer(i4b), dimension(2) :: dimids_obs
 
     logical(lgt) :: write_var
 
-    real(real32), dimension(nspat1,nspat2) :: longitude
-    real(real32), dimension(nspat1,nspat2) :: latitude
+    real(real32), dimension(info%space%nx_local, &
+                            info%space%ny_local) :: longitude
+    real(real32), dimension(info%space%nx_local, &
+                            info%space%ny_local) :: latitude
+    
+    integer(i4b), dimension(info%snow%n_bands)   :: band_i
+    integer(i4b), dimension(info%config%nParam)  :: param_i
+    integer(i4b) :: ib, ip
+
     real(real32), parameter                :: NA_VALUE_OUT = -9999._real32
 
-    integer(i4b), dimension(n_bands) :: band_i
-    integer(i4b), dimension(NUMPAR)  :: param_i
-    integer(i4b) :: ib, ip
+    nPar    = info%config%nParam
+
+    nObs    = info%space%nObs
+    nSpat1  = info%space%nx_local  ! NOTE: local to rank (MPI parallelization)
+    nSpat2  = info%space%ny_local
+    
+    n_bands = info%snow%n_bands
 
     call VARDESCRIBE()
 
@@ -51,15 +65,17 @@ contains
     call handle_err(ierr)
 
     ! Dimensions
-    ierr = nf90_def_dim(ncid_out, "time", NF90_UNLIMITED, dim_time); call handle_err(ierr)
-    ierr = nf90_def_dim(ncid_out, "band", n_bands, dim_band);        call handle_err(ierr)
-    ierr = nf90_def_dim(ncid_out, "param", NUMPAR, dim_par);         call handle_err(ierr)
-    ierr = nf90_def_dim(ncid_out, "x", nSpat1, dim_x);               call handle_err(ierr)
-    ierr = nf90_def_dim(ncid_out, "y", nSpat2, dim_y);               call handle_err(ierr)
+    ierr = nf90_def_dim(ncid_out, "time",  NF90_UNLIMITED, dim_time); call handle_err(ierr)
+    ierr = nf90_def_dim(ncid_out, "band",  n_bands,        dim_band); call handle_err(ierr)
+    ierr = nf90_def_dim(ncid_out, "param", nPar,           dim_par);  call handle_err(ierr)
+    ierr = nf90_def_dim(ncid_out, "obs",   nObs,           dim_obs);  call handle_err(ierr)
+    ierr = nf90_def_dim(ncid_out, "x",     nSpat1,         dim_x);    call handle_err(ierr)
+    ierr = nf90_def_dim(ncid_out, "y",     nSpat2,         dim_y);    call handle_err(ierr)
 
-    dimids_3    = (/ dim_x, dim_y, dim_time /)
+    dimids_3    = (/ dim_x, dim_y,           dim_time /)
     dimids_band = (/ dim_x, dim_y, dim_band, dim_time /)
     dimids_par  = (/ dim_x, dim_y, dim_par,  dim_time /)
+    dimids_obs  = (/               dim_obs,  dim_time /)
 
     ! Time-varying output vars
     do ivar = 1, NOUTVAR
@@ -93,6 +109,11 @@ contains
       end if
 
     end do  ! looping through variables
+
+    ! Observed streamflow
+    ierr = nf90_def_var(ncid_out, trim(info%files%qobs_name), NF90_FLOAT, dimids_obs, varid); call handle_err(ierr)
+    ierr = nf90_put_att(ncid_out, varid, "_FillValue", NA_VALUE_OUT);                    call handle_err(ierr)
+    ierr = nf90_put_att(ncid_out, varid, "units",      "mm/day");                        call handle_err(ierr)
 
     ! Coordinate variables
     ierr = nf90_def_var(ncid_out, "time", NF90_FLOAT, (/dim_time/), varid_time);         call handle_err(ierr)
@@ -130,14 +151,14 @@ contains
     ierr = nf90_put_var(ncid_out, varid_lon, longitude); call handle_err(ierr)
 
     band_i  = [(ib, ib=1,n_bands)]
-    param_i = [(ip, ip=1,NUMPAR)]
+    param_i = [(ip, ip=1,nPar)]
 
     ierr = nf90_put_var(ncid_out, varid_band,  band_i);  call handle_err(ierr)
     ierr = nf90_put_var(ncid_out, varid_param, param_i); call handle_err(ierr)
     
     ierr = nf90_close(ncid_out); call handle_err(ierr)
 
-    print *, 'NetCDF file for model runs defined with dimensions', nSpat1, nSpat2, n_bands, NUMPAR
+    print *, 'NetCDF file for model runs defined with dimensions', nSpat1, nSpat2, n_bands, nPar
 
   END SUBROUTINE DEF_OUTPUT
 

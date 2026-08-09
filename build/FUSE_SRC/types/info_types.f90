@@ -39,7 +39,10 @@ module info_types
  ! -------------------------------------------------------------------------------------
 
  type :: space_info
- 
+
+   ! observation dimension
+   integer(i4b) :: nobs = 1
+
    ! global dimensions (full forcing file)
    integer(i4b) :: nx_global = 1
    integer(i4b) :: ny_global = 1
@@ -96,11 +99,13 @@ module info_types
 
  ! -------------------------------------------------------------------------------------
  
- ! --- forcing_vars used in file_info
+ ! --- hydromet_vars used in file_info
  
- type :: forcing_vars
-  character(len=64), allocatable :: name(:)   ! NFORC
-  integer(i4b),      allocatable :: varid(:)  ! NFORC
+ type :: hydromet_vars ! NVAR_HYDROMET
+  character(len=64), allocatable :: name(:) 
+  character(len=64), allocatable :: units(:)
+  integer(i4b),      allocatable :: varid(:)
+  integer(i4b),      allocatable :: ndims(:)
   real(wp),          allocatable :: multiplier(:)
  end type
 
@@ -119,32 +124,32 @@ module info_types
    character(len=:), allocatable :: m_decisions
   
    ! domain-derived input suffixes
-   character(len=:), allocatable :: suffix_forcing
+   character(len=:), allocatable :: suffix_hydromet
    character(len=:), allocatable :: suffix_elev_bands
   
    ! actual input filenames for this domain (derived once dom_id known)
-   character(len=512) :: forcing_file    ! dom_id//suffix_forcing
+   character(len=512) :: hydromet_file   ! dom_id//suffix_hydromet
    character(len=512) :: elevbands_file  ! dom_id//suffix_elev_bands
   
    ! output base name + concrete outputs
    character(len=512) :: fname_tempry
-   character(len=512) :: fname_netcdf_forc
+   character(len=512) :: fname_netcdf_hmet
    character(len=512) :: fname_netcdf_runs
    character(len=512) :: fname_netcdf_para
 
-   ! NetCDF forcing file info
-   integer(i4b)                  :: ncid_forc = -9999  ! NetCDF file ID for forcing data
+   ! NetCDF hydromet file info
+   integer(i4b)                  :: ncid_hydromet = -9999  ! NetCDF file ID for hydromet data
 
    character(len=:), allocatable :: time_name          ! name of coordinate variables
    character(len=:), allocatable :: latitude_name      ! name of coordinate variables
    character(len=:), allocatable :: longitude_name     ! name of coordinate variables
    
-   character(len=:), allocatable :: precip_name        ! name of forcing variables   
-   character(len=:), allocatable :: temp_name          ! name of forcing variables   
-   character(len=:), allocatable :: pet_name           ! name of forcing variables  
-   character(len=:), allocatable :: qobs_name          ! name of forcing variables
+   character(len=:), allocatable :: precip_name        ! name of hydromet variables   
+   character(len=:), allocatable :: temp_name          ! name of hydromet variables   
+   character(len=:), allocatable :: pet_name           ! name of hydromet variables  
+   character(len=:), allocatable :: qobs_name          ! name of hydromet variables
 
-   type(forcing_vars)            :: forc               ! name/varid table
+   type(hydromet_vars)           :: hydromet           ! name/varid table
 
  end type file_info
 

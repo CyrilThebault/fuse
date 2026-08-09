@@ -1,7 +1,9 @@
 module put_output_module
 
   use nrtype
-  use domain_types, only: domain_data
+  use info_types, only: fuse_info                           ! info structure (includes "everything")
+  use work_types, only: fuse_work                           ! structures that depend on nState/nPar
+  use domain_types, only: domain_data                       ! domain data
   use iso_fortran_env, only: real32
 
   use netcdf, only: &
@@ -14,7 +16,7 @@ module put_output_module
 
 contains
 
-  subroutine put_output(domain, istart_sim, istart_in, numtim)
+  subroutine put_output(info, work, domain, istart_sim, istart_in, numtim)
 
   ! -------------------------------------------------------------------------------------
   ! Creator:
@@ -45,10 +47,13 @@ contains
   implicit none
 
   ! input
-  type(domain_data), intent(in) :: domain
-  integer(i4b),      intent(in) :: istart_sim
-  integer(i4b),      intent(in) :: istart_in
-  integer(i4b),      intent(in) :: numtim
+  type(fuse_info)   , intent(in)    :: info           ! info structures that include "everything"
+  type(fuse_work)   , intent(inout) :: work           ! work structures that depend on npar/nState
+  type(domain_data) , intent(inout) :: domain         ! domain structures that hold 3-d data
+
+  integer(i4b),      intent(in)     :: istart_sim
+  integer(i4b),      intent(in)     :: istart_in
+  integer(i4b),      intent(in)     :: numtim
 
   ! locals
   logical(lgt) :: write_var
@@ -56,6 +61,7 @@ contains
   integer(i4b) :: ivar
   integer(i4b) :: ivar_id
 
+  integer(i4b), dimension(2) :: start2, count2
   integer(i4b), dimension(3) :: start3, count3
   integer(i4b), dimension(4) :: start4_band, count4_band
   integer(i4b), dimension(4) :: start4_param, count4_param
@@ -69,7 +75,7 @@ contains
   real(real32), dimension(numtim) :: time_steps_sub
 
   character(len=32) :: subname
-  subname="put_output.f90"
+  subname="put_output.f90/"
 
   ! -----------------------------------------------------------------------------
   ! dimension lists (Fortran nf90 uses 1-based indices)
@@ -130,6 +136,17 @@ contains
     ! e.g. name = trim(vname(ivar))//'__dFlux_dParam'
 
   end do
+
+  ! write observations
+
+  start2 = (/              1, istart_sim/)
+  count2 = (/info%space%nobs, numtim/)
+
+  ierr = nf90_inq_varid(ncid_out, trim(info%files%qobs_name), ivar_id)
+  call handle_err(ierr, trim(subname)//":nf90_inq_varid: obsq")
+
+  ierr = nf90_put_var(ncid_out, ivar_id, work%obs%q, start=start2, count=count2)
+  call handle_err(ierr, trim(subname)//":nf90_put_var(2d):"//trim(vname(ivar)))
 
   ! write time
   time_steps_sub = real(time_steps(istart_in:(istart_in + numtim - 1)), kind(real32))

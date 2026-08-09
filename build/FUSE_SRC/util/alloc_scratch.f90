@@ -23,6 +23,7 @@ CONTAINS
 
     integer(i4b) :: ib
     integer(i4b) :: nBands, nState, nPar
+    integer(i4b) :: nq, nt
     logical(lgt) :: redo
 
     ierr=0; message="init_fuse_work/"
@@ -30,6 +31,14 @@ CONTAINS
     nBands = info%snow%n_bands
     nState = info%config%nState
     nPar   = info%config%nParam
+
+    nq = info%space%nobs
+    nt = info%time%nt_window
+
+    if (nq /= 1) then
+      message=trim(message)//'WIP: restrict to nq=1'
+      ierr=20; return
+    endif
 
     ! check if there is a need to reallocate
     redo = needs_realloc_work(work, nBands, nState, nPar, NPAR_SNOW)
@@ -77,6 +86,13 @@ CONTAINS
       endif
       work%snow%sbands(ib)%var%dSWE_dParam(:) = 0._wp
     enddo
+
+    ! ---- allocate streamfloe observations ----
+    allocate(work%obs%q(nq,nt), stat=ierr)
+    if(ierr/=0) then
+      message=trim(message)//"cannot allocate work%obs%q"
+      return
+    endif
 
     ! ---- initialize the band snow vars once ----
     work%snow%sbands(:)%var%SWE         = 0._wp
@@ -183,13 +199,14 @@ CONTAINS
     endif
 
     ! Must be allocated if we claim initialized
+    if (.not. allocated(work%obs%q))       then; redo=.true.; return; endif
     if (.not. allocated(work%adj%df_dS))   then; redo=.true.; return; endif
     if (.not. allocated(work%adj%df_dPar)) then; redo=.true.; return; endif
     if (.not. allocated(work%adj%dL_dPar)) then; redo=.true.; return; endif
     if (.not. allocated(work%snow%sbands)) then; redo=.true.; return; endif
 
     ! Size checks
-    if (size(work%adj%df_dS)    /= nState) then; redo=.true.; return; endif
+    if (size(work%adj%df_dS)   /= nState) then; redo=.true.; return; endif
     if (size(work%adj%df_dPar) /= nPar)   then; redo=.true.; return; endif
     if (size(work%adj%dL_dPar) /= nPar)   then; redo=.true.; return; endif
     if (size(work%snow%sbands) /= nBands) then; redo=.true.; return; endif

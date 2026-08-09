@@ -28,7 +28,6 @@ USE parse_command_args_MODULE, only: parse_command_args          ! parse command
 USE setup_domain_module, only: setup_domain                      ! initialize the model domain
 USE setup_model_definition_module, only: setup_model_definition  ! setup the FUSE model configuration
 USE alloc_scratch_module, only: init_fuse_work                   ! initialze work structure
-USE manage_legacy_data, only: deallocate_legacy_data             ! deallocate legacy data
 
 ! model run: external subroutines/functions
 USE get_fparam_module, only: GET_PRE_PARAM, GET_SCE_PARAM ! read parameters from netcdf file
@@ -99,7 +98,7 @@ endif
 
 ! ----- initialize the model domain -----------------------------------------------------
 
-! read forcing metadata (space/time/coords), apply MPI decomposition, and allocate domain arrays
+! read hydromet metadata (space/time/coords), apply MPI decomposition, and allocate domain arrays
 call setup_domain(cli_opts, info, domain, err, message) 
 if(err/=0) stop trim(message)
 
@@ -161,16 +160,13 @@ end select ! (FUSE mode)
   
 ! ----- finalize ------------------------------------------------------------------------
   
-call deallocate_legacy_data(err, message)
-if(err/=0) stop trim(message)
-
 ! deallocate space
 DEALLOCATE(APAR, BL, BU, stat=err)
 if(err/=0)then; write(*,*) 'unable to deallocate space for parameter vectors'; stop; endif
 
 ! close NetCDF files
-PRINT *, 'Closing forcing file'
-err = nf90_close(info%files%ncid_forc)
+PRINT *, 'Closing hydromet file'
+err = nf90_close(info%files%ncid_hydromet)
 if(err/=0)then; message=trim(message)//' nf90_close failed: '//trim(nf90_strerror(err)); return; endif
 
 PRINT *, 'Closing output file'

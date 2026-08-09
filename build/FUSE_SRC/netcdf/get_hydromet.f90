@@ -1,4 +1,4 @@
-module get_gforce_module
+module get_hydromet_module
 
 use nrtype
 use info_types, only: fuse_info
@@ -6,16 +6,18 @@ use domain_types, only: domain_data
 
 use netcdf
 
-use fuse_globaldata, only: NVAR_FORC
+use fuse_globaldata, only: NA_VALUE
+use fuse_globaldata, only: NVAR_HYDROMET
 use fuse_globaldata, only: iPRECIP, iTEMP, iPET, iQOBS
 
 implicit none
 
 private
 
-public :: get_gforce_3d
 public :: read_latlon_2d
-public :: get_forcing_metadata
+public :: get_met_data
+public :: get_qobs_data
+public :: get_hydromet_metadata
 
 contains
 
@@ -220,7 +222,7 @@ contains
 
   ! --------------------------------------------------------------------------------------
 
-  subroutine get_forcing_metadata(ncid, info, ierr, message)
+  subroutine get_hydromet_metadata(ncid, info, ierr, message)
   implicit none
   integer(i4b), intent(in)       :: ncid
   type(fuse_info), intent(inout) :: info
@@ -228,86 +230,68 @@ contains
   character(*), intent(out)      :: message
 
   integer(i4b) :: ivar
-  character(len=128) :: units
+  character(len=256) :: cmessage
 
   ierr = 0
-  message = "get_forcing_metadata/"
+  message = "get_hydromet_metadata/"
 
   ! get table of name/varid pairs (names set in TOML read)
-  info%files%forc%name(iPRECIP) = info%files%precip_name
-  info%files%forc%name(iTEMP)   = info%files%temp_name
-  info%files%forc%name(iPET)    = info%files%pet_name
-  info%files%forc%name(iQOBS)   = info%files%qobs_name
+  info%files%hydromet%name(iPRECIP) = info%files%precip_name
+  info%files%hydromet%name(iTEMP)   = info%files%temp_name
+  info%files%hydromet%name(iPET)    = info%files%pet_name
+  info%files%hydromet%name(iQOBS)   = info%files%qobs_name
 
-  info%files%forc%varid(:) = -1
+  info%files%hydromet%varid(:) = -1
 
   ! get varid for each forcing variable
-  do ivar = 1, NVAR_FORC
+  do ivar = 1, NVAR_HYDROMET
 
-    if(info%space%grid_flag .and. ivar == iQOBS) cycle ! skips qobs if a grid
+    ! get the variable id
+    ierr = nf90_inq_varid(ncid, trim(info%files%hydromet%name(ivar)), info%files%hydromet%varid(ivar))
+    if(ierr/=0)then; message=trim(message)//trim(nf90_strerror(ierr))//' ['//trim(info%files%hydromet%name(ivar))//']'; return; endif
 
-    call lookup_varid(ncid, trim(info%files%forc%name(ivar)), info%files%forc%varid(ivar), ierr, message)
-    if(ierr/=0) return
+    ! get rank of variable in NetCDF file
+    ierr = nf90_inquire_variable(ncid, info%files%hydromet%varid(ivar), ndims=info%files%hydromet%ndims(ivar) )
+    if(ierr/=0)then; message=trim(message)//trim(nf90_strerror(ierr))//' ['//trim(info%files%hydromet%name(ivar))//']'; return; endif
 
-    if (ivar == iTEMP) cycle
-
-    units = ""
-    ierr = nf90_get_att(ncid, info%files%forc%varid(ivar), "units", units)
-
+    ! get units
+    ierr = nf90_get_att(ncid, info%files%hydromet%varid(ivar), "units", &
+                              info%files%hydromet%units(ivar) )
+    
     if (ierr /= nf90_noerr) then
-      message = trim(message)// "cannot read units for variable '"// trim(info%files%forc%name(ivar))//"': "// trim(nf90_strerror(ierr))
+      message = trim(message)// "cannot read units for variable '"// &
+                trim(info%files%hydromet%name(ivar))//"': "//            &
+                trim(nf90_strerror(ierr))
       return
     end if
 
+    ! get unit conversion
     select case (ivar)
-
+    
+      case (iTEMP) ! do nothing
+    
       case (iPRECIP, iPET, iQOBS)
-        call get_input_flux_multiplier(units, info%files%forc%multiplier(ivar), ierr, message)
+     
+        call get_input_flux_multiplier(info%files%hydromet%units(ivar),      &
+                                       info%files%hydromet%multiplier(ivar), &
+                                       ierr, cmessage)
+        if(ierr/=0)then; message=trim(message)//trim(cmessage); return; endif
 
       case default
-        ierr = 20
-        message = trim(message)// &
-          "unexpected forcing variable while reading units"
-        return
-
+        message = trim(message)//"unexpected variable while reading units"
+        ierr = 20; return
+    
     end select
-
-    if (ierr /= 0) then
-      message = trim(message)// &
-        " [variable="//trim(info%files%forc%name(ivar))//"]"
-      return
-    end if
 
   end do  ! ivar
 
-  contains
+  end subroutine get_hydromet_metadata
 
-   subroutine lookup_varid(ncid, vname, vid, ierr, message)
-
-    integer(i4b), intent(in)    :: ncid
-    character(len=*), intent(in) :: vname
-    integer(i4b), intent(inout) :: vid
-    integer(i4b), intent(inout) :: ierr
-    character(*), intent(inout) :: message
-
-    if (len_trim(vname) == 0) then
-      ierr = 20
-      message = trim(message)//"empty variable name"
-      return
-    end if
-
-    ierr = nf90_inq_varid(ncid, trim(vname), vid)
-    if (ierr /= 0) then
-      message = trim(message)//trim(nf90_strerror(ierr))//" [var="//trim(vname)//"]"
-    end if
-
-   end subroutine lookup_varid
-
-  end subroutine get_forcing_metadata
-
-
-  SUBROUTINE get_gforce_3d(info, itim_start, numtim, &
-                           domain, ierr, message)
+  ! ---------------------------------------------------------------------------------------
+  ! ---------------------------------------------------------------------------------------
+  
+  SUBROUTINE get_met_data(info, itim_start, numtim, &
+                          domain, ierr, message)
   ! ---------------------------------------------------------------------------------------
   ! Creator:
   ! --------
@@ -318,81 +302,150 @@ contains
   ! --------
   ! Read NetCDF gridded forcing data for a range of time steps
   ! ---------------------------------------------------------------------------------------
-  USE multiforce,only:aValid                             ! time series of lumped forcing/response data
 
   IMPLICIT NONE
 
   ! input
-  type(fuse_info),   intent(in)             :: info        ! info data structure that holds spatial indices
-  integer(i4b),      intent(in)             :: itim_start  ! index of model time step - start of the period to extract
-  integer(i4b),      intent(in)             :: numtim      ! number of model time steps to extract
+  type(fuse_info),   intent(in)           :: info        ! info data structure that holds spatial indices
+  integer(i4b),      intent(in)           :: itim_start  ! index of model time step - start of the period to extract
+  integer(i4b),      intent(in)           :: numtim      ! number of model time steps to extract
 
   ! output
-  type(domain_data), intent(inout)          :: domain      ! domain data structure that holds 3-d arrays
-  integer(i4b),      intent(out)            :: ierr        ! error code
-  character(*),      intent(out)            :: message     ! error message
+  type(domain_data), intent(inout)        :: domain      ! domain data structure that holds 3-d arrays
+  integer(i4b),      intent(out)          :: ierr        ! error code
+  character(*),      intent(out)          :: message     ! error message
 
   ! internal
-  integer(i4b)                            :: iVar        ! loop through forcing data
+  integer(i4b)                            :: iVar        ! loop through hydromet data
+  integer(i4b), parameter                 :: ndim_2d=2   ! named variable for 2 dimensions
+  integer(i4b), parameter                 :: ndim_3d=3   ! named variable for 3 dimensions
   real(wp),dimension(:,:,:),allocatable   :: gTemp       ! temporary 3d grid
-  integer(i4b)                            :: nx, ny       ! grid dimensions
-  integer(i4b)                            :: ystart       ! start index iin input file (for MPI)
-  integer(i4b)                            :: start_3d(3)  ! start indices in NetCDF file
-  integer(i4b)                            :: count_3d(3)  ! count in NetCDF file
+  integer(i4b)                            :: nx, ny      ! grid dimensions
+  integer(i4b)                            :: ystart      ! start index iin input file (for MPI)
+  integer(i4b), allocatable               :: nc_start(:) ! start indices in NetCDF file
+  integer(i4b), allocatable               :: nc_count(:) ! count in NetCDF file
 
   ! initialize error control
-  ierr=0; message='get_gforce_3d/'
+  ierr=0; message='get_met_data/'
   ! ---------------------------------------------------------------------------------------
 
-  ! 3-d grid dimensions
+  ! get indices in the input file
   nx     = info%space%nx_local
   ny     = info%space%ny_local
-  ystart = info%space%y_start_global  ! start index in input file (for MPI)
+  ystart = info%space%y_start_global
+  
+  ! allocate space for gridded forcing buffer
+  allocate(gtemp(nx,ny,numtim), stat=ierr)
+  if (ierr /= 0) then
+    message = trim(message)//'unable to allocate hydromet buffer'
+    return
+  end if
 
-  ! indices for NetCDF rea
-  start_3d = (/ 1, ystart, itim_start/)
-  count_3d = (/nx,     ny,     numtim/)
+  ! loop through hydromet variables
+  do ivar = 1, NVAR_HYDROMET
 
-  ! allocate space for the temporary grid
-  allocate(gTemp(nx,ny,numtim), stat=ierr)
-  if(ierr/=0)then; message=trim(message)//'problem allocating space for gTemp'; return; endif
+    ! just meteorological forcing data here
+    if (ivar == iQOBS) cycle
 
-  ! get forcing grids
-  do ivar = 1, NVAR_FORC
+    ! separate read for 2d and 3d input format
+    select case ( info%files%hydromet%ndims(ivar) )
 
-   if(info%space%grid_flag .and. ivar == iQOBS) cycle ! skips qobs if a grid
+      ! 2-d catchments (hru, time) -> (1,nSpat2,time)
+      case (ndim_2d)
 
-   ! get the data
-   ierr = nf90_get_var(info%files%ncid_forc, info%files%forc%varid(ivar), gTemp, start=start_3d, count=count_3d)
-   if(ierr/=0)then; message=trim(message)//trim(nf90_strerror(ierr)); return; endif
+        nc_start = (/ystart, itim_start/)
+        nc_count = (/    ny,     numtim/)
 
-   ! save the data in the structure -- and convert fluxes to mm/day
-   select case(ivar)
+        ierr = nf90_get_var(info%files%ncid_hydromet,        &
+                            info%files%hydromet%varid(ivar), &
+                            gtemp(1,:,1:numtim),             &
+                            start=nc_start, count=nc_count)
+     
+      ! 3-d grid (x,y,t)                    
+      case (ndim_3d)
+        
+        nc_start = (/ 1, ystart, itim_start/)
+        nc_count = (/nx,     ny,     numtim/)
 
-    case (iPRECIP)
-      domain%force(:,:,1:numtim)%ppt  = gTemp(:,:,:) * info%files%forc%multiplier(iPRECIP)
+        ierr = nf90_get_var(info%files%ncid_hydromet,        &
+                            info%files%hydromet%varid(ivar), &
+                            gtemp(:,:,1:numtim),             &
+                            start=nc_start, count=nc_count)
+    
+      case default
+        message=trim(message)//'unknown dimensions for variable '//trim( info%files%hydromet%name(ivar) )
+        ierr=20; return
 
-    case (iTEMP)
-      domain%force(:,:,1:numtim)%temp = gTemp(:,:,:)
+    end select
 
-    case (iPET)
-      domain%force(:,:,1:numtim)%pet  = gTemp(:,:,:) * info%files%forc%multiplier(iPET)
+    if (ierr /= nf90_noerr) then
+      message = trim(message)//trim(nf90_strerror(ierr))
+      return
+    end if
 
-    case (iQOBS)
-      aValid(:,:,1:numtim)%obsq = gTemp(:,:,:) * info%files%forc%multiplier(iQOBS)   ! TODO: check dimensions (works for nx=1, ny=1)
-    case default
-      message=trim(message)//'unable to identify forcing variable'
-      ierr=10; return
-
-   end select  ! identify forcing variable
+    ! save the data in the structure -- and convert fluxes to mm/day
+    select case(ivar)
+  
+      case (iPRECIP);  domain%force(:,:,1:numtim)%ppt  = gTemp(:,:,:) * info%files%hydromet%multiplier(iPRECIP)
+      case (iTEMP);    domain%force(:,:,1:numtim)%temp = gTemp(:,:,:)
+      case (iPET);     domain%force(:,:,1:numtim)%pet  = gTemp(:,:,:) * info%files%hydromet%multiplier(iPET)
+      case default
+        message=trim(message)//'unable to identify forcing variable'
+        ierr=10; return
+  
+    end select  ! identify forcing variable
 
   end do  ! (loop thru forcing variables)
 
-  ! deallocate space for gTemp
-  deallocate(gTemp, stat=ierr)
-  if(ierr/=0)then; message=trim(message)//'problem deallocating space for gTemp'; return; endif
+  end subroutine get_met_data
 
-  end subroutine get_gforce_3d
+  ! ---------------------------------------------------------------------------------------
+  ! ---------------------------------------------------------------------------------------
+
+  SUBROUTINE get_qobs_data(info, itim_start, numtim, &
+                           qobs, ierr, message)
+  ! ---------------------------------------------------------------------------------------
+  ! Purpose:
+  ! --------
+  ! Read NetCDF streamflow for a range of time steps
+  ! ---------------------------------------------------------------------------------------
+
+  IMPLICIT NONE
+
+  ! input
+  type(fuse_info),   intent(in)           :: info        ! info data structure that holds spatial indices
+  integer(i4b),      intent(in)           :: itim_start  ! index of model time step - start of the period to extract
+  integer(i4b),      intent(in)           :: numtim      ! number of model time steps to extract
+
+  ! output
+  real(wp),          intent(out)          :: qobs(:,:)   ! data array that holds qobs (nq, nt)
+  integer(i4b),      intent(out)          :: ierr        ! error code
+  character(*),      intent(out)          :: message     ! error message
+
+  ! internal
+  integer(i4b)                            :: nc_start(2) ! start indices in NetCDF file
+  integer(i4b)                            :: nc_count(2) ! count in NetCDF file
+
+  ! initialize error control
+  ierr=0; message='get_qobs_data/'
+  ! ---------------------------------------------------------------------------------------
+
+  nc_start = (/              1, itim_start/)
+  nc_count = (/info%space%nobs,     numtim/)
+
+  ierr = nf90_get_var(info%files%ncid_hydromet,         &
+                      info%files%hydromet%varid(iQOBS), &
+                      qobs(:,1:numtim),                 &
+                      start=nc_start, count=nc_count)
+
+  if (ierr /= nf90_noerr) then
+    message = trim(message)//trim(nf90_strerror(ierr))
+    return
+  end if
+
+  qobs(:,1:numtim) = qobs(:,1:numtim) * info%files%hydromet%multiplier(iQOBS)
+
+  end subroutine get_qobs_data
 
   ! -------------------------------------------------------------------------------------
   ! -------------------------------------------------------------------------------------
@@ -576,9 +629,4 @@ contains
 
   end subroutine get_input_flux_multiplier
 
-
-
-
-
-
-end module get_gforce_module
+end module get_hydromet_module

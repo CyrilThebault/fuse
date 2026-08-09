@@ -12,18 +12,16 @@ MODULE multiforce
  
  USE nrtype
 
- USE multiforce_types, only: TDATA, VDATA, ADATA, FDATA
+ USE multiforce_types, only: TDATA, FDATA
 
  implicit none
  private
 
- public :: forcefile
+ public :: ncid_hydromet, ncid_var
 
- public :: ncid_forc, ncid_var
+ public :: nHydromet, nInput
 
- public :: nForce, nInput
-
- public :: timDat, valDat, aValid
+ public :: timDat
  public :: AFORCE, CFORCE, MFORCE
  
  public :: date_start_input, date_end_input
@@ -57,10 +55,6 @@ MODULE multiforce
  ! time data structures
  TYPE(tData)                           :: timDat            ! model time structure
  
- ! response data structures
- TYPE(vData)                           :: valDat            ! validation structure
- TYPE(vData), allocatable              :: aValid(:,:,:)     ! all model validation data
- 
  ! forcing data structures
  TYPE(FDATA), allocatable              :: AFORCE(:)         ! all model forcing data
  TYPE(FDATA), allocatable              :: CFORCE(:)         ! COPY of model forcing data
@@ -68,13 +62,11 @@ MODULE multiforce
 
  ! NetCDF
 
- CHARACTER(len=StrLen)                 :: forcefile    = 'undefined'   ! name of forcing file
+ INTEGER(i4b), PARAMETER               :: nHydromet = 7                ! number of hydromet variables
+ INTEGER(i4b)                          :: nInput = 4                   ! number of variable to retrieve from input file
 
- INTEGER(i4b), PARAMETER               :: nForce = 7                   ! number of forcing variables
- INTEGER(i4b)                          :: nInput = 3                   ! number of variable to retrieve from input file
-
- INTEGER(i4b)                          :: ncid_forc = -1               ! NetCDF forcing file ID
- INTEGER(i4b), DIMENSION(nForce)       :: ncid_var                     ! NetCDF forcing variable ID
+ INTEGER(i4b)                          :: ncid_hydromet = -1           ! NetCDF hydromet file ID
+ INTEGER(i4b), DIMENSION(nHydromet)    :: ncid_var                     ! NetCDF hydromet variable ID
 
  ! timing information - note that numtim_in >= numtim_sim >= numtim_sub
  

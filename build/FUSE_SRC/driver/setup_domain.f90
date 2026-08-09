@@ -25,8 +25,8 @@ contains
   USE time_windows_module,   only: get_time_windows             ! get info on the rolling time windows
   USE time_windows_module,   only: export_time_to_multiforce    ! populate legacy multiforce modules
 
-  USE get_gforce_module,     only: get_forcing_metadata         ! get forcing metadata
-  USE get_gforce_module,     only: read_latlon_2d               ! read lat/lon
+  USE get_hydromet_module,   only: get_hydromet_metadata        ! get hydromet metadata
+  USE get_hydromet_module,   only: read_latlon_2d               ! read lat/lon
   USE read_elevbands_module, only: read_elevbands               ! read elevation bands
 
   USE alloc_domain_module,   only: allocate_domain_data         ! allocate space for data arrays in the domain structure
@@ -71,24 +71,24 @@ contains
   ! ----- MPI decomposition of the spatial domain ----------------------------------------
 
   ! get indices for MPI decomposition of the spatial domain: y_start_global, ny_local 
-  ! NOTE: These indices will be used later to read different subsets of forcing data for different ranks
+  ! NOTE: These indices will be used later to read different subsets of hydromet data for different ranks
   call get_domain_decomp_indices(info)
 
   ! ----- read grid info and define indices for MPI domain decomposition ------------------
 
-  ! open NetCDF forcing file
-  ierr = nf90_open(trim(info%files%fname_netcdf_forc), nf90_nowrite, info%files%ncid_forc)
+  ! open NetCDF hydromet file
+  ierr = nf90_open(trim(info%files%fname_netcdf_hmet), nf90_nowrite, info%files%ncid_hydromet)
   if (ierr/=0)then; message=trim(message)//' nf90_open failed: '//trim(nf90_strerror(ierr)); return; endif
-  if(isPrint) print *, 'Open forcing file:', trim(info%files%fname_netcdf_forc)
-  if(isPrint) PRINT *, 'NCID_FORC is', info%files%ncid_forc
+  if(isPrint) print *, 'Open hydromet file:', trim(info%files%fname_netcdf_hmet)
+  if(isPrint) print *, 'NCID_HYDROMET is', info%files%ncid_hydromet
  
   ! ----- Compute time indices for sim/eval windows and subperiod chunk size --------------
   !
-  ! Reads the forcing-file NetCDF time coordinate (and units), and:
+  ! Reads the hydromet-file NetCDF time coordinate (and units), and:
   !   - builds a Julian-day time axis and timestep in days
   !   - maps the user-specified simulation/evaluation date ranges into index windows
   !     (and optional subperiod chunks) stored in info%time
-  call get_time_windows(info%files%ncid_forc, info, ierr, cmessage)
+  call get_time_windows(info%files%ncid_hydromet, info, ierr, cmessage)
   if (ierr/=0)then; message=trim(message)//trim(cmessage); ierr=20; return; endif
 
   ! ----- Allocate space for domain data --------------------------------------------------
@@ -97,17 +97,17 @@ contains
   call allocate_domain_data(info, domain, ierr, cmessage)
   if (ierr/=0)then; message=trim(message)//trim(cmessage); ierr=20; return; endif
 
-  ! ----- Read lat/lon, elevation band arrays, and forcing var ids  -----------------------
+  ! ----- Read lat/lon, elevation band arrays, and hydromet var ids  -----------------------
 
   ! read lat/lon and store in the domain%data%coords structure
-  call read_latlon_2d(info%files%ncid_forc, info, domain%coords, ierr, message)
+  call read_latlon_2d(info%files%ncid_hydromet, info, domain%coords, ierr, message)
   if (ierr/=0)then; message=trim(message)//trim(cmessage); ierr=20; return; endif
 
   ! read elevation bands information and store in the domain%data structure
   call read_elevbands(info, domain, ierr, cmessage)
   if (ierr/=0)then; message=trim(message)//trim(cmessage); ierr=20; return; endif
 
-  call get_forcing_metadata(info%files%ncid_forc, info, ierr, cmessage)
+  call get_hydromet_metadata(info%files%ncid_hydromet, info, ierr, cmessage)
   if (ierr/=0)then; message=trim(message)//trim(cmessage); ierr=20; return; endif
 
   ! ----- Routines that use the old structures --------------------------------------------

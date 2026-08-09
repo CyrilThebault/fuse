@@ -14,7 +14,7 @@ USE nrtype                                            ! variable types, etc.
 USE sce_callback_context, only: ctx                   ! access FUSE data structures
 USE parameter_transform_module, only: vector_to_physical_space
 USE fuse_evaluate_module, only: fuse_evaluate         ! run model and compute the metric chosen as objective function
-USE multiforce, only: ncid_forc                       ! NetCDF forcing file ID
+USE multiforce, only: ncid_hydromet                   ! NetCDF hydromet file ID
 USE fuse_fileManager,only:METRIC, TRANSFO             ! metric and transformation requested in the filemanager
 USE fuse_globaldata, only: nFUSE_eval                      ! # fuse evaluations
 

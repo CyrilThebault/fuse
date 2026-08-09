@@ -6,7 +6,7 @@ input_dir    = "test/CAN_05BB001/lumped/input/"
 output_dir   = "test/CAN_05BB001/lumped/work/"
 
 [input]
-forcing_suffix   = "_daymet_qobs_merged_legacy.nc"
+hydromet_suffix   = "_daymet_qobs_merged_legacy.nc"
 elevbands_suffix = "_elev_bands.nc"
 
 [model]
@@ -19,7 +19,7 @@ time      = "time"
 latitude  = "latitude"
 longitude = "longitude"
 
-[forcing_vars]
+[hydromet_vars]
 precip = "prcp"
 temp   = "temp"
 pet    = "pet_oudin"
