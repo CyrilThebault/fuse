@@ -4,7 +4,7 @@ module work_types
 
  use nrtype
 
- use multiforce_types,  only: TDATA, VDATA, ADATA, FDATA
+ use multiforce_types,  only: TDATA, FDATA
  use multibands_types,  only: BANDS, BANDS_INFO, BANDS_VAR
  use multiparam_types,  only: PARATT, PARINFO, PARADJ, PARDVD, PAR_ID
  use multistate_types,  only: STATEV, M_TIME
@@ -64,8 +64,8 @@ module work_types
 
  ! numerix structure (linear algebra, ...)
  type fuse_numerix
-   real(wp)     , allocatable          :: x0(:)      ! state variables (start of step)
-   real(wp)     , allocatable          :: x1(:)      ! state variables (end of step)
+   real(wp)     , allocatable          :: x0(:)          ! state variables (start of step)
+   real(wp)     , allocatable          :: x1(:)          ! state variables (end of step)
  end type fuse_numerix
 
  ! adjoint structure (differentiable fuse)
@@ -74,6 +74,11 @@ module work_types
    type(fluxes), allocatable           :: df_dPar(:)     ! derivative in fluxes w.r.t. parameters
    real(wp),     allocatable           :: dL_dPar(:)     ! derivative in loss function w.r.t. parameters
  end type fuse_adjoint
+
+ ! observation structure
+ type fuse_obs
+   real(wp),     allocatable           :: q(:,:)         ! streamflow (nobs, ntime)
+ end type fuse_obs
 
  ! run-level / evaluation-level
  type fuse_run
@@ -90,6 +95,7 @@ module work_types
    type(fuse_param)   :: par     ! parameter structure
    type(fuse_numerix) :: num     ! numerix structure (linear algebra, ...)
    type(fuse_adjoint) :: adj     ! adjoint structure (differentiable fuse)
+   type(fuse_obs)     :: obs     ! observations structure
    type(fuse_run)     :: run     ! run-level structure
    logical(lgt)       :: is_initialized = .false.
  end type fuse_work

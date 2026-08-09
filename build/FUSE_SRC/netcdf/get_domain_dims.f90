@@ -15,7 +15,7 @@ contains
   integer(i4b),    intent(out)   :: ierr
   character(*),    intent(out)   :: message
   
-  character(len=1024) :: forc_file ! forcing file
+  character(len=1024) :: hmet_file ! hydromet file
   character(len=1024) :: elev_file ! elev bands file
 
   character(len=1024) :: cmessage
@@ -25,11 +25,11 @@ contains
   message = "get_domain_metadata/"
 
   ! get filenames
-  forc_file = trim(info%files%input_path)//trim(info%files%forcing_file)
+  hmet_file = trim(info%files%input_path)//trim(info%files%hydromet_file)
   elev_file = trim(info%files%input_path)//trim(info%files%elevbands_file)
 
   ! read forcing dimensions
-  call read_forcing_dimensions(forc_file, info, ierr, cmessage)
+  call read_forcing_dimensions(hmet_file, info, ierr, cmessage)
   if(ierr/=0)then; message=trim(message)//trim(cmessage); return; endif
  
   ! read number of elevation bands

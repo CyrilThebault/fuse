@@ -26,7 +26,7 @@ MODULE fuse_globaldata
  logical(lgt), save      :: isDebug=.false.
 
  ! indices of forcing variables in vectors
- integer(i4b), parameter :: NVAR_FORC=4
+ integer(i4b), parameter :: NVAR_HYDROMET=4
  integer(i4b), parameter :: iPRECIP=1, iTEMP=2, iPET=3, iQOBS=4
 
  ! indices of snow parameters in vectors

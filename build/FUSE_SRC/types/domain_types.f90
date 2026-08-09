@@ -2,7 +2,7 @@ module domain_types
 
  use nrtype
 
- use multiforce_types,  only: ADATA, FDATA, VDATA
+ use multiforce_types,  only: FDATA
  use multibands_types,  only: BANDS_INFO, BANDS_VAR
  use multistate_types,  only: STATEV
  use multi_flux_types,  only: FLUXES
@@ -41,9 +41,6 @@ module domain_types
     ! coordinate information
     type(coord_data)             :: coords
 
-    ! 2D ancillary forcing (optional, for PET etc.)
-    type(ADATA), allocatable      :: ancil(:,:)         ! (nx_local, ny_local)
-
     ! 3D forcing window
     type(FDATA), allocatable      :: force(:,:,:)       ! gForce_3d (nx_local, ny_local, nt_window)
 
@@ -65,9 +62,6 @@ module domain_types
 
     ! 4D snow-band state window
     type(BANDS_VAR), allocatable  :: bands_var(:,:,:,:) ! MBANDS_VAR_4d (nx_local, ny_local, n_bands, nt_window+1)
-
-    ! 3D observed discharge / validity (optional)
-    type(VDATA), allocatable      :: valid(:,:,:)       ! aValid (nx_local, ny_local, nt_window)
 
     ! Remapping and netework routing
     type(river_network_data)      :: river_network      ! river_network%topology, river_network%runoff, ...

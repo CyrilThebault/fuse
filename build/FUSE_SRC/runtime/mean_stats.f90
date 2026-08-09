@@ -21,7 +21,6 @@ USE fuse_fileManager,only: METRIC, TRANSFO            ! metric and transformatio
 USE fuse_globaldata, only: isPrint
 ! FUSE modules
 USE metrics                                           ! available metrics and transformations
-USE multiforce, only: aValid                          ! model forcing data (obs streamflow)
 USE multiforce, only: NA_VALUE                        ! model forcing structure (temporally constant)
 USE multiforce, only: eval_beg, eval_end              ! model forcing structure (temporally constant)
 USE multiforce, only: sim_beg, numtim_sim             ! model forcing structure (temporally constant)
@@ -68,7 +67,7 @@ IF (IERR.NE.0) STOP ' PROBLEM ALLOCATING SPACE IN MEAN_STATS.F90 '
 ! extract OBS and SIM for evaluation period, note that sim_beg, eval_beg, sim_end,
 ! eval_end are all with respect to julian_day_input
 QSIM = domain%route(1,1,eval_beg-sim_beg+1:eval_end-sim_beg+1)%Q_ROUTED
-QOBS = aValid(1,1,eval_beg-sim_beg+1:eval_end-sim_beg+1)%OBSQ
+QOBS = work%obs%q(1,eval_beg-sim_beg+1:eval_end-sim_beg+1)
 
 ! check for missing QOBS values
 QOBS_MASK = QOBS.ne.REAL(NA_VALUE, KIND(WP)) ! find the time steps for which QOBS is available

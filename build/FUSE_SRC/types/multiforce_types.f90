@@ -15,7 +15,7 @@ MODULE multiforce_types
  implicit none
  private
 
- public :: TDATA, VDATA, ADATA, FDATA
+ public :: TDATA, VDATA, FDATA
 
  ! the time data structure (will have no spatial dimension)
  TYPE TDATA
@@ -27,22 +27,17 @@ MODULE multiforce_types
     REAL(WP)                             :: DSEC       ! second
     REAL(WP)                             :: DTIME      ! time in seconds since year dot
  ENDTYPE TDATA
- 
- ! the response structure (will not have a spatial dimension)
+
+ ! validation/observation data
+ !   gridded data:    (nx, ny, nt)
+ !   point/HRU data:  (1, nobs, nt), with singleton first spatial dimension
  TYPE VDATA
     REAL(WP)                             :: OBSQ       ! observed runoff (mm day-1)
  END TYPE VDATA
  
- ! ancillary forcing variables used to compute ET (will have a spatial dimension)
- TYPE ADATA
-    REAL(WP)                             :: AIRTEMP    ! air temperature (K)
-    REAL(WP)                             :: SPECHUM    ! specific humidity (g/g)
-    REAL(WP)                             :: AIRPRES    ! air pressure (Pa)
-    REAL(WP)                             :: SWDOWN     ! downward sw radiation (W m-2)
-    REAL(WP)                             :: NETRAD     ! net radiation (W m-2)
- END TYPE ADATA
- 
- ! the forcing data structure (will have a spatial dimension)
+ ! meteorological forcing data
+ !   gridded data:    (nx, ny, nt)
+ !   point/HRU data:  (1, nhru, nt), with singleton first spatial dimension
  TYPE FDATA
     REAL(WP)                             :: PPT        ! water input: rain + melt (mm day-1)
     REAL(WP)                             :: TEMP       ! temperature for snow model (deg.C)

@@ -288,10 +288,37 @@ ncatted -O -h \
 echo
 
 # ------------------------------------------------------------------------------
-# Step 8: Convert files to legacy format to support old code
+# Step 8: Create an observation dimension for streamflow
 # ------------------------------------------------------------------------------
 
-echo "Step 8: Convert files to legacy format"
+echo "Step 8: Create an observation dimension for streamflow"
+
+# Give streamflow observations their own observation dimension.
+ncap2 -O -h -s '
+    defdim("nobs",1);
+    runoff_obs_new[time,nobs] = runoff_obs;
+'    "${MERGED_FILE}" "${MERGED_FILE}"
+
+ncks -O -h -x \
+    -v runoff_obs \
+    "${MERGED_FILE}" "${MERGED_FILE}"
+
+ncrename -O -h \
+    -v runoff_obs_new,runoff_obs \
+    "${MERGED_FILE}" "${MERGED_FILE}"
+
+ncatted -O -h \
+    -a long_name,runoff_obs,o,c,"observed runoff depth" \
+    -a units,runoff_obs,o,c,"mm day-1" \
+    "${MERGED_FILE}"
+
+echo
+
+# ------------------------------------------------------------------------------
+# Step 9: Convert files to legacy format to support old code
+# ------------------------------------------------------------------------------
+
+echo "Step 9: Convert files to legacy format"
 
 base=$(basename "$MERGED_FILE" .nc)
 LEGACY_FILE="$(dirname "$MERGED_FILE")/${base}_legacy.nc"
@@ -300,8 +327,8 @@ LEGACY_FILE="$(dirname "$MERGED_FILE")/${base}_legacy.nc"
 ncwa -O -h -a hru "${MERGED_FILE}" "${LEGACY_FILE}"
 
 # add latitude and longitude variables
-ncecat -O -h -u latitude -v prcp,temp,pet,pet_oudin,runoff_obs "${LEGACY_FILE}" "${LEGACY_FILE}"
-ncecat -O -h -u longitude -v prcp,temp,pet,pet_oudin,runoff_obs "${LEGACY_FILE}" "${LEGACY_FILE}"
+ncecat -O -h -u latitude -v prcp,temp,pet,pet_oudin "${LEGACY_FILE}" "${LEGACY_FILE}"
+ncecat -O -h -u longitude -v prcp,temp,pet,pet_oudin "${LEGACY_FILE}" "${LEGACY_FILE}"
 
 # put the dimensions in the correct order
 ncpdq -O -h -a time,latitude,longitude "${LEGACY_FILE}" "${LEGACY_FILE}"
@@ -316,6 +343,10 @@ ncap2 -O -h -s "
     longitude[longitude]=${lon};
 " "${LEGACY_FILE}" "${LEGACY_FILE}"
 
+
+# Copy the runoff obs (and all its attributes)
+ncks -A -h -v runoff_obs "${MERGED_FILE}" "${LEGACY_FILE}"
+
 # Copy the basin area (and all its attributes)
 ncks -A -h -v basin_area "${MERGED_FILE}" "${LEGACY_FILE}"
 
@@ -327,3 +358,4 @@ echo
 
 echo "FUSE input preparation completed successfully."
 echo "Created: ${MERGED_FILE}"
+echo "Created: ${LEGACY_FILE}"

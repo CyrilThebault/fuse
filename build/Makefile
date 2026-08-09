@@ -262,7 +262,6 @@ FUSE_SHARE += multiparam_data.f90
 FUSE_SHARE += multistate_data.f90
 FUSE_SHARE += multi_flux_data.f90
 FUSE_SHARE += multiroute_data.f90
-FUSE_SHARE += manage_legacy_data.f90
 SHARE = $(patsubst %, $(SHARE_DIR)/%, $(FUSE_SHARE))
 
 # combine data modules together
@@ -386,7 +385,7 @@ FUSE_NETCDF += extractor.f90 juldayss.f90 caldatss.f90
 FUSE_NETCDF += get_domain_dims.f90
 FUSE_NETCDF += read_elevbands.f90
 FUSE_NETCDF += domain_decomp.f90
-FUSE_NETCDF += get_gforce.f90
+FUSE_NETCDF += get_hydromet.f90
 FUSE_NETCDF += get_smodel.f90
 FUSE_NETCDF += get_fparam.f90
 FUSE_NETCDF += def_params.f90

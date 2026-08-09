@@ -14,7 +14,6 @@ contains
   subroutine varextract_3d(domain, varname, nspat1, nspat2, numtim, xout)
   ! ---------------------------------------------------------------------------------------
   USE model_numerix
-  USE multiforce, only: aValid                                ! model validation data
   implicit none
 
   type(domain_data), intent(in) :: domain
@@ -35,10 +34,6 @@ contains
    CASE ('ppt')        ; xout = real(domain%force(:,:,1:numtim)%PPT ,        kind=real32)
    CASE ('temp')       ; xout = real(domain%force(:,:,1:numtim)%TEMP,        kind=real32) 
    CASE ('pet')        ; xout = real(domain%force(:,:,1:numtim)%PET ,        kind=real32) 
-   
-   ! extract response data
-   ! TODO: Check this -- it is weird that obs q is 3d
-   CASE ('obsq')       ; xout = real(aValid(:,:,1:numtim)%OBSQ,              kind=real32)
    
    ! extract model states
    CASE ('tens_1')     ; xout = real(domain%state(:,:,1:numtim)%TENS_1 ,     kind=real32)

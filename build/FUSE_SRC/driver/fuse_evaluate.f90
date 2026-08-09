@@ -73,8 +73,7 @@ MODULE fuse_evaluate_module
     if(isPrint) WRITE(*,*) "TIME ELAPSED = ", t2-t1
 
     ! calculate mean summary statistics
-    ! NOTE: .NOT.GRID_FLAG means catchment mode (lumped or distributed)
-    if( .not. info%space%grid_flag)then
+    if (info%mpi%rank == 0) then
 
       if(isPrint) PRINT *, 'Calculating performance metrics...'
       CALL MEAN_STATS(work, domain)
@@ -83,10 +82,10 @@ MODULE fuse_evaluate_module
       write(*,'(i6,1x,a11,1x,f12.6,1x,a20,1x,f12.6)') nFUSE_eval, "OBJ FUNC = ", METRIC_VAL, "; TIME ELAPSED = ", t2-t1
       !if(nFUSE_eval > 10) stop "checking results"
 
-    endif ! if catchment mode (lumped or distributed)
+      if(isPrint) PRINT *, 'Writing model statistics...'
+      CALL PUT_SSTATS(work%run%stats, work%run%n_evaluations)
 
-    if(isPrint) PRINT *, 'Writing model statistics...'
-    CALL PUT_SSTATS(work%run%stats, work%run%n_evaluations)
+    endif ! all observations on rank=0
 
   END SUBROUTINE fuse_evaluate
 
@@ -197,8 +196,9 @@ MODULE fuse_evaluate_module
   use multiforce, only: timDat  ! NOTE: used in legacy codes
   use multiforce, only: nspat1, nspat2, DELTIM, sim_beg, sim_end, numtim_sub
   use time_utils,        only: caldatss
-  use get_gforce_module, only: get_gforce_3d
-  use put_output_module, only: put_output
+  use get_hydromet_module, only: get_met_data
+  use get_hydromet_module, only: get_qobs_data
+  use put_output_module,   only: put_output
 
   implicit none
 
@@ -222,6 +222,7 @@ MODULE fuse_evaluate_module
   ! locals
   real(wp)     :: dt_sub, dt_full
   integer(i4b) :: iSpat1, iSpat2, iBands
+  character(len=256) :: cmessage  
 
   ierr = 0
   message = "run_time_loop/"
@@ -256,7 +257,7 @@ MODULE fuse_evaluate_module
     sim_idx = in_idx - sim_beg + 1
 
     ! -----------------------------------------------------------------------------------------------------------------
-    ! ----- start of subperiod: load forcing --------------------------------------------------------------------------
+    ! ----- start of subperiod: load hydromet data --------------------------------------------------------------------
 
     ! determine length of current subperiod
     remaining = sim_end - in_idx + 1       ! # remaining data windows in simulation 
@@ -266,12 +267,21 @@ MODULE fuse_evaluate_module
     chunk_start_sim = in_idx - sim_beg + 1     ! start of chunk in simulation index space
     chunk_start_in  = in_idx                   ! start of chunk in input index space
 
-    ! load forcing for desired period into the domain%force data structure
-    if(isPrint) PRINT *, 'New subperiod: loading forcing for ',chunk_len,' time steps'
-    call get_gforce_3d(info, chunk_start_in, chunk_len, &
-                       domain, ierr, message)
-    IF(ierr/=0) stop 'Error while extracting 3d forcing: '//trim(message)
-    if(isPrint) PRINT *, 'Forcing loaded. Running FUSE...'
+    if(isPrint) PRINT *, 'New subperiod: loading hydromet data for ',chunk_len,' time steps'
+    
+    ! load meteorological forcing data for desired period into the domain%force data structure
+    ! NOTE: reads different spatial slice per MPI rank in the nSpat2 dimension
+    call get_met_data(info, chunk_start_in, chunk_len, &
+                      domain, ierr, cmessage)
+    if (ierr/=0) then; message=trim(message)//trim(cmessage); return; endif
+
+    ! load streamflow observations for desired period into the domain%valid data structure
+    ! NOTE: qobs replicated across MPI ranks
+    call get_qobs_data(info, chunk_start_in, chunk_len, &
+                       work%obs%q(:,1:chunk_len), ierr, cmessage)
+    if (ierr/=0) then; message=trim(message)//trim(cmessage); return; endif
+
+    if(isPrint) PRINT *, 'Hydromet data loaded. Running FUSE...'
     
     ! -----------------------------------------------------------------------------------------------------------------
 
@@ -316,7 +326,7 @@ MODULE fuse_evaluate_module
     ! write model output
     IF (OUTPUT_FLAG) THEN
       if(isPrint) PRINT *, 'Write output for ',chunk_len,' time steps starting at indices', chunk_start_sim
-      CALL PUT_OUTPUT(domain, chunk_start_sim, chunk_start_in, chunk_len)
+      CALL PUT_OUTPUT(info, work, domain, chunk_start_sim, chunk_start_in, chunk_len)
       if(isPrint) PRINT *, 'Done writing output'
     ELSE
       if(isPrint) PRINT *, 'OUTPUT_FLAG is set on FALSE, no output written'

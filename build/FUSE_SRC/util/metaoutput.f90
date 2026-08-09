@@ -43,7 +43,6 @@ MODULE metaoutput
   I=I+1; VNAME(I)='ppt        '; LNAME(I)='precipitation rate                                 '; VUNIT(I)='mm/day'; isBand(i)=.false.; isFlux(i)=.false.
   I=I+1; VNAME(I)='pet        '; LNAME(I)='potential evapotranspiration rate                  '; VUNIT(I)='mm/day'; isBand(i)=.false.; isFlux(i)=.false.
   I=I+1; VNAME(I)='temp       '; LNAME(I)='mean air temperature                               '; VUNIT(I)='deg.C '; isBand(i)=.false.; isFlux(i)=.false.
-  I=I+1; VNAME(I)='obsq       '; LNAME(I)='observed runoff                                    '; VUNIT(I)='mm/day'; isBand(i)=.false.; isFlux(i)=.false.
                                                                                                                                                           
   ! model states
   I=I+1; VNAME(I)='tens_1     '; LNAME(I)='tension storage in the upper layer                 '; VUNIT(I)='mm    '; isBand(i)=.false.; isFlux(i)=.false.

@@ -7,7 +7,7 @@ MODULE fuse_filemanager
   use info_types, only: cli_options
   use info_types, only: fuse_info
 
-  use fuse_globaldata, only: NVAR_FORC
+  use fuse_globaldata, only: NVAR_HYDROMET
   use fuse_globaldata, only: iPRECIP, iTEMP, iPET, iQOBS
 
   implicit none
@@ -19,7 +19,7 @@ MODULE fuse_filemanager
 
   ! expose legacy globals
   public :: SETNGS_PATH, INPUT_PATH, OUTPUT_PATH
-  public :: suffix_forcing, suffix_elev_bands
+  public :: suffix_hydromet, suffix_elev_bands
   public :: M_DECISIONS, CONSTRAINTS, MOD_NUMERIX, MBANDS_NC
   public :: FMODEL_ID, Q_ONLY_STR, Q_ONLY
   public :: date_start_sim, date_end_sim, date_start_eval, date_end_eval, numtim_sub_str
@@ -37,7 +37,7 @@ MODULE fuse_filemanager
   CHARACTER(LEN=fusePathLen)  :: OUTPUT_PATH
   
   ! content of input directory
-  CHARACTER(LEN=fusePathLen)  :: suffix_forcing    ! suffix for forcing file
+  CHARACTER(LEN=fusePathLen)  :: suffix_hydromet   ! suffix for hydromet file
   CHARACTER(LEN=fusePathLen)  :: suffix_elev_bands ! suffix for elevation band file
   
   ! content of settings directory
@@ -151,7 +151,7 @@ contains
         case ("filepaths.settings_dir"       ); call get_value(subtable, trim(keys(j)%key), info%files%setngs_path      , stat=istat)
 
         ! ---- files: suffixes ----
-        case ("input.forcing_suffix"         ); call get_value(subtable, trim(keys(j)%key), info%files%suffix_forcing   , stat=istat)
+        case ("input.hydromet_suffix"        ); call get_value(subtable, trim(keys(j)%key), info%files%suffix_hydromet  , stat=istat)
         case ("input.elevbands_suffix"       ); call get_value(subtable, trim(keys(j)%key), info%files%suffix_elev_bands, stat=istat)
 
         ! ---- files: settings filenames ----
@@ -164,11 +164,11 @@ contains
         case ("forcing_coords.latitude"      ); call get_value(subtable, trim(keys(j)%key), info%files%latitude_name    , stat=istat)
         case ("forcing_coords.longitude"     ); call get_value(subtable, trim(keys(j)%key), info%files%longitude_name   , stat=istat)
 
-        ! ---- files: forcing variable names ----
-        case ("forcing_vars.precip"          ); call get_value(subtable, trim(keys(j)%key), info%files%precip_name      , stat=istat)
-        case ("forcing_vars.temp"            ); call get_value(subtable, trim(keys(j)%key), info%files%temp_name        , stat=istat)
-        case ("forcing_vars.pet"             ); call get_value(subtable, trim(keys(j)%key), info%files%pet_name         , stat=istat)
-        case ("forcing_vars.qobs"            ); call get_value(subtable, trim(keys(j)%key), info%files%qobs_name        , stat=istat)
+        ! ---- files: hydromet variable names ----
+        case ("hydromet_vars.precip"         ); call get_value(subtable, trim(keys(j)%key), info%files%precip_name      , stat=istat)
+        case ("hydromet_vars.temp"           ); call get_value(subtable, trim(keys(j)%key), info%files%temp_name        , stat=istat)
+        case ("hydromet_vars.pet"            ); call get_value(subtable, trim(keys(j)%key), info%files%pet_name         , stat=istat)
+        case ("hydromet_vars.qobs"           ); call get_value(subtable, trim(keys(j)%key), info%files%qobs_name        , stat=istat)
 
         ! ---- mizuRoute: namelist path/filenames ----
         case ("mizuRoute.namelist_path"      ); call get_value(subtable, trim(keys(j)%key), info%mrout%namelist_path    , stat=istat)
@@ -261,7 +261,7 @@ contains
   if(allocated(opts%tag)) tag = trim(opts%tag)
 
   ! ---- derived input filenames ----
-  info%files%forcing_file   = trim(dom_id)//trim(info%files%suffix_forcing)
+  info%files%hydromet_file  = trim(dom_id)//trim(info%files%suffix_hydromet)
   info%files%elevbands_file = trim(dom_id)//trim(info%files%suffix_elev_bands)
 
   ! ---- derived output base name ----
@@ -269,7 +269,7 @@ contains
                             trim(dom_id)//'_'//trim(info%config%fmodel_id)//'_'//trim(tag)
 
   ! ---- final filenames ----
-  info%files%fname_netcdf_forc = trim(info%files%input_path)//trim(info%files%forcing_file)
+  info%files%fname_netcdf_hmet = trim(info%files%input_path)//trim(info%files%hydromet_file)
   info%files%fname_netcdf_runs = trim(info%files%fname_tempry)//'_runs_'//trim(run_mode)//'.nc'
   info%files%fname_netcdf_para = trim(info%files%fname_tempry)//'_para_'//trim(run_mode)//'.nc'
 
@@ -286,7 +286,6 @@ contains
   subroutine export_domain_to_legacy(info)
   use model_defn, only: FNAME_TEMPRY, FNAME_NETCDF_RUNS, FNAME_NETCDF_PARA
   use multiparam, only: MAXN, KSTOP, PCENTO
-  use multiforce, only: forcefile
 
   implicit none
 
@@ -297,7 +296,7 @@ contains
   SETNGS_PATH       = trim(info%files%setngs_path)
   INPUT_PATH        = trim(info%files%input_path)
   OUTPUT_PATH       = trim(info%files%output_path)
-  suffix_forcing    = trim(info%files%suffix_forcing)
+  suffix_hydromet   = trim(info%files%suffix_hydromet)
   suffix_elev_bands = trim(info%files%suffix_elev_bands)
   CONSTRAINTS       = trim(info%files%constraints)
   MOD_NUMERIX       = trim(info%files%mod_numerix)
@@ -327,9 +326,6 @@ contains
   FNAME_TEMPRY      = trim(info%files%fname_tempry)
   FNAME_NETCDF_RUNS = trim(info%files%fname_netcdf_runs)
   FNAME_NETCDF_PARA = trim(info%files%fname_netcdf_para)
-  
-  ! populate module multiforce
-  forcefile = trim(info%files%forcing_file)
   
   ! populate shared public variable in this module (fuse_filemanager)
   MBANDS_NC = trim(info%files%elevbands_file)

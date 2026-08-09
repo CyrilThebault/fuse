@@ -4,7 +4,7 @@ module alloc_domain_module
   USE info_types, only: fuse_info
   USE domain_types, only: domain_data
  
-  use fuse_globaldata, only: NVAR_FORC
+  use fuse_globaldata, only: NVAR_HYDROMET
 
   implicit none
   private
@@ -31,10 +31,6 @@ CONTAINS
   ny = info%space%ny_local
   nt = info%time%nt_window
   nb = info%snow%n_bands
-
-  ! allocate validity mask
-  allocate(domain%valid(nx,ny,nt), stat=ierr)
-  if(ierr/=0)then; message=trim(message)//"cannot allocate valid"; return; endif
 
   ! allocate forcing window
   allocate(domain%force(nx,ny,nt), stat=ierr)
@@ -64,10 +60,14 @@ CONTAINS
   allocate(domain%bands_var(nx,ny,nb,nt+1), stat=ierr)
   if(ierr/=0)then; message=trim(message)//"cannot allocate elev bands (var)"; return; endif
 
-  ! allocate forcing lookup table
-  allocate(info%files%forc%name(NVAR_FORC), info%files%forc%varid(NVAR_FORC), info%files%forc%multiplier(NVAR_FORC), stat=ierr)
-  if(ierr/=0)then; message=trim(message)//"cannot allocate forcing lookup table"; return; endif
-  info%files%forc%multiplier(:) = -1._wp
+  ! allocate hydromet lookup table
+  allocate(info%files%hydromet%name(NVAR_HYDROMET),  &
+           info%files%hydromet%units(NVAR_HYDROMET), &
+           info%files%hydromet%varid(NVAR_HYDROMET), &
+           info%files%hydromet%ndims(NVAR_HYDROMET), &
+           info%files%hydromet%multiplier(NVAR_HYDROMET), stat=ierr)
+  if(ierr/=0)then; message=trim(message)//"cannot allocate hydromet lookup table"; return; endif
+  info%files%hydromet%multiplier(:) = -1._wp
 
   end subroutine allocate_domain_data
 
@@ -81,10 +81,9 @@ CONTAINS
   ! legacy modules
   use multiforce, only: nSpat1, nSpat2, numtim_sub
   USE multiforce, only: startSpat2                         ! starting y index for data read
-  USE multiforce, only: ncid_forc
+  USE multiforce, only: ncid_hydromet
   use multiforce, only: timeUnits
   use multiforce, only: nInput
-  use multiForce, only: aValid
   use multiBands, only: N_BANDS, MBANDS
   implicit none
 
@@ -110,23 +109,16 @@ CONTAINS
   numtim_sub = nt
   startSpat2 = info%space%y_start_global
 
-  ncid_forc  = info%files%ncid_forc
+  ncid_hydromet  = info%files%ncid_hydromet
 
   nInput     = info%config%nInput
 
   ! set bands
   N_BANDS = nb
 
-  ! allocate validity mask
-  allocate(aValid(nx,ny,nt), stat=ierr)
-  if(ierr/=0)then; message=trim(message)//"cannot allocate valid"; return; endif
-
   ! allocate elevation bands
   allocate(MBANDS(nb), stat=ierr)
   if(ierr/=0)then; message=trim(message)//"cannot allocate elev bands"; return; endif
-
-  ! copy arrays in the domain structure to legacy arrays
-  aValid         = domain%valid      ! validity mask
 
   end subroutine set_legacy_arrays
 
