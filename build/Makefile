@@ -297,7 +297,6 @@ NR_SUB = $(patsubst %, $(NUMREC_DIR)/%, $(FUSE_NR_SUB))
 # FUSE physics (differentiable model)
 FUSE_PHYSICS =
 FUSE_PHYSICS += smoothers.f90
-FUSE_PHYSICS += get_bundle.f90
 FUSE_PHYSICS += update_swe_diff.f90
 FUSE_PHYSICS += qsatexcess_diff.f90
 FUSE_PHYSICS += evap_upper_diff.f90
@@ -311,6 +310,7 @@ FUSE_PHYSICS += mod_derivs_diff.f90
 FUSE_PHYSICS += conserve_clamp.f90
 FUSE_PHYSICS += fix_ovshoot.f90
 FUSE_PHYSICS += implicit_solve.f90
+FUSE_PHYSICS += physics_diff.f90
 PHYSICS = $(patsubst %, $(PHYSICS_DIR)/%, $(FUSE_PHYSICS))
 
 # Old physics (model "guts")
@@ -344,6 +344,7 @@ FUSE_SOLVER += fuse_deriv.f90
 FUSE_SOLVER += fmin.f90 fdjac_ode.f90 flux_deriv.f90 disaggflux.f90
 FUSE_SOLVER += fuse_sieul.f90
 FUSE_SOLVER += newtoniter.f90 lnsrch.f90
+FUSE_SOLVER += physics_orig.f90
 SOLVER = $(patsubst %, $(SOLVER_DIR)/%, $(FUSE_SOLVER))
 
 # FUSE preliminaries

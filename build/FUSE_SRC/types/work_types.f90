@@ -62,6 +62,11 @@ module work_types
    type(pardvd)                        :: param_derive   ! derived model parameters
  end type fuse_param
 
+ ! routing structure, across steps
+ type fuse_route
+  real(wp)      , allocatable          :: future(:)      ! rolling routing convolution queue
+ end type fuse_route
+
  ! numerix structure (linear algebra, ...)
  type fuse_numerix
    real(wp)     , allocatable          :: x0(:)          ! state variables (start of step)
@@ -92,6 +97,7 @@ module work_types
  type fuse_work
    type(fuse_step)    :: step    ! per-step structure
    type(fuse_snow)    :: snow    ! snow structure
+   type(fuse_route)   :: route   ! parameter structure
    type(fuse_param)   :: par     ! parameter structure
    type(fuse_numerix) :: num     ! numerix structure (linear algebra, ...)
    type(fuse_adjoint) :: adj     ! adjoint structure (differentiable fuse)

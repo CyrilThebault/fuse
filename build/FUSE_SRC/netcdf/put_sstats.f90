@@ -27,7 +27,6 @@ REAL(MSP)                              :: APAR        ! desired parameter (MSP i
 INTEGER(I4B)                           :: IVAR_ID     ! variable ID
 include 'netcdf.inc'                                  ! use netCDF libraries
 ! ---------------------------------------------------------------------------------------
-print *, 'entered PUT_SSTATS, ipar = ', ipar
 ! open NetCDF parameter file
 IERR = NF_OPEN(TRIM(FNAME_NETCDF_PARA),NF_WRITE,NCID); CALL HANDLE_ERR(IERR)
 
