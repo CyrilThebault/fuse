@@ -87,10 +87,6 @@ contains
   info%config%nParam    = NUMPAR   ! NSTATE is in module multiparam
   info%config%listParam = LPARAM(1:NUMPAR)   ! (performs allocation) LPARAM is in module multiparam
 
-  ! Compute derived model parameters (bucket sizes, etc.)
-  CALL PAR_DERIVE(info,ERR,CMESSAGE)
-  if (err/=0)then; message=trim(message)//trim(cmessage); err=20; return; endif
-
   ! ----- initialize parameters, statistics, and output -----------------------------------
 
   ! get number of parameter sets
@@ -101,7 +97,7 @@ contains
     case('def', 'idx', 'opt'); NUMPSET = 1
 
     ! use NUMPSET =1.2MAXN since final number of parameter sets produced by SCE is unknown
-    case('sce');               NUMPSET = int(1.2_wp * real(MAXN, wp))
+    case('sce');               NUMPSET = MAXN+1
 
     ! check
     case default

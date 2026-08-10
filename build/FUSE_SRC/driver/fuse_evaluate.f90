@@ -32,7 +32,6 @@ MODULE fuse_evaluate_module
 
     use nrtype
     use fuse_globaldata,only: NPAR_SNOW, isPrint, nFUSE_eval
-    use model_defn,only: NSTATE
     use multiforce,only: nspat1, nspat2, numtim_sub
     use multibands,only: N_BANDS, n_bands
 
@@ -113,6 +112,9 @@ MODULE fuse_evaluate_module
   use xtry_2_str_module
   use put_params_module, only: put_params
 
+  use qtimedelay_module, only: qtimedelay
+  use init_state_module, only: init_state
+
   implicit none
 
   type(fuse_info)        , intent(in)      :: info
@@ -141,9 +143,16 @@ MODULE fuse_evaluate_module
     print *, xpar
   end if
 
-  ! compute derived model parameters (bucket sizes, etc.)
-  call par_derive(info, ierr, cmessage)
-  if(ierr/=0)then; message=trim(message)//trim(cmessage); return; endif
+  ! Compute derived model parameters (bucket sizes, etc.)
+  CALL PAR_DERIVE(work%par)   ! populates work structure with DPARAM
+
+  ! compute fraction of runoff in future time steps (unit hydrograph for hillslope routing)
+  CALL QTIMEDELAY(info,                  & !
+                  work%par%param_adjust, & ! adjustable model parameters (time delay, )
+                  work%par%param_derive, & ! derived model parameters (FRAC_FUTURE, )
+                  work%route%future,     & ! rolling routing convolution queue
+                  ierr, cmessage)
+  if (ierr/=0) then; message=trim(message)//trim(cmessage); return; endif
 
   ! get elevation bands (if catchment)
   Z_FORCING      = domain%z_forcing(1,1)
@@ -152,13 +161,16 @@ MODULE fuse_evaluate_module
   if (isPrint) print *, 'Writing parameter values...'
   call put_params(work%run%n_evaluations)
 
-  ! initialize model states over the 2D gridded domain (1x1 in catchment mode)
+  ! initialize model states over the 2D gridded domain (1 x nHRU in catchment mode)
   do iSpat2 = 1, nSpat2
     do iSpat1 = 1, nSpat1
-      call init_state(fracstate0)
-      call str_2_xtry(FSTATE, work%num%x0)
-      call xtry_2_str(work%num%x0, FSTATE)
-      domain%state(iSpat1, iSpat2, 1) = FSTATE
+      call init_state(fracstate0,            & ! input:  fraction state
+                      work%par%param_adjust, & ! adjustable model parameters (time delay, )
+                      work%par%param_derive, & ! derived model parameters (FRAC_FUTURE, )
+                      work%step%state0,      & ! output: start-of-step state
+                      work%snow%sbands(:)%var%bands_var)  ! output: SWE for elevation bands
+      call str_2_xtry(work%step%state0, work%num%x0)
+      domain%state(iSpat1, iSpat2, 1) = work%step%state0
     end do
   end do
   if (isPrint) print *, 'Model states initialized over the 2D gridded domain'
@@ -180,6 +192,8 @@ MODULE fuse_evaluate_module
 
   ! initialize summary statistics + timer
   call init_stats(work)
+
+  if (isPrint) print *, 'End of initialize_run'
 
   end subroutine initialize_run
 
@@ -358,29 +372,23 @@ MODULE fuse_evaluate_module
 
   ! switches / options
   use fuse_globaldata,   only: NA_VALUE_SP
-  use model_defn,   only: SMODL, NSTATE
-  use model_defnames
-  use multiforce,   only: DELTIM, MFORCE, nspat1, nspat2
-  use multistate,   only: FSTATE, MSTATE
-  use multiroute,   only: MROUTE
-  use multibands,   only: MBANDS, Z_FORCING 
-  use multi_flux,   only: W_FLUX, M_FLUX
   use set_all_module, only: SET_STATE, SET_FLUXES, SET_ROUTE
+
+  ! model options
+  use model_defn,   only: SMODL
+  use model_defnames
+
+  ! physics drivers
+  use physics_orig_module, only: physics_orig
+  use physics_diff_module, only: physics_diff
+
+  use Q_OVERLAND_module, only: Q_OVERLAND
 
   ! state vector conversions
   use str_2_xtry_module
   use xtry_2_str_module
 
-  ! differentiable
-  use get_bundle_module,       only: get_bundle
-  use implicit_solve_module,   only: implicit_solve
-  use update_swe_diff_module,  only: update_swe_diff  ! (only if you actually call it here)
-  use update_swe_diff_module,  only: update_swe_diff  ! ok to remove if unused
-
-  ! original solver interface
-  use interfaceb, only: ode_int, fuse_solve
-
-  ! diff-mode flags (make sure these names really live here in your tree)
+  ! diff-mode flags
   use model_numerix, only: diff_mode, original, differentiable
 
   implicit none
@@ -398,166 +406,204 @@ MODULE fuse_evaluate_module
   ierr = 0
   message = "advance_one_cell/"
 
-  ! ---------------------------------------------------------------------------
-  ! only run FUSE for grid points within domain defined by elev_mask
-  ! NOTE: you currently run when elev_mask is FALSE (keep as-is for BFB)
-  ! ---------------------------------------------------------------------------
+  ! only run FUSE for grid points within domain when elev_mask is FALSE
   if (.not. domain%elev_mask(iSpat1,iSpat2)) then
 
-    ! extract forcing for this grid cell and time step
-    MFORCE = domain%force(iSpat1,iSpat2,sub_idx)
+    ! -----------------------------------------------------------------------------------
+    ! ----- initialize ------------------------------------------------------------------
+    ! -----------------------------------------------------------------------------------
 
-    ! forcing sanity checks (keep behavior; convert STOP -> error return)
-    if (MFORCE%PPT < 0.0_wp) then
-      ierr=1; message='Negative precipitation in input file'; return
-    end if
-    if (MFORCE%PPT > 5000.0_wp) then
-      ierr=1; message='Precipitation greater than 5000 in input file'; return
-    end if
-    if (MFORCE%PET < 0.0_wp) then
-      ierr=1; message='Negative PET in input file'; return
-    end if
-    if (MFORCE%PET > 100.0_wp) then
-      ierr=1; message='PET greater than 100 in input file'; return
-    end if
-    if (MFORCE%TEMP < -100.0_wp) then
-      ierr=1; message='Temperature lower than -100 in input file'; return
-    end if
-    if (MFORCE%TEMP > 100.0_wp) then
-      ierr=1; message='Temperature greater than 100 in input file'; return
-    end if
+    ! extract forcing for this grid cell and time step
+    work%step%force = domain%force(iSpat1,iSpat2,sub_idx)
+
+    call check_force(work%step%force%ppt, work%step%force%temp, ierr, cmessage)
+    if (ierr /= 0) then; message = trim(message)//trim(cmessage); return; end if
 
     ! extract model states for this grid cell and time step
-    FSTATE = domain%state(iSpat1,iSpat2,sub_idx)
-    MSTATE = FSTATE
-    call STR_2_XTRY(FSTATE, work%num%x0)
+    work%step%state0 = domain%state(iSpat1,iSpat2,sub_idx)
+    work%step%state1 = domain%state(iSpat1,iSpat2,sub_idx)
+    call STR_2_XTRY(work%step%state0, work%num%x0)
+
+    ! extract the elevation bands
+    work%snow%z_forcing               = domain%z_forcing (iSpat1,iSpat2)
+    work%snow%sbands(:)%info          = domain%bands_info(iSpat1,iSpat2,:)
+    work%snow%sbands(:)%var%bands_var = domain%bands_var (iSpat1,iSpat2,:,sub_idx)
 
     ! initialize model fluxes
-    ! If INITFLUXES lives somewhere else in your tree, swap this line accordingly.
-    call INITFLUXES()
+    call INITFLUXES(work%step%flux)
 
-    ! populate fuse work structure (diff path only)
-    if (diff_mode == differentiable) call get_bundle(work)
+    ! initialize the snow fluxes for the elevation bands
+    work%snow%sbands(:)%var%SNOWACCMLTN = 0._wp
+    work%snow%sbands(:)%var%SNOWMELT    = 0._wp
 
-    ! -------------------------
-    ! snow module
-    ! -------------------------
-    select case(SMODL%iSNOWM)
+    ! initialize derivatives in the adjoint model
+    work%adj%df_dS(:)   = work%step%flux
+    work%adj%df_dPar(:) = work%step%flux
 
-      case(iopt_temp_index)
+    ! -----------------------------------------------------------------------------------
+    ! ----- run -------------------------------------------------------------------------
+    ! -----------------------------------------------------------------------------------
 
-        Z_FORCING      = domain%z_forcing (iSpat1,iSpat2)
-        MBANDS(:)%info = domain%bands_info(iSpat1,iSpat2,:)
-        MBANDS(:)%var  = domain%bands_var (iSpat1,iSpat2,:,sub_idx)
+    select case (diff_mode)
 
-        if (diff_mode == differentiable) then
-          work%snow%z_forcing               = Z_FORCING
-          work%snow%sbands(:)%info          = MBANDS(:)%info
-          work%snow%sbands(:)%var%bands_var = MBANDS(:)%var
-        end if
+      case (original)
+        call physics_orig(work,                     &
+                          dt_sub, dt_full,          &
+                          sub_idx, iSpat1, iSpat2,  &
+                          ierr, cmessage)
 
-        select case(diff_mode)
-          case(original)
-            call UPDATE_SWE(DELTIM)
-          case(differentiable)
-            call UPDATE_SWE_DIFF(work, DELTIM)
-          case default
-            ierr=1; message='advance_one_cell: cannot identify diff_mode (snow)'; return
-        end select
-
-      case(iopt_no_snowmod)
-        call QRAINERROR()
+      case (differentiable)
+        call physics_diff(work, dt_full,            &
+                          sub_idx, iSpat1, iSpat2,  &
+                          ierr, cmessage)
 
       case default
-        ierr=1; message='advance_one_cell: unknown SMODL%iSNOWM option'; return
+        ierr     = 10
+        cmessage = 'unknown physics mode'
 
     end select
 
-    ! -------------------------
-    ! interception
-    ! -------------------------
-    select case(diff_mode)
-
-      case(original)
-        M_FLUX%PIN0 = M_FLUX%EFF_PPT
-        call UPDATE_INTERCEPTION(DELTIM, ierr, cmessage)
-        if (ierr /= 0) then; message = trim(message)//trim(cmessage); return; end if
-
-      case(differentiable)
-        if (SMODL%iINTRC /= iopt_no_intrcep) then
-          message = 'interception not yet implemented for differentiable mode'
-          ierr = 1; return
-        end if
-
-      case default
-        message = 'cannot identify diff_mode (interception)'
-        ierr = 1; return
-
-    end select
-    ! -------------------------
-    ! soil physics
-    ! -------------------------
-    select case(diff_mode)
-
-      case(original)
-        call ODE_INT(FUSE_SOLVE, work%num%x0, work%num%x1, dt_sub, dt_full, ierr, cmessage)
-        if (ierr /= 0) then; message=trim(message)//trim(cmessage); return; end if
-
-      case(differentiable)
-        call implicit_solve(work, work%num%x0, work%num%x1, nState, ierr, cmessage)
-        if (ierr /= 0) then; message=trim(message)//trim(cmessage); return; end if
-        W_FLUX = work%step%flux
-
-      case default
-         message=trim(message)//'cannot identify diff_mode (soil)'
-         ierr=1; return
-
-    end select
-
-    ! routing
-    call Q_OVERLAND()
-    if (MROUTE%Q_ROUTED < 0._wp) then
-      message=trim(message)//'Q_ROUTED is less than zero'
-      ierr=1; return
-    end if
-    if (MROUTE%Q_ROUTED > 1000._wp) then
-      message=trim(message)//'Q_ROUTED is enormous'
-      ierr=1; return
+    if (ierr /= 0) then
+      message = trim(message)//trim(cmessage)
+      return
     end if
 
-    ! write back to 3D buffers
-    call XTRY_2_STR(work%num%x1, FSTATE)
-    domain%state(iSpat1,iSpat2,sub_idx+1) = FSTATE
-    domain%flux (iSpat1,iSpat2,sub_idx)   = W_FLUX
-    domain%route(iSpat1,iSpat2,sub_idx)   = MROUTE
+    ! -----------------------------------------------------------------------------------
+    ! ----- routing ---------------------------------------------------------------------
+    ! -----------------------------------------------------------------------------------
+   
+    ! hillslope routing
+    call Q_OVERLAND(work%par%param_derive, & ! params
+                    work%step%flux,        & ! land fluxes
+                    work%route%future,     & ! rolling routing convolution queue
+                    work%step%route,       & ! routing fluxes
+                    ierr, cmessage)
+    if (ierr /= 0) then; message = trim(message)//trim(cmessage); return; end if
 
+    call check_routing(work%step%route%q_routed, ierr, cmessage)
+    if (ierr /= 0) then; message = trim(message)//trim(cmessage); return; end if
+
+    ! -----------------------------------------------------------------------------------
+    ! ----- finalize ---------------------------------------------------------------------
+    ! -----------------------------------------------------------------------------------
+    
+    ! convert to data structures
+    call XTRY_2_STR(work%num%x1, work%step%state1)
+
+    ! write back to 3D data structures
+    domain%state(iSpat1,iSpat2,sub_idx+1) = work%step%state1
+    domain%flux (iSpat1,iSpat2,sub_idx)   = work%step%flux
+    domain%route(iSpat1,iSpat2,sub_idx)   = work%step%route
+
+    ! save canonical snow state
     if (SMODL%iSNOWM == iopt_temp_index) then
 
-      if (diff_mode == differentiable) then
-        Z_FORCING      = work%snow%z_forcing
-        MBANDS(:)%info = work%snow%sbands(:)%info
-        MBANDS(:)%var  = work%snow%sbands(:)%var%bands_var
-      end if
+      domain%state(iSpat1,iSpat2,sub_idx+1)%SWE_TOT = sum(work%snow%sbands(:)%var%SWE * &
+                                                          work%snow%sbands(:)%info%AF)
 
-      domain%state(iSpat1,iSpat2,sub_idx+1)%SWE_TOT = sum(MBANDS(:)%var%SWE * MBANDS(:)%info%AF)
-      domain%bands_var(iSpat1,iSpat2,:,sub_idx+1)   = MBANDS(:)%var
+      domain%bands_var(iSpat1,iSpat2,:,sub_idx+1)   = work%snow%sbands(:)%var%bands_var
 
     end if
 
     ! stats
     call COMP_STATS(work)
 
+  ! -------------------------------------------------------------------------------------
+  ! -------------------------------------------------------------------------------------
+  
+  ! outside mask: NA fill
+  
   else
-    ! outside mask: NA fill
-    call SET_STATE(NA_VALUE_SP)
-    domain%state(iSpat1,iSpat2,sub_idx) = FSTATE
+    
+    call SET_STATE (NA_VALUE_SP, domain%state(iSpat1,iSpat2,sub_idx+1), &
+                                 domain%bands_var(iSpat1,iSpat2,:,sub_idx+1) )
 
-    call SET_FLUXES(NA_VALUE_SP)
-    domain%flux(iSpat1,iSpat2,sub_idx) = W_FLUX
+    call SET_FLUXES(NA_VALUE_SP, domain%flux(iSpat1,iSpat2,sub_idx),    &
+                                 domain%bands_var(iSpat1,iSpat2,:,sub_idx+1) )
 
-    call SET_ROUTE(NA_VALUE_SP)
-    domain%route(iSpat1,iSpat2,sub_idx) = MROUTE
+    call SET_ROUTE (NA_VALUE_SP, domain%route(iSpat1,iSpat2,sub_idx) )
+  
   end if
+
+  ! -------------------------------------------------------------------------------------
+  ! -------------------------------------------------------------------------------------
+  ! -------------------------------------------------------------------------------------
+  ! -------------------------------------------------------------------------------------
+
+  contains
+
+    ! -----------------------------------------------------------------------------------
+    ! -----------------------------------------------------------------------------------
+    
+    subroutine check_force(ppt, temp, ierr, message)
+    
+    real(wp)               , intent(in)    :: ppt
+    real(wp)               , intent(in)    :: temp
+      
+    integer(i4b)           , intent(out)   :: ierr
+    character(*)           , intent(out)   :: message
+
+    ierr    = 0
+    message = "check_force/"
+
+    ! forcing sanity checks
+    if (ppt < 0.0_wp) then
+      ierr=1; message='Negative precipitation in input file'; return
+    end if
+
+    if (ppt > 5000.0_wp) then
+      ierr=1; message='Precipitation greater than 5000 in input file'; return
+    end if
+
+    if (ppt < 0.0_wp) then
+      ierr=1; message='Negative PET in input file'; return
+    end if
+
+    if (ppt > 100.0_wp) then
+      ierr=1; message='PET greater than 100 in input file'; return
+    end if
+
+    if (temp < -100.0_wp) then
+      ierr=1; message='Temperature lower than -100 in input file'; return
+    end if
+
+    if (temp > 100.0_wp) then
+      ierr=1; message='Temperature greater than 100 in input file'; return
+    end if
+
+    end  subroutine check_force
+
+    ! -----------------------------------------------------------------------------------
+    ! -----------------------------------------------------------------------------------
+   
+    subroutine check_routing(q_routed, ierr, message) 
+    
+    real(wp)               , intent(in)    :: q_routed
+      
+    integer(i4b)           , intent(out)   :: ierr
+    character(*)           , intent(out)   :: message
+
+    ierr    = 0
+    message = "check_force/"
+    ierr    = 0
+    message = "check_routing/"
+
+    ! routing sanity checks
+
+    if (q_routed < 0._wp) then
+      message=trim(message)//'Q_ROUTED is less than zero'
+      ierr=1; return
+    end if
+
+    if (q_routed > 1000._wp) then
+      message=trim(message)//'Q_ROUTED is enormous'
+      ierr=1; return
+    end if
+
+    end subroutine check_routing
+
+    ! -----------------------------------------------------------------------------------
+    ! -----------------------------------------------------------------------------------
 
   end subroutine advance_one_cell
 

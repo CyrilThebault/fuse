@@ -24,18 +24,19 @@ contains
   !---------------------------------------------------------------------
   subroutine put_parset(parset, parnames, parStruct, ierr, message)
 
+    USE multiparam, only: MPARAM, DPARAM
+
     implicit none
 
     real(wp),         intent(in)    :: parset(:)
     type(par_id),     intent(in)    :: parnames(:)
     type(fuse_param), intent(inout) :: parStruct
     
-    integer(i4b),      intent(out)  :: ierr
-    character(*),      intent(out)  :: message
+    integer(i4b),     intent(out)   :: ierr
+    character(*),     intent(out)   :: message
 
     integer(i4b)                    :: ipar
     character(len=256)              :: cmessage         ! error message of downwind routine
-
 
     ierr=0
     message='put_parset/'
@@ -47,11 +48,9 @@ contains
 
     do ipar = 1, size(parset)
 
-      call par_insert(               &
-          parset(ipar),              & 
-          parnames(ipar)%parname,    &
-          parStruct,                 &
-          ierr, cmessage)
+      call par_insert(parset(ipar),                 & 
+                      trim(parnames(ipar)%parname), &
+                      parStruct, ierr, cmessage)
 
       if(ierr/=0)then
         message=trim(message)//trim(cmessage)
@@ -59,6 +58,11 @@ contains
       endif
 
     end do
+
+    ! copy parameters to legacy structures
+    MPARAM = parStruct%param_adjust
+    DPARAM = parStruct%param_derive
+
   end subroutine put_parset
 
   !---------------------------------------------------------------------
