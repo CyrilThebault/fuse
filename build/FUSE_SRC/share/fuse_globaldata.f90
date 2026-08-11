@@ -25,6 +25,9 @@ MODULE fuse_globaldata
  logical(lgt), save      :: isPrint=.true.
  logical(lgt), save      :: isDebug=.false.
 
+ ! flag to run mizuRoute
+ logical(lgt), save      :: do_mizuRoute=.false.
+
  ! indices of forcing variables in vectors
  integer(i4b), parameter :: NVAR_HYDROMET=4
  integer(i4b), parameter :: iPRECIP=1, iTEMP=2, iPET=3, iQOBS=4

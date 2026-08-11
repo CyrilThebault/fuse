@@ -26,7 +26,9 @@ USE public_var, ONLY: charMissing
 USE public_var, ONLY: integerMissing
 USE public_var, ONLY: realMissing
 
-! modules
+! FUSE global variables
+USE fuse_globaldata, only: isPrint
+USE fuse_globaldata, only: do_mizuRoute
 
 implicit none
 
@@ -62,7 +64,6 @@ CONTAINS
   use read_param_module,   only: read_param           ! read the routing parameters
   use read_remap,          only: get_remap_data       ! read remap data
 
-
   implicit none
 
   type(fuse_info),   intent(in)    :: info
@@ -75,6 +76,15 @@ CONTAINS
 
   ierr = 0
   message = 'init_mizuroute_domain/'
+
+  ! set flag to run mizuRoute
+  do_mizuRoute = allocated(info%ntopo%hfabric_file)
+
+  ! early return (not running mizuRoute)
+  if ( .not. do_mizuRoute ) then
+    if (isPrint) print*, 'mizuRoute hydrofabric file not defined: running lumped simulations'
+    return
+  endif
 
   !---------------------------------------------------------------------
   ! Read the mizuRoute namelist
