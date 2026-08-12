@@ -455,7 +455,10 @@ MODULE fuse_evaluate_module
     ! extract forcing for this grid cell and time step
     work%step%force = domain%force(iSpat1,iSpat2,sub_idx)
 
-    call check_force(work%step%force%ppt, work%step%force%temp, ierr, cmessage)
+    call check_force(work%step%force%ppt,   &
+                     work%step%force%temp,  &
+                     work%step%force%pet,   &
+                     ierr, cmessage)
     if (ierr /= 0) then; message = trim(message)//trim(cmessage); return; end if
 
     ! extract model states for this grid cell and time step
@@ -585,10 +588,11 @@ MODULE fuse_evaluate_module
     ! -----------------------------------------------------------------------------------
     ! -----------------------------------------------------------------------------------
     
-    subroutine check_force(ppt, temp, ierr, message)
+    subroutine check_force(ppt, temp, pet, ierr, message)
     
     real(wp)               , intent(in)    :: ppt
     real(wp)               , intent(in)    :: temp
+    real(wp)               , intent(in)    :: pet
       
     integer(i4b)           , intent(out)   :: ierr
     character(*)           , intent(out)   :: message
@@ -605,11 +609,11 @@ MODULE fuse_evaluate_module
       ierr=1; message='Precipitation greater than 5000 in input file'; return
     end if
 
-    if (ppt < 0.0_wp) then
+    if (pet < 0.0_wp) then
       ierr=1; message='Negative PET in input file'; return
     end if
 
-    if (ppt > 100.0_wp) then
+    if (pet > 100.0_wp) then
       ierr=1; message='PET greater than 100 in input file'; return
     end if
 
