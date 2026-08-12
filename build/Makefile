@@ -185,6 +185,7 @@ MIZU_LIB += $(MIZU_RMAP)
 # structures, and perform network routing.
 MIZU_RUN =
 MIZU_RUN += $(FUSE_SOURCE_DIR)/mizuRoute/init_mizuRoute.f90
+MIZU_RUN += $(FUSE_SOURCE_DIR)/mizuRoute/network_routing.f90
 
 #========================================================================
 # Assemble all of the FUSE sub-routines

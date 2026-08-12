@@ -143,8 +143,7 @@ contains
   endif  ! (ndims=3)
 
   ! define grid
-  ! TODO: includes point list of catchments, but logic not implemented yet
-  grid_flag = nx_global > 1 
+  grid_flag = ndims == 3 
 
   ! set the number of input variables (3 = ppt, temp, pet; 4 = + obsq)
   nInput = merge(3,4,grid_flag)

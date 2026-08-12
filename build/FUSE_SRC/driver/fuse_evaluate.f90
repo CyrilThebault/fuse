@@ -6,11 +6,15 @@ MODULE fuse_evaluate_module
   use work_types, only: fuse_work
   use domain_types, only: domain_data
 
+  use fuse_globaldata, only: isPrint
+  use fuse_globaldata, only: do_mizuRoute
+
   IMPLICIT NONE
 
   CONTAINS
   
-    SUBROUTINE fuse_evaluate(XPAR, info, work, domain, OUTPUT_FLAG, METRIC_VAL)
+    SUBROUTINE fuse_evaluate(XPAR, info, work, domain, OUTPUT_FLAG, METRIC_VAL, &
+                             ierr, message)
 
     ! ---------------------------------------------------------------------------------------
     ! Creator:
@@ -45,27 +49,30 @@ MODULE fuse_evaluate_module
     LOGICAL(LGT)          , intent(in)     :: OUTPUT_FLAG    ! .TRUE. if desire time series output
 
     ! output
-    REAL(WP),INTENT(OUT)                   :: METRIC_VAL     ! metric 
+    REAL(WP)              , INTENT(OUT)    :: METRIC_VAL     ! metric 
 
     ! error control
-    integer(i4b)                           :: err, ierr
-    character(len=1024)                    :: message
+    integer(i4b)          , intent(out)    :: ierr
+    character(*)          , intent(out)    :: message
 
     ! timing
     real(wp)                               :: t1, t2
+    
+    ! downwind error routine
+    character(len=1024)                    :: cmessage
 
     ! ---------------------------------------------------------------------------------------
 
     ! populate parameter structures and initialize states
     call initialize_run(info, XPAR, work, domain, ierr, message)
-    if (ierr /= 0) stop trim(message)
+    if (ierr /= 0) then; message = trim(message)//trim(cmessage); return; end if
     
     ! initialize timing
     CALL CPU_TIME(T1)
 
     ! run fuse for the entire time series
     call run_time_loop(info, work, domain, OUTPUT_FLAG, ierr, message)
-    if (ierr /= 0) stop trim(message)
+    if (ierr /= 0) then; message = trim(message)//trim(cmessage); return; end if
 
     ! get timing information
     CALL CPU_TIME(T2)
@@ -207,12 +214,15 @@ MODULE fuse_evaluate_module
   subroutine run_time_loop(info, work, domain, output_flag, ierr, message)
 
   use fuse_globaldata, only: isPrint
-  use multiforce, only: timDat  ! NOTE: used in legacy codes
-  use multiforce, only: nspat1, nspat2, DELTIM, sim_beg, sim_end, numtim_sub
-  use time_utils,        only: caldatss
+  use multiforce,      only: timDat  ! NOTE: used in legacy codes
+  use multiforce,      only: nspat1, nspat2, DELTIM, sim_beg, sim_end, numtim_sub
+  
+  use time_utils,          only: caldatss
   use get_hydromet_module, only: get_met_data
   use get_hydromet_module, only: get_qobs_data
   use put_output_module,   only: put_output
+
+  use network_routing_module, only: network_routing
 
   implicit none
 
@@ -313,18 +323,43 @@ MODULE fuse_evaluate_module
                                              work%step%time%ih, work%step%time%imin, work%step%time%dsec)
       timDat = work%step%time ! NOTE: used in the legacy data structures
 
+      ! ---------------------------------------------------------------------------------------------------------------
+      ! ----- land model ----------------------------------------------------------------------------------------------
+      ! ---------------------------------------------------------------------------------------------------------------
+
       ! loop through grid points and run the model for one time step
       DO iSpat2=1,nSpat2
         DO iSpat1=1,nSpat1
   
-          ! run fuse for one grid cell
-          call advance_one_cell(work, domain, sub_idx, iSpat1, iSpat2, dt_sub, dt_full, ierr, message)
-          if (ierr /= 0)  stop trim(message)
+          ! run fuse for one grid cell or HRU
+          call advance_one_cell(info, work, domain,      &
+                                sub_idx, iSpat1, iSpat2, &
+                                dt_sub, dt_full,         &
+                                ierr, cmessage)
+          if (ierr /= 0) then; message = trim(message)//trim(cmessage); return; end if
   
           !if(sub_idx > 100) stop "check"
 
         END DO  ! (looping thru 2nd spatial dimension)
       END DO  ! (looping thru 1st spatial dimension)
+
+      ! ---------------------------------------------------------------------------------------------------------------
+      ! ----- network routing model -----------------------------------------------------------------------------------
+      ! ---------------------------------------------------------------------------------------------------------------
+
+      ! route flow through the river network
+      call network_routing(domain%river_network%runoff,   &  ! runoff data (FUSE simulations)
+                           domain%remap%routing,          &  ! routing map (grid->HRU or HRU->HRU) 
+                           domain%river_network%topology, &  ! network topology
+                           ierr, cmessage)                   ! error control
+      
+      if (ierr /= 0) then
+        message = trim(message)//trim(cmessage)
+        return
+      endif
+      
+      ! ---------------------------------------------------------------------------------------------------------------
+      ! ---------------------------------------------------------------------------------------------------------------
 
     end do  ! looping through subperiod
 
@@ -368,7 +403,10 @@ MODULE fuse_evaluate_module
   ! ----- private subroutine advance_one_cell: run fuse for one grid cell ---------------------------------------------
   ! -------------------------------------------------------------------------------------------------------------------
 
-  subroutine advance_one_cell(work, domain, sub_idx, iSpat1, iSpat2, dt_sub, dt_full, ierr, message)
+  subroutine advance_one_cell(info, work, domain,      &
+                              sub_idx, iSpat1, iSpat2, &
+                              dt_sub, dt_full,         &
+                              ierr, message)
 
   ! switches / options
   use fuse_globaldata,   only: NA_VALUE_SP
@@ -393,6 +431,7 @@ MODULE fuse_evaluate_module
 
   implicit none
 
+  type(fuse_info)       , intent(in)    :: info           ! info structures that include "everything"
   type(fuse_work)       , intent(inout) :: work           ! work structures that depend on npar/nState
   type(domain_data)     , intent(inout) :: domain         ! domain structures that hold 3-d data 
   integer(i4b)          , intent(in)    :: sub_idx, iSpat1, iSpat2
@@ -494,6 +533,17 @@ MODULE fuse_evaluate_module
     domain%state(iSpat1,iSpat2,sub_idx+1) = work%step%state1
     domain%flux (iSpat1,iSpat2,sub_idx)   = work%step%flux
     domain%route(iSpat1,iSpat2,sub_idx)   = work%step%route
+
+    ! write routing to the mizuRoute data structures
+    if ( do_mizuRoute ) then
+
+      if ( .not. info%space%grid_flag ) then
+        domain%river_network%runoff%sim(iSpat2) = work%step%route%q_routed
+      else
+        domain%river_network%runoff%sim2d(ispat1,iSpat2) = work%step%route%q_routed
+      endif
+
+    endif
 
     ! save canonical snow state
     if (SMODL%iSNOWM == iopt_temp_index) then

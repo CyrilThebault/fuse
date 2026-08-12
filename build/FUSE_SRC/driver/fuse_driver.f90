@@ -144,8 +144,8 @@ select case(trim(cli_opts%runmode))
     endif
 
     ! run FUSE
-    CALL FUSE_EVALUATE(APAR, info, work, domain, OUTPUT_FLAG, METRIC_VAL)
-
+    CALL FUSE_EVALUATE(APAR, info, work, domain, OUTPUT_FLAG, METRIC_VAL, err, message)
+    if(err/=0) stop trim(message)
 
   ! ----- SCE calibration run -----------------------------------------------------------
 
