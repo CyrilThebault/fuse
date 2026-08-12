@@ -64,7 +64,9 @@ SCE_PAR = SCE_PAR_MSP
 
 OUTPUT_FLAG = .FALSE.  ! do not produce runs.nc files during calibration
 
-CALL FUSE_evaluate(SCE_PAR, ctx%info, ctx%work, ctx%domain, OUTPUT_FLAG, METRIC_VAL)
+CALL FUSE_evaluate(SCE_PAR, ctx%info, ctx%work, ctx%domain, OUTPUT_FLAG, METRIC_VAL, &
+                   ierr, message)
+if (ierr/=0) stop trim(message)
 
 ! save objective function value: SCE is a minimization algorithm
 select case(metric)

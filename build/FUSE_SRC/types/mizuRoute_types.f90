@@ -39,7 +39,7 @@ module mizuroute_types
   type :: river_network_data
 
     type(mizuroute_topology) :: topology  ! static network topology and attributes
-    type(mizu_runoff)        :: runoff    ! FUSE runoff in mizuRouts structures
+    type(mizu_runoff)        :: runoff    ! FUSE runoff in mizuRoute structures
 
   end type river_network_data
 

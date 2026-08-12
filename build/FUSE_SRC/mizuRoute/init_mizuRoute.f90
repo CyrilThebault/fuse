@@ -43,8 +43,8 @@ CONTAINS
  ! This routine:
  !   (1) initializes the mizuRoute metadata;
  !   (2) configures the FUSE–mizuRoute interface;
- !   (3) reads the spatial remapping information;
- !   (4) constructs the river-network topology; and
+ !   (4) constructs the river-network topology;
+ !   (3) reads the spatial remapping information; and
  !   (5) allocates the routing input data structures.
  !-----------------------------------------------------------------------
  subroutine init_mizuroute_domain(info, domain, ierr, message)
@@ -64,6 +64,8 @@ CONTAINS
   use read_param_module,   only: read_param           ! read the routing parameters
   use read_remap,          only: get_remap_data       ! read remap data
 
+  use nr_utils,            only: match_index
+
   implicit none
 
   type(fuse_info),   intent(in)    :: info
@@ -73,6 +75,9 @@ CONTAINS
 
   integer(i4b)                     :: nSpace(1:2) = integerMissing
   character(len=strLen)            :: cmessage
+
+  integer(i4b)                     :: iHRU
+  integer(i4b), allocatable        :: basinID(:)
 
   ierr = 0
   message = 'init_mizuroute_domain/'
@@ -85,6 +90,10 @@ CONTAINS
     if (isPrint) print*, 'mizuRoute hydrofabric file not defined: running lumped simulations'
     return
   endif
+
+  ! shortcuts to data structures
+  associate(topology => domain%river_network%topology, &
+            remap    => domain%remap%routing)
 
   !---------------------------------------------------------------------
   ! Read the mizuRoute namelist
@@ -113,26 +122,6 @@ CONTAINS
   call populate_mizu_modules(info)
 
   !---------------------------------------------------------------------
-  ! Read spatial remapping information
-  !---------------------------------------------------------------------
-
-  ! This defines the mapping between the FUSE hydrologic spatial units and the routing HRUs.
-  
-  if ( allocated(info%remap%remap_file) )then
-    
-    call get_remap_data(trim(ancil_dir)//trim(info%remap%remap_file), & ! input: file name
-                        nSpace,                                       & ! input: vector of spatial dimensions
-                        domain%remap%routing,                         & ! output: data structure to remap data from a polygon
-                        ierr, cmessage)                                 ! output: error control
-    
-    if(ierr/=0)then
-      message=trim(message)//trim(cmessage)
-      return
-    endif
-  
-  endif  ! (if remapping file exists)
-
-  !---------------------------------------------------------------------
   ! Construct the river network topology
   !---------------------------------------------------------------------
 
@@ -150,13 +139,13 @@ CONTAINS
   ! It is the only substantial mizuRoute routine duplicated in the FUSE compatibility layer; all other
   ! mizuRoute functionality is called from the original mizuRoute modules and subroutines.
 
-  call init_ntopo(domain%river_network%topology%n_hru,           &
-                  domain%river_network%topology%n_seg,           &
-                  domain%river_network%topology%hru,             &
-                  domain%river_network%topology%seg,             &
-                  domain%river_network%topology%hru2seg,         &
-                  domain%river_network%topology%ntopo,           &
-                  domain%river_network%topology%pfaf,            &
+  call init_ntopo(topology%n_hru,           &
+                  topology%n_seg,           &
+                  topology%hru,             &
+                  topology%seg,             &
+                  topology%hru2seg,         &
+                  topology%ntopo,           &
+                  topology%pfaf,            &
                   ierr, cmessage)
 
   if (ierr /= 0) then
@@ -164,7 +153,33 @@ CONTAINS
     return
   end if
 
-  domain%river_network%topology%is_initialized = .true.
+  topology%is_initialized = .true.
+
+  !---------------------------------------------------------------------
+  ! Read spatial remapping information
+  !---------------------------------------------------------------------
+
+  ! This defines the mapping between the FUSE hydrologic spatial units and the routing HRUs.
+  
+  if ( allocated(info%remap%remap_file) )then
+   
+    ! read runoff mapping file 
+    call get_remap_data(trim(ancil_dir)//trim(info%remap%remap_file), & ! input: file name
+                        nSpace,                                       & ! input: vector of spatial dimensions
+                        remap,                                        & ! output: data structure to remap data from a polygon
+                        ierr, cmessage)                                 ! output: error control
+    if(ierr/=0)then; message=trim(message)//trim(cmessage); return; endif
+
+    ! extract the vector of HRU IDs from the data structure
+    basinID = [ (topology%hru2seg(iHRU)%var(ixHRU2SEG%hruId)%dat(1), iHRU=1,size(topology%hru2seg)) ]
+
+    ! get indices of the HRU ids in the mapping file in the routing layer
+    remap%hru_ix = match_index(basinID, remap%hru_id, ierr, cmessage)
+    if(ierr/=0)then; message=trim(message)//trim(cmessage); return; endif
+
+  endif  ! (if remapping file exists)
+
+  end associate
 
   !---------------------------------------------------------------------
   ! Initialize routing input data structures
@@ -175,10 +190,17 @@ CONTAINS
 
   runoff%nSpace    = nSpace
   runoff%fillvalue = realMissing
+  
+  ! 1-D HRU runoff
+  if ( .not. info%space%grid_flag ) then
+    message=trim(message)//'HRU spatial config not yet implemented'
+    ierr=10; return
 
-  ! allocate space for 2-d gridded runoff 
-  allocate(runoff%sim2d(nSpace(1), nSpace(2)), stat=ierr)
-  if(ierr/=0)then; message=trim(message)//'unable to allocate gridded runoff input'; return; endif
+  ! 2-D gridded runoff
+  else
+    allocate(runoff%sim2d(nSpace(1), nSpace(2)), stat=ierr)
+    if(ierr/=0)then; message=trim(message)//'unable to allocate gridded runoff input'; return; endif
+  endif
 
   ! allocate space for HRU variables
   allocate(runoff%basinRunoff(n_hru), stat=ierr)
