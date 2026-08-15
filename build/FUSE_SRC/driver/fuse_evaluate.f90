@@ -348,10 +348,9 @@ MODULE fuse_evaluate_module
       ! ---------------------------------------------------------------------------------------------------------------
 
       ! route flow through the river network
-      call network_routing(domain%river_network%runoff,   &  ! runoff data (FUSE simulations)
-                           domain%remap%routing,          &  ! routing map (grid->HRU or HRU->HRU) 
-                           domain%river_network%topology, &  ! network topology
-                           ierr, cmessage)                   ! error control
+      call network_routing(domain%river_network,   &  ! network data: network topology and runoff data (FUSE simulations)
+                           domain%remap%routing,   &  ! routing map (grid->HRU or HRU->HRU) 
+                           ierr, cmessage)            ! error control
       
       if (ierr /= 0) then
         message = trim(message)//trim(cmessage)

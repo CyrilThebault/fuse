@@ -25,7 +25,8 @@ MODULE fuse_globaldata
  logical(lgt), save      :: isPrint=.true.
  logical(lgt), save      :: isDebug=.false.
 
- ! flag to run mizuRoute
+ ! runtime options inferred from available control files
+ logical(lgt), save      :: do_remapping=.false.
  logical(lgt), save      :: do_mizuRoute=.false.
 
  ! indices of forcing variables in vectors

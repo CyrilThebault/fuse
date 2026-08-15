@@ -1,12 +1,18 @@
 module mizuroute_types
 
-  use nrtype, only: i4b, lgt
+  use nrtype, only: wp, i4b, lgt
 
   use dataTypes, only: mizu_var_dlength => var_dlength
   use dataTypes, only: mizu_var_ilength => var_ilength
   use dataTypes, only: mizu_var_clength => var_clength
   use dataTypes, only: mizu_remap       => remap
   use dataTypes, only: mizu_runoff      => runoff
+
+  use dataTypes, only: mizu_RCHPRP      => RCHPRP
+  use dataTypes, only: mizu_RCHTOPO     => RCHTOPO
+
+  use dataTypes, ONLY: mizu_STRFLX      => STRFLX
+  use dataTypes, ONLY: mizu_STRSTA      => STRSTA
 
   implicit none
   private
@@ -38,8 +44,19 @@ module mizuroute_types
   !---------------------------------------------------------------------
   type :: river_network_data
 
-    type(mizuroute_topology) :: topology  ! static network topology and attributes
-    type(mizu_runoff)        :: runoff    ! FUSE runoff in mizuRoute structures
+    type(mizuroute_topology)        :: topology  ! static network topology and attributes
+    type(mizu_runoff)               :: runoff    ! FUSE runoff in mizuRoute structures
+
+    ! mizuRoute routing: reach properties and network topology
+    type(mizu_RCHPRP),  allocatable :: param(:)  ! reach properties
+    type(mizu_RCHTOPO), allocatable :: ntopo(:)  ! network topology
+
+    ! mizuRoute routing state and fluxes
+    type(mizu_STRSTA),  allocatable :: state(:)  ! model states
+    type(mizu_STRFLX),  allocatable :: flux(:)   ! model fluxes
+
+    ! routing workspace
+    real(wp),           allocatable :: reach_inflow(:)  ! lateral inflow to each reach [m3/s]
 
   end type river_network_data
 

@@ -1,10 +1,19 @@
 MODULE init_mizuRoute
 
-! data types
 USE nrtype,    ONLY: i4b,dp,lgt,strLen
+
+! fuse data types
+USE info_types,   ONLY: fuse_info
+USE domain_types, ONLY: domain_data
+
+! mizuRoute data types
 USE dataTypes, ONLY: var_ilength     ! integer type:          var(:)%dat
 USE dataTypes, ONLY: var_clength     ! integer type:          var(:)%dat
 USE dataTypes, ONLY: var_dlength     ! double precision type: var(:)%dat, or dat
+
+! combined fuse+mizuRoute
+USE mizuroute_types, ONLY: river_network_data
+USE mizuroute_types, ONLY: spatial_remap_data
 
 ! metadata on data structures
 USE globalData, ONLY: meta_HRU       ! HRU properties
@@ -26,8 +35,18 @@ USE public_var, ONLY: charMissing
 USE public_var, ONLY: integerMissing
 USE public_var, ONLY: realMissing
 
+! Named variables for routing methods
+USE public_var, ONLY: nRouteMethods         ! 6: number of routing methods available
+USE public_var, ONLY: accumRunoff           ! 0: runoff accumulation over all the upstream reaches
+USE public_var, ONLY: impulseResponseFunc   ! 1: impulse response function
+USE public_var, ONLY: kinematicWaveTracking ! 2: Lagrangian kinematic wave
+USE public_var, ONLY: kinematicWave         ! 3: kinematic wave
+USE public_var, ONLY: muskingumCunge        ! 4: muskingum-cunge
+USE public_var, ONLY: diffusiveWave         ! 5: diffusiveWave
+
 ! FUSE global variables
 USE fuse_globaldata, only: isPrint
+USE fuse_globaldata, only: do_remapping
 USE fuse_globaldata, only: do_mizuRoute
 
 implicit none
@@ -45,23 +64,21 @@ CONTAINS
  !   (2) configures the FUSE–mizuRoute interface;
  !   (4) constructs the river-network topology;
  !   (3) reads the spatial remapping information; and
- !   (5) allocates the routing input data structures.
+ !   (5) allocates the mizuRoute routing data structures.
  !-----------------------------------------------------------------------
  subroutine init_mizuroute_domain(info, domain, ierr, message)
-
-  ! data types
-  use info_types, only: fuse_info
-  use domain_types, only: domain_data
 
   ! shared data
   use public_var, only: ancil_dir
   use public_var, only: idSegOut
   use public_var, only: ntopAugmentMode
+  use globalData, only: length_conv,time_conv
   use globalData, only: onRoute
 
   ! external subroutines
   use popMetadat_module,   only: popMetadat           ! populate metadata
   use read_param_module,   only: read_param           ! read the routing parameters
+  use process_ntopo,       only: put_data_struct      ! copy data to the new structures 
   use read_remap,          only: get_remap_data       ! read remap data
 
   use nr_utils,            only: match_index
@@ -77,23 +94,22 @@ CONTAINS
   character(len=strLen)            :: cmessage
 
   integer(i4b)                     :: iHRU
+  integer(i4b)                     :: iSeg
+  integer(i4b)                     :: idxRoute
   integer(i4b), allocatable        :: basinID(:)
 
   ierr = 0
   message = 'init_mizuroute_domain/'
 
-  ! set flag to run mizuRoute
-  do_mizuRoute = allocated(info%ntopo%hfabric_file)
-
-  ! early return (not running mizuRoute)
+  ! ---- early return (not running mizuRoute) ----
   if ( .not. do_mizuRoute ) then
     if (isPrint) print*, 'mizuRoute hydrofabric file not defined: running lumped simulations'
     return
   endif
 
-  ! shortcuts to data structures
-  associate(topology => domain%river_network%topology, &
-            remap    => domain%remap%routing)
+  ! ---- initialize unit conversions ----
+  length_conv = 1.0e-3_dp    ! FUSE runoff length: mm -> m
+  time_conv   = 86400.0_dp   ! FUSE runoff time:   day -> s
 
   !---------------------------------------------------------------------
   ! Read the mizuRoute namelist
@@ -139,21 +155,26 @@ CONTAINS
   ! It is the only substantial mizuRoute routine duplicated in the FUSE compatibility layer; all other
   ! mizuRoute functionality is called from the original mizuRoute modules and subroutines.
 
-  call init_ntopo(topology%n_hru,           &
-                  topology%n_seg,           &
-                  topology%hru,             &
-                  topology%seg,             &
-                  topology%hru2seg,         &
-                  topology%ntopo,           &
-                  topology%pfaf,            &
+  call init_ntopo(domain%river_network%topology%n_hru,           &
+                  domain%river_network%topology%n_seg,           &
+                  domain%river_network%topology%hru,             &
+                  domain%river_network%topology%seg,             &
+                  domain%river_network%topology%hru2seg,         &
+                  domain%river_network%topology%ntopo,           &
+                  domain%river_network%topology%pfaf,            &
                   ierr, cmessage)
+  if(ierr/=0)then; message=trim(message)//trim(cmessage); return; endif
+  
+  ! TEMPORARY: Copy the data to the old mizuRoute data structures
+  call put_data_struct(domain%river_network%topology%n_seg,      & 
+                       domain%river_network%topology%seg,        &
+                       domain%river_network%topology%ntopo,      &
+                       domain%river_network%param,               &
+                       domain%river_network%ntopo,               &
+                       ierr, cmessage)
+  if(ierr/=0)then; message=trim(message)//trim(cmessage); return; endif
 
-  if (ierr /= 0) then
-    message = trim(message)//trim(cmessage)
-    return
-  end if
-
-  topology%is_initialized = .true.
+  domain%river_network%topology%is_initialized = .true.
 
   !---------------------------------------------------------------------
   ! Read spatial remapping information
@@ -161,52 +182,46 @@ CONTAINS
 
   ! This defines the mapping between the FUSE hydrologic spatial units and the routing HRUs.
   
-  if ( allocated(info%remap%remap_file) )then
+  if ( do_remapping ) then
    
+    ! (short-cuts)
+    associate(n_hru   => domain%river_network%topology%n_hru,   &
+              hru2seg => domain%river_network%topology%hru2seg, &
+              remap   => domain%remap%routing)
+
     ! read runoff mapping file 
     call get_remap_data(trim(ancil_dir)//trim(info%remap%remap_file), & ! input: file name
                         nSpace,                                       & ! input: vector of spatial dimensions
                         remap,                                        & ! output: data structure to remap data from a polygon
                         ierr, cmessage)                                 ! output: error control
     if(ierr/=0)then; message=trim(message)//trim(cmessage); return; endif
+    
+    basinID = [ (hru2seg(iHRU)%var(ixHRU2SEG%hruId)%dat(1), iHRU=1,n_hru) ]
 
-    ! extract the vector of HRU IDs from the data structure
-    basinID = [ (topology%hru2seg(iHRU)%var(ixHRU2SEG%hruId)%dat(1), iHRU=1,size(topology%hru2seg)) ]
-
-    ! get indices of the HRU ids in the mapping file in the routing layer
     remap%hru_ix = match_index(basinID, remap%hru_id, ierr, cmessage)
     if(ierr/=0)then; message=trim(message)//trim(cmessage); return; endif
 
+    end associate
+
   endif  ! (if remapping file exists)
 
-  end associate
-
   !---------------------------------------------------------------------
-  ! Initialize routing input data structures
+  ! Allocate mizuRoute routing structures
   !---------------------------------------------------------------------
 
-  associate(runoff => domain%river_network%runoff, &
-            n_hru  => domain%river_network%topology%n_hru)
-
-  runoff%nSpace    = nSpace
-  runoff%fillvalue = realMissing
-  
-  ! 1-D HRU runoff
-  if ( .not. info%space%grid_flag ) then
-    message=trim(message)//'HRU spatial config not yet implemented'
-    ierr=10; return
-
-  ! 2-D gridded runoff
-  else
-    allocate(runoff%sim2d(nSpace(1), nSpace(2)), stat=ierr)
-    if(ierr/=0)then; message=trim(message)//'unable to allocate gridded runoff input'; return; endif
-  endif
-
-  ! allocate space for HRU variables
-  allocate(runoff%basinRunoff(n_hru), stat=ierr)
-  if(ierr/=0)then; message=trim(message)//'unable to allocate hru runoff input'; return; endif
-
-  end associate
+  ! only enable able mizuRoute routing formulations for kinematic wave, muskingum-cunge, and diffusiveWave
+  onRoute(:) = .false.
+  onRoute(kinematicWave)  = .true.      ! 3: kinematic wave
+  onRoute(muskingumCunge) = .true.      ! 4: muskingum-cunge
+  onRoute(diffusiveWave)  = .true.      ! 5: diffusiveWave
+   
+  call allocate_mizuroute_domain(info,                                 &
+                                 domain%river_network,                 &
+                                 domain%river_network%topology%n_hru,  &
+                                 domain%river_network%topology%n_seg,  &
+                                 nSpace,                               &
+                                 ierr, cmessage)
+  if(ierr/=0)then; message=trim(message)//trim(cmessage); return; endif
 
  end subroutine init_mizuroute_domain
 
@@ -222,8 +237,6 @@ CONTAINS
  ! *********************************************************************
  subroutine populate_mizu_modules(info)
  
-  use info_types, only: fuse_info
-
   ! mizuRoute configuration expected by the unmodified source code
   !
   ! File paths/names
@@ -428,5 +441,112 @@ CONTAINS
   endif
 
  END SUBROUTINE init_ntopo
+
+ ! *********************************************************************
+ ! private subroutine: allocate space for the mizuRoute structures
+ ! *********************************************************************
+ subroutine allocate_mizuroute_domain(info, river_network, n_hru, n_seg, nSpace, &
+                                      ierr, message)
+ 
+   use globalData, only: onRoute
+   use globalData, only: nMolecule
+   
+   implicit none
+   
+   type(fuse_info),              intent(in)    :: info
+   type(river_network_data),     intent(inout) :: river_network
+   integer(i4b),                 intent(in)    :: n_hru
+   integer(i4b),                 intent(in)    :: n_seg
+   integer(i4b),                 intent(in)    :: nSpace(2)
+   integer(i4b),                 intent(out)   :: ierr
+   character(*),                 intent(out)   :: message
+   
+   character(len=strLen)                       :: cmessage
+   
+   integer(i4b)                                :: iHRU
+   integer(i4b)                                :: iSeg
+   integer(i4b)                                :: idxRoute
+  
+   ! ---- allocate space for runoff inputs ----
+   
+   river_network%runoff%nSpace    = nSpace
+   river_network%runoff%fillvalue = realMissing
+   
+   ! 1-D HRU runoff
+   if ( .not. info%space%grid_flag ) then
+     message=trim(message)//'HRU spatial config not yet implemented'
+     ierr=10; return
+   
+   ! 2-D gridded runoff
+   else
+     allocate(river_network%runoff%sim2d(nSpace(1), nSpace(2)), stat=ierr)
+     if(ierr/=0)then; message=trim(message)//'unable to allocate gridded runoff input'; return; endif
+   endif
+   
+   ! allocate space for HRU variables
+   allocate(river_network%runoff%basinRunoff(n_hru), stat=ierr)
+   if(ierr/=0)then; message=trim(message)//'unable to allocate hru runoff input'; return; endif
+   
+   ! ---- initialize network states and fluxes ----
+   
+   ! allocate space for all segments in the river network
+   allocate(river_network%flux(n_seg),  &
+            river_network%state(n_seg), & 
+            river_network%reach_inflow(n_seg), stat=ierr)
+   if(ierr/=0)then; message=trim(message)//'unable to allocate river_network flux/state'; return; endif
+   
+   ! * loop through stream segments
+   do iSeg = 1, n_seg
+   
+     ! allocate fluxes for the routing method vector in each stream segment
+     allocate(river_network%flux(iSeg)%ROUTE(0:nRouteMethods-1), stat=ierr)
+     if (ierr /= 0) then
+       write(message,'(A,I0)') trim(message)//'unable to allocate river_network%flux%ROUTE for iSeg=', iSeg
+       return
+     end if
+   
+     ! * loop through routing methods
+     do idxRoute=0,nRouteMethods-1
+     
+       if ( .not. onRoute(idxRoute) ) cycle
+   
+       ! allocate states each routing method individually
+   
+       select case(idxRoute)
+   
+         case (kinematicWave)
+           allocate(river_network%state(iSeg)%KW_ROUTE%molecule%Q(nMolecule%KW_ROUTE), &
+                    source=0._dp, stat=ierr)
+       
+         case (muskingumCunge)
+            allocate(river_network%state(iSeg)%MC_ROUTE%molecule%Q(nMolecule%MC_ROUTE), &
+                     source=0._dp, stat=ierr)
+   
+         case (diffusiveWave)
+           allocate(river_network%state(iSeg)%DW_ROUTE%molecule%Q(nMolecule%DW_ROUTE), &
+                    source=0._dp, stat=ierr)
+   
+         case default
+           message=trim(message)//'unable to identify routing method'
+           ierr=10; return
+   
+       end select
+   
+       if (ierr /= 0) then
+         write(message,'(A,I0,A,I0)') trim(message)//'unable to allocate routing state for iSeg=', &
+                                      iSeg, ', idxRoute=', idxRoute
+         return
+       endif
+   
+       ! initialize fluxes
+       river_network%flux(iSeg)%ROUTE(idxRoute)%FLOOD_VOL = 0._dp
+       river_network%flux(iSeg)%ROUTE(idxRoute)%REACH_VOL = 0._dp
+       river_network%flux(iSeg)%ROUTE(idxRoute)%REACH_Q   = 0._dp
+       river_network%flux(iSeg)%ROUTE(idxRoute)%Qerror    = 0._dp
+     
+     end do  ! * loop through routing methods
+  end do  ! * loop through stream segments
+  
+ end subroutine allocate_mizuroute_domain 
 
 END MODULE init_mizuRoute

@@ -10,6 +10,9 @@ MODULE fuse_filemanager
   use fuse_globaldata, only: NVAR_HYDROMET
   use fuse_globaldata, only: iPRECIP, iTEMP, iPET, iQOBS
 
+  use fuse_globaldata, only: do_remapping
+  use fuse_globaldata, only: do_mizuRoute
+
   implicit none
   private
 
@@ -259,6 +262,10 @@ contains
 
   tag = ""
   if(allocated(opts%tag)) tag = trim(opts%tag)
+
+  ! ---- runtime options inferred from available control files ----
+  do_remapping = allocated(info%remap%remap_file)
+  do_mizuRoute = allocated(info%ntopo%hfabric_file)
 
   ! ---- derived input filenames ----
   info%files%hydromet_file  = trim(dom_id)//trim(info%files%suffix_hydromet)
