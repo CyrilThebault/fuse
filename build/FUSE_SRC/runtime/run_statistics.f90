@@ -38,7 +38,6 @@ contains
   USE metrics                                           ! available metrics and transformations
   USE multiforce, only: NA_VALUE                        ! model forcing structure (temporally constant)
   USE multiforce, only: sim_beg, eval_beg, eval_end     ! model forcing structure (temporally constant)
-  USE multiforce, only: sim_beg                         ! model forcing structure (temporally constant)
   
   IMPLICIT NONE
 
@@ -201,7 +200,7 @@ contains
     select case(METRIC)
       case ("KGE");  work%run%stats%METRIC_VAL = work%run%stats%KGE
       case ("KGEP"); work%run%stats%METRIC_VAL = work%run%stats%KGEP
-      case ("NGE");  work%run%stats%METRIC_VAL = work%run%stats%NASH_SUTT
+      case ("NSE");  work%run%stats%METRIC_VAL = work%run%stats%NASH_SUTT
       case ("RMSE"); work%run%stats%METRIC_VAL = work%run%stats%RAW_RMSE
       case ("MAE");  work%run%stats%METRIC_VAL = work%run%stats%MAE
       case default

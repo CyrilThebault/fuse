@@ -365,6 +365,7 @@ CONTAINS
   call char2int(trim(info%mrout%methods), routeMethods, invalid_value=0)
   nRoutes = size(routeMethods)
 
+  ! indices for the vector of selected routing methods
   do iRoute = 1, nRoutes
     select case(routeMethods(iRoute))
       case (accumRunoff);           idxSUM = iRoute
@@ -374,30 +375,21 @@ CONTAINS
       case (kinematicWave);         idxKW  = iRoute
       case (diffusiveWave);         idxDW  = iRoute
       case default
-        message=trim(message)//'routOpt may include invalid digits; expect digits 1-5 in routOpt'; ierr=81; return
+        message=trim(message)//'routOpt may include invalid digits; expect digits 1-5 in routOpt'
+        ierr=81; return
     end select
   end do
 
-  ! indices in the active routing-method vector
+  ! number of computational "molecules" for the supported routing methods 
   do iRoute = 1, nRoutes
-    if (routeMethods(iRoute)==kinematicWave) then
-      nMolecule%KW_ROUTE = 20
-    else if (routeMethods(iRoute)==muskingumCunge) then
-      nMolecule%MC_ROUTE = 2
-    else if (routeMethods(iRoute)==diffusiveWave) then
-      nMolecule%DW_ROUTE = 20
-    end if
-  end do
-
-  ! the number of computational "molecules" in each reach
-  do iRoute = 1, nRoutes
-    if (routeMethods(iRoute)==kinematicWave) then
-      nMolecule%KW_ROUTE = 20
-    else if (routeMethods(iRoute)==muskingumCunge) then
-      nMolecule%MC_ROUTE = 2
-    else if (routeMethods(iRoute)==diffusiveWave) then
-      nMolecule%DW_ROUTE = 20
-    end if
+    select case ( routeMethods(iRoute) )
+      case (kinematicWave);  nMolecule%KW_ROUTE = 20
+      case (muskingumCunge); nMolecule%MC_ROUTE = 2
+      case (diffusiveWave);  nMolecule%DW_ROUTE = 20
+      case default
+        message=trim(message)//'routeMethods in FUSE restricted to (kinematicWave, muskingumCunge, diffusiveWave)'
+        ierr=20; return
+    end select
   end do
 
   ! network topology
