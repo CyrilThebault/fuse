@@ -27,7 +27,11 @@ qobs   = "runoff_obs"
 
 [output]
 model_id = "2"
-q_only   = true
+variables = [
+  "q_instnt",
+  "q_routed",
+  "q_obs"
+]
 
 [run_periods]
 date_start_sim  = "1987-01-02"

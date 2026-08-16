@@ -14,6 +14,7 @@ SUBROUTINE GET_OBJFNC(NETCDF_FILE,OF_NAME,IMOD,IPARSET,OF,XOPT)
 ! ---------------------------------------------------------------------------------------
 USE nrtype                                            ! variable types, etc.
 USE multiparam, ONLY: LPARAM, NUMPAR                  ! parameter names
+USE handle_err_module, only: handle_err               ! handle NetCDF errors
 IMPLICIT NONE
 ! input
 CHARACTER(LEN=*), INTENT(IN)           :: NETCDF_FILE ! NetCDF file name

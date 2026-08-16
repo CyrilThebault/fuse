@@ -144,6 +144,7 @@ MIZU_BASE += $(MIZU_DIR)/nr_utils.f90
 MIZU_BASE += $(MIZU_DIR)/gamma_func.f90
 MIZU_BASE += $(MIZU_DIR)/ncio_utils.f90
 MIZU_BASE += $(MIZU_DIR)/ascii_utils.f90
+MIZU_BASE += $(MIZU_DIR)/base_route.f90
 
 # Thin FUSE compatibility layer.
 #
@@ -151,7 +152,9 @@ MIZU_BASE += $(MIZU_DIR)/ascii_utils.f90
 # required by the unmodified mizuRoute source routines.
 MIZU_DATA =
 MIZU_DATA += $(FUSE_SOURCE_DIR)/types/mizuRoute_types.f90
-MIZU_DATA += $(FUSE_SOURCE_DIR)/mizuRoute/mizuRoute_data.f90
+MIZU_DATA += $(FUSE_SOURCE_DIR)/mizuRoute/water_balance_shim.f90
+MIZU_DATA += $(FUSE_SOURCE_DIR)/mizuRoute/globalData_shim.f90
+MIZU_DATA += $(FUSE_SOURCE_DIR)/mizuRoute/pio_utils_shim.f90
 
 # mizuRoute routines used to read, validate, augment, and optionally
 # write the river-network topology.
@@ -167,8 +170,20 @@ MIZU_TOPO += $(MIZU_DIR)/read_streamSeg.f90
 MIZU_TOPO += $(MIZU_DIR)/write_streamSeg.f90
 
 # mizuRoute remapping routines
+MIZU_RMAP =
 MIZU_RMAP += $(MIZU_DIR)/standalone/read_remap.f90
 MIZU_RMAP += $(MIZU_DIR)/process_remap.f90
+
+# mizuRoute routing routines
+MIZU_ROUTE =
+MIZU_ROUTE += $(MIZU_DIR)/advection_diffusion.f90
+MIZU_ROUTE += $(MIZU_DIR)/data_assimilation.f90
+MIZU_ROUTE += $(MIZU_DIR)/accum_runoff.f90
+MIZU_ROUTE += $(MIZU_DIR)/irf_route.f90
+MIZU_ROUTE += $(MIZU_DIR)/kwt_route.f90
+MIZU_ROUTE += $(MIZU_DIR)/kwe_route.f90
+MIZU_ROUTE += $(MIZU_DIR)/mc_route.f90
+MIZU_ROUTE += $(MIZU_DIR)/dfw_route.f90
 
 # Complete set of imported mizuRoute dependencies required by the
 # FUSE-mizuRoute coupling.
@@ -177,6 +192,7 @@ MIZU_LIB += $(MIZU_BASE)
 MIZU_LIB += $(MIZU_DATA)
 MIZU_LIB += $(MIZU_TOPO)
 MIZU_LIB += $(MIZU_RMAP)
+MIZU_LIB += $(MIZU_ROUTE)
 
 # FUSE-facing mizuRoute coupling routines.
 #
@@ -184,6 +200,7 @@ MIZU_LIB += $(MIZU_RMAP)
 # variables expected by mizuRoute, initialize the river-network
 # structures, and perform network routing.
 MIZU_RUN =
+MIZU_RUN += $(FUSE_SOURCE_DIR)/mizuRoute/init_model_data_shim.f90
 MIZU_RUN += $(FUSE_SOURCE_DIR)/mizuRoute/init_mizuRoute.f90
 MIZU_RUN += $(FUSE_SOURCE_DIR)/mizuRoute/network_routing.f90
 
@@ -376,8 +393,7 @@ FUSE_RUNTIME += initfluxes.f90
 FUSE_RUNTIME += set_all.f90
 FUSE_RUNTIME += ode_int.f90
 FUSE_RUNTIME += fuse_solve.f90
-FUSE_RUNTIME += comp_stats.f90
-FUSE_RUNTIME += mean_stats.f90
+FUSE_RUNTIME += run_statistics.f90
 RUNTIME = $(patsubst %, $(RUNTIME_DIR)/%, $(FUSE_RUNTIME))
 
 # NetCDF routines
@@ -439,7 +455,8 @@ ifeq ($(FC),gfortran)
                  -fcheck=all \
                  -ffpe-trap=invalid,zero,overflow \
                  -finit-real=snan \
-                 -finit-integer=-999999
+                 -finit-integer=-999999 \
+                 -finit-logical=false
   FFLAGS_FIXED = -O2 -c -ffixed-form
 endif
 

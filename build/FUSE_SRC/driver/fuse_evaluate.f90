@@ -9,7 +9,14 @@ MODULE fuse_evaluate_module
   use fuse_globaldata, only: isPrint
   use fuse_globaldata, only: do_mizuRoute
 
-  IMPLICIT NONE
+  use run_statistics, only: accumulate_numerical_stats
+  use run_statistics, only: finalize_numerical_stats
+  use run_statistics, only: compute_performance_stats
+
+  implicit none
+  private
+
+  public :: fuse_evaluate
 
   CONTAINS
   
@@ -81,8 +88,12 @@ MODULE fuse_evaluate_module
     ! calculate mean summary statistics
     if (info%mpi%rank == 0) then
 
+      call finalize_numerical_stats(work)  ! land model only
+      
       if(isPrint) PRINT *, 'Calculating performance metrics...'
-      CALL MEAN_STATS(work, domain)
+      call compute_performance_stats(work, domain, ierr, cmessage)
+      if (ierr /= 0) then; message = trim(message)//trim(cmessage); return; end if
+      
       metric_val = work%run%stats%metric_val
 
       write(*,'(i6,1x,a11,1x,f12.6,1x,a20,1x,f12.6)') nFUSE_eval, "OBJ FUNC = ", METRIC_VAL, "; TIME ELAPSED = ", t2-t1
@@ -124,16 +135,16 @@ MODULE fuse_evaluate_module
 
   implicit none
 
-  type(fuse_info)        , intent(in)      :: info
-  real(wp), dimension(:) , intent(in)      :: xpar
-  type(fuse_work)        , intent(inout)   :: work
+  type(fuse_info)        , intent(in)         :: info
+  real(wp), dimension(:) , intent(in)         :: xpar
+  type(fuse_work)        , intent(inout)      :: work
 
-  type(domain_data)      , intent(inout)   :: domain
-  integer(i4b)           , intent(out)     :: ierr
-  character(len=*)       , intent(out)     :: message
+  type(domain_data)      , intent(inout)      :: domain
+  integer(i4b)           , intent(out)        :: ierr
+  character(len=*)       , intent(out)        :: message
 
-  integer(i4b)                             :: iSpat1, iSpat2, iBands
-  character(len=256)                       :: cmessage  ! error message of downwind routine
+  integer(i4b)                                :: iSpat1, iSpat2, iBands
+  character(len=256)                          :: cmessage  ! error message of downwind routine
 
   ierr    = 0
   message = "initialize_run/"
@@ -171,13 +182,15 @@ MODULE fuse_evaluate_module
   ! initialize model states over the 2D gridded domain (1 x nHRU in catchment mode)
   do iSpat2 = 1, nSpat2
     do iSpat1 = 1, nSpat1
+
       call init_state(fracstate0,            & ! input:  fraction state
-                      work%par%param_adjust, & ! adjustable model parameters (time delay, )
-                      work%par%param_derive, & ! derived model parameters (FRAC_FUTURE, )
-                      work%step%state0,      & ! output: start-of-step state
-                      work%snow%sbands(:)%var%bands_var)  ! output: SWE for elevation bands
+                      work%par%param_adjust, & ! input:  adjustable model parameters (time delay, )
+                      work%par%param_derive, & ! input:  derived model parameters (FRAC_FUTURE, )
+                      work%step%state0)        ! output: start-of-step state
+      
       call str_2_xtry(work%step%state0, work%num%x0)
       domain%state(iSpat1, iSpat2, 1) = work%step%state0
+
     end do
   end do
   if (isPrint) print *, 'Model states initialized over the 2D gridded domain'
@@ -192,7 +205,7 @@ MODULE fuse_evaluate_module
     domain%bands_var(:,:,:,1)%SNOWMELT    = 0._wp
     domain%bands_var(:,:,:,1)%DSWE_DT     = 0._wp
    
-    ! get work array foor the bands
+    ! get work array for the bands
     work%snow%sbands(:)%var%bands_var = domain%bands_var(1,1,:,1)
 
   end if ! if (SMODL%iSNOWM == iopt_temp_index)
@@ -347,17 +360,21 @@ MODULE fuse_evaluate_module
       ! ----- network routing model -----------------------------------------------------------------------------------
       ! ---------------------------------------------------------------------------------------------------------------
 
-      ! route flow through the river network
-      call network_routing(domain%river_network%runoff,   &  ! runoff data (FUSE simulations)
-                           domain%remap%routing,          &  ! routing map (grid->HRU or HRU->HRU) 
-                           domain%river_network%topology, &  ! network topology
-                           ierr, cmessage)                   ! error control
+      if (do_mizuRoute) then
+
+        ! route flow through the river network
+        call network_routing(sub_idx,                &  ! time index
+                             domain%river_network,   &  ! network data: network topology and runoff data (FUSE simulations)
+                             domain%remap%routing,   &  ! routing map (grid->HRU or HRU->HRU) 
+                             ierr, cmessage)            ! error control
+        
+        if (ierr /= 0) then
+          message = trim(message)//trim(cmessage)
+          return
+        endif
       
-      if (ierr /= 0) then
-        message = trim(message)//trim(cmessage)
-        return
       endif
-      
+
       ! ---------------------------------------------------------------------------------------------------------------
       ! ---------------------------------------------------------------------------------------------------------------
 
@@ -558,8 +575,8 @@ MODULE fuse_evaluate_module
 
     end if
 
-    ! stats
-    call COMP_STATS(work)
+    ! Accumulate numerical solver statistics for the land model
+    call accumulate_numerical_stats(work) ! land model only
 
   ! -------------------------------------------------------------------------------------
   ! -------------------------------------------------------------------------------------

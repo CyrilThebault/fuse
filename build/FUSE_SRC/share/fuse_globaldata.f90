@@ -25,7 +25,8 @@ MODULE fuse_globaldata
  logical(lgt), save      :: isPrint=.true.
  logical(lgt), save      :: isDebug=.false.
 
- ! flag to run mizuRoute
+ ! runtime options inferred from available control files
+ logical(lgt), save      :: do_remapping=.false.
  logical(lgt), save      :: do_mizuRoute=.false.
 
  ! indices of forcing variables in vectors
@@ -36,6 +37,12 @@ MODULE fuse_globaldata
  integer(i4b), parameter :: NPAR_SNOW=7
  integer(i4b), parameter :: iMBASE=1, iMFMAX=2, iMFMIN=3, iPXTEMP=4, iOPG=5, iLAPSE=6  ! indices in vectors
  integer(i4b), parameter :: iPERR=7   ! not a snow parameter, but used here
+
+ ! named variables for variable type
+ integer(i4b), parameter :: VAR_OBS   = 1
+ integer(i4b), parameter :: VAR_BAND  = 2
+ integer(i4b), parameter :: VAR_BASIN = 3
+ integer(i4b), parameter :: VAR_REACH = 4
 
  ! number of fuse evaluations
  integer(i4b), save      :: nFUSE_eval

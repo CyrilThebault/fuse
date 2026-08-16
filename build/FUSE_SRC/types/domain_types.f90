@@ -22,13 +22,17 @@ module domain_types
     logical(lgt) :: is_point_list  = .false.   ! true if nx=1 and lat/lon are 1D over ny
    
     ! 2D rectilinear OR point-list
-    real(wp), allocatable :: lon_1d(:)   ! nx or ny depending on layout
-    real(wp), allocatable :: lat_1d(:)
+    real(wp)    , allocatable :: lon_1d(:)   ! nx or ny depending on layout
+    real(wp)    , allocatable :: lat_1d(:)
    
     ! 2D curvilinear
-    real(wp), allocatable :: lon_2d(:,:) ! (nx_local, ny_local)
-    real(wp), allocatable :: lat_2d(:,:)
-   
+    real(wp)    , allocatable :: lon_2d(:,:) ! (nx_local, ny_local)
+    real(wp)    , allocatable :: lat_2d(:,:)
+
+    ! IDs for HRU and stream segments
+    integer(i4b), allocatable :: hru_id(:)
+    integer(i4b), allocatable :: seg_id(:)
+
     ! optional IDs (int is usually safest)
     integer(i4b), allocatable :: cell_id(:,:)  ! always stored locally as (nx_local, ny_local)
 

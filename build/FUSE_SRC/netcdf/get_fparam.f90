@@ -1,6 +1,7 @@
 module get_fparam_module
 USE nrtype
 USE netcdf
+USE handle_err_module, only: handle_err               ! handle NetCDF errors
 implicit none
 private
 public::GET_PRE_PARAM,GET_SCE_PARAM

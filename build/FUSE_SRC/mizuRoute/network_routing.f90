@@ -5,9 +5,13 @@ module network_routing_module
   use dataTypes,       only: mizu_remap       => remap
   use dataTypes,       only: mizu_runoff      => runoff
   use mizuroute_types, only: mizuroute_topology
+  use mizuroute_types, only: river_network_data
+  use mizuroute_types, only: spatial_remap_data
 
   use fuse_globaldata, only: isPrint
-  use fuse_globaldata, only: do_mizuRoute
+  use fuse_globaldata, only: do_remapping
+
+  use var_lookup,      only: ixNTOPO            ! index of variables for the network topology
 
   implicit none
 
@@ -16,43 +20,122 @@ module network_routing_module
 
 contains
 
-  subroutine network_routing(runoff_data, routing_map, topology, ierr, message)
+  subroutine network_routing(sub_idx, river_network, routing_map, ierr, message)
 
     use process_remap_module, only: remap_runoff
+    use process_remap_module, only: basin2reach
+
+    USE globalData,           only: rch_routes  ! routing methods instantiated
 
     implicit none
 
     ! input
-
-    type(mizu_runoff)        , intent(inout)   :: runoff_data
+    integer(i4b)             , intent(in)      :: sub_idx
+    type(river_network_data) , intent(inout)   :: river_network
     type(mizu_remap)         , intent(in)      :: routing_map
-    type(mizuroute_topology) , intent(in)      :: topology
 
     ! output
     integer(i4b)             , intent(out)     :: ierr
     character(*)             , intent(out)     :: message
 
     ! locals
-    integer(i4b) :: ihru
-    integer(i4b) :: iseg
+    integer(i4b) :: ix
+    integer(i4b) :: iSeg,jSeg
+    integer(i4b) :: n_seg
+    real(dp)     :: T0,T1
+    real(dp)     :: fracStep
+    integer(i4b) :: iSub
     character(len=256)  :: cmessage
 
     ! initialize error control
     ierr    = 0
     message = 'network_routing/'
 
-    ! early return (not running mizuRoute)
-    if ( .not. do_mizuRoute ) then
-      if (isPrint) print*, 'mizuRoute hydrofabric file not defined: running lumped simulations'
-      return
-    endif
+    n_seg = river_network%topology%n_seg
 
-    ! remap runoff to basin HRUs
-    call remap_runoff (runoff_data,             &   ! input: routed runoff from FUSE
-                       routing_map,             &   ! input: mapping structure for routing
-                       runoff_data%basinRunoff, &   ! output: runoff for basin HRUs
-                       ierr, cmessage)              ! output: error control
-    if (ierr /= 0) then; message = trim(message)//trim(cmessage); return; end if
+    !---------------------------------------------------------------------
+    ! remap FUSE runoff to river-network HRUs
+    !---------------------------------------------------------------------
+
+    if (do_remapping) then
+      call remap_runoff(river_network%runoff,             &   ! input: routed runoff from FUSE
+                        routing_map,                      &   ! input: mapping structure for routing
+                        river_network%runoff%basinRunoff, &   ! output: runoff for basin HRUs
+                        ierr, cmessage)                       ! output: error control
+      if (ierr /= 0) then; message = trim(message)//trim(cmessage); return; end if
+    end if
+
+    !---------------------------------------------------------------------
+    ! convert basin runoff depth to lateral reach inflow [m3/s]
+    !---------------------------------------------------------------------
+
+    ! aggregate basin runoff to each stream segment and convert runoff depth to volumetric lateral inflow
+    call basin2reach(river_network%runoff%basinRunoff,    & ! input: basin runoff (m/s)
+                     river_network%ntopo,                 & ! input: reach topology
+                     river_network%param,                 & ! input: reach parameter
+                     river_network%reach_inflow,          & ! output: reach inflow (m3/s)
+                     ierr, cmessage)                        ! output: error control
+    if(ierr/=0)then; message=trim(message)//trim(cmessage); return; endif
+
+    ! transfer lateral inflow (routing workspace) to flux data structures
+    do iSeg = 1, n_seg
+      river_network%flux(iSeg)%BASIN_QR(0) = river_network%flux(iSeg)%BASIN_QR(1)        ! streamflow from previous step
+      river_network%flux(iSeg)%BASIN_QR(1) = river_network%reach_inflow(iSeg)            ! streamflow (m3/s)
+    end do
+
+    !---------------------------------------------------------------------
+    ! network routing
+    !---------------------------------------------------------------------
+
+    fracStep = 1._dp / real(river_network%time%n_sub, dp)
+
+    ! * loop through routing methods
+    do ix = 1, size(rch_routes)
+   
+      ! alias the local polymorphic routing object for the selected routing method
+      associate(rch_route => rch_routes(ix)%rch_route)
+  
+      ! initialize streamflow for the FUSE step
+      river_network%method(ix)%streamflow(:,sub_idx) = 0._dp
+
+      ! * loop through substeps
+      do iSub = 1, river_network%time%n_sub
+
+        T0 = real(iSub-1, dp) * river_network%time%dt_sub
+        T1 = real(iSub,   dp) * river_network%time%dt_sub
+
+        ! * loop through stream segments
+        do iSeg = 1, n_seg
+  
+          ! process segments in the prescribed upstream-to-downstream routing order
+          jSeg = river_network%topology%ntopo(iSeg)%var(ixNTOPO%rchOrder)%dat(1)
+   
+          ! route runoff for segment jSeg using method ix
+          call rch_route%route(jSeg,                  &
+                               T0, T1,                &
+                               river_network%ntopo,   &
+                               river_network%param,   &
+                               river_network%state,   &
+                               river_network%flux,    &
+                               ierr, cmessage)
+          if(ierr/=0)then; message=trim(message)//trim(cmessage); return; endif
+   
+          ! aggregate streamflow per substep
+          river_network%method(ix)%streamflow(jSeg, sub_idx) = river_network%method(ix)%streamflow(jSeg, sub_idx) + &
+                                                               river_network%flux(jSeg)%ROUTE(ix)%REACH_Q * fracStep
+
+          !print*, 'river_network%reach_inflow(jSeg, sub_idx ) = ', river_network%reach_inflow(jSeg, sub_idx)
+          !print*, 'river_network%flux(jSeg)%ROUTE(ix)%REACH_Q = ', river_network%flux(jSeg)%ROUTE(ix)%REACH_Q
+
+        end do  ! * loop through stream segments
+
+        !stop 'check'
+
+      end do  ! * loop through substeps
+   
+      end associate
+   
+    end do ! * loop through routing methods
 
   end subroutine network_routing
 

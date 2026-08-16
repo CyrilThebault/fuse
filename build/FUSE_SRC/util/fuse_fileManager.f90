@@ -10,6 +10,9 @@ MODULE fuse_filemanager
   use fuse_globaldata, only: NVAR_HYDROMET
   use fuse_globaldata, only: iPRECIP, iTEMP, iPET, iQOBS
 
+  use fuse_globaldata, only: do_remapping
+  use fuse_globaldata, only: do_mizuRoute
+
   implicit none
   private
 
@@ -21,7 +24,7 @@ MODULE fuse_filemanager
   public :: SETNGS_PATH, INPUT_PATH, OUTPUT_PATH
   public :: suffix_hydromet, suffix_elev_bands
   public :: M_DECISIONS, CONSTRAINTS, MOD_NUMERIX, MBANDS_NC
-  public :: FMODEL_ID, Q_ONLY_STR, Q_ONLY
+  public :: FMODEL_ID 
   public :: date_start_sim, date_end_sim, date_start_eval, date_end_eval, numtim_sub_str
   public :: METRIC, TRANSFO
   public :: KSTOP_str, MAXN_str, PCENTO_str
@@ -48,8 +51,6 @@ MODULE fuse_filemanager
   
   ! content of output directory
   CHARACTER(LEN=64)           :: FMODEL_ID         ! string defining FUSE model
-  CHARACTER(LEN=64)           :: Q_ONLY_STR        ! TRUE = restrict attention to simulated runoff
-  LOGICAL                     :: Q_ONLY            ! .TRUE. = restrict attention to simulated runoff
   
   ! define simulation and evaluation periods
   CHARACTER(len=20)           :: date_start_sim    ! date start simulation
@@ -72,51 +73,55 @@ contains
   ! -------------------------------------------------------------------------------------
   ! -------------------------------------------------------------------------------------
 
-  subroutine read_fuse_control_file(fuseFileManagerIn, opts, info, err, message)
-  use tomlf_all, only: toml_table, toml_error, toml_key, toml_value ! data types
-  use tomlf_all, only: toml_load, get_value                         ! procedures
+  subroutine read_fuse_control_file(info, ierr, message)
+  use tomlf_all, only: toml_table, toml_array, toml_error, toml_key, toml_value ! data types
+  use tomlf_all, only: toml_load, get_value, len                                ! procedures
   
   ! Purpose: Reads FUSE control file (TOML version) AND populates info structure
   !
   implicit none
 
   ! dummies
-  character(*),      intent(in)     :: fuseFileManagerIn
-  type(cli_options), intent(in)     :: opts
   type(fuse_info),   intent(inout)  :: info
-  integer(i4b),      intent(out)    :: err
+  integer(i4b),      intent(out)    :: ierr
   character(*),      intent(out)    :: message
 
   ! TOML table
   type(toml_table), allocatable :: tbl         ! root TOML table
   type(toml_table), pointer     :: subtable    ! sub-table for a given section
+  type(toml_array), pointer     :: outputvars  ! sub-table for the list of output variables
   type(toml_key),   allocatable :: sections(:) ! top-level sections
   type(toml_key),   allocatable :: keys(:)     ! sub-table keys
   type(toml_error), allocatable :: error
 
   ! locals
   integer(i4b) :: istat
-  integer(i4b) :: n, i, j
+  integer(i4b) :: n, i, j, k
+  integer(i4b) :: nVars
   character(len=256) :: lookup
-
+  character(len=:), allocatable :: name
+  
   ! create file paths
   character(len=256) :: dom_id, tag, run_mode
 
-  err = 0
+  ierr = 0
   message = "read_fuse_control_file/"
 
+  ! ----- initialize flag to write time series (modified if exist in the TOML) -----
+  info%config%write_timeseries = .true.
+
   ! ----- load the root TOML table -----
-  call toml_load(tbl, trim(fuseFileManagerIn), error=error)
+  call toml_load(tbl, trim(info%config%cli_opts%control_file), error=error)
   if (allocated(error)) then
-    message = "problem loading toml file['"//trim(fuseFileManagerIn)//"']: "//trim(error%message)
-    err=10; return
+    message = "problem loading toml file['"//trim(info%config%cli_opts%control_file)//"']: "//trim(error%message)
+    ierr=10; return
   endif
 
   ! ----- get the top-level sections -----
   call tbl%get_keys(sections)
   if(.not.allocated(sections)) then
-    message = "problem loading toml sections['"//trim(fuseFileManagerIn)//"']"
-    err=10; return
+    message = "problem loading toml sections['"//trim(info%config%cli_opts%control_file)//"']"
+    ierr=10; return
   endif
 
   ! ----- loop through sections -----
@@ -125,8 +130,8 @@ contains
     ! ----- load the TOML sub-table for the current section -----
     call get_value(tbl, trim(sections(i)%key), subtable, requested=.false.) 
     if(.not.associated(subtable)) then
-      message = "problem loading toml sub-sections['"//trim(fuseFileManagerIn)//"']:"//trim(sections(i)%key)
-      err=10; return
+      message = "problem loading toml sub-sections['"//trim(info%config%cli_opts%control_file)//"']:"//trim(sections(i)%key)
+      ierr=10; return
     endif
 
     ! ----- get keys for a given section (sub-table) -----
@@ -134,7 +139,6 @@ contains
     
     ! ----- loop through the sub-table -----
     do j = 1, size(keys)
-
 
       ! ---------------------------------------------------------------------------------------------------------------
       ! ---------------------------------------------------------------------------------------------------------------
@@ -176,7 +180,8 @@ contains
 
         ! ---- mizuRoute: runtime ----
         case ("mizuRoute.dt"                 ); call get_value(subtable, trim(keys(j)%key), info%mrout%dt               , stat=istat)
-        
+        case ("mizuRoute.methods"            ); call get_value(subtable, trim(keys(j)%key), info%mrout%methods          , stat=istat) 
+
         ! ---- hydrofabric: path/filenames ----
         case ("hydrofabric.hfabric_path"     ); call get_value(subtable, trim(keys(j)%key), info%ntopo%hfabric_path     , stat=istat)
         case ("hydrofabric.hfabric_file"     ); call get_value(subtable, trim(keys(j)%key), info%ntopo%hfabric_file     , stat=istat)
@@ -212,9 +217,10 @@ contains
         case ("remapping.vname_i_index"      ); call get_value(subtable, trim(keys(j)%key), info%remap%vname_i_index    , stat=istat)
         case ("remapping.vname_j_index"      ); call get_value(subtable, trim(keys(j)%key), info%remap%vname_j_index    , stat=istat)
 
-        ! ---- config: runtime ----
+        ! ---- config: output ----
+        case ("output.write_timeseries"      ); call get_value(subtable, trim(keys(j)%key), info%config%write_timeseries, stat=istat)
+        case ("output.variables"             ); call get_value(subtable, trim(keys(j)%key), outputvars                  , stat=istat)
         case ("output.model_id"              ); call get_value(subtable, trim(keys(j)%key), info%config%fmodel_id       , stat=istat)
-        case ("output.q_only"                ); call get_value(subtable, trim(keys(j)%key), info%config%q_only          , stat=istat)
 
         ! ---- config: periods ----
         case ("run_periods.date_start_sim"   ); call get_value(subtable, trim(keys(j)%key), info%config%date_start_sim  , stat=istat)
@@ -232,21 +238,58 @@ contains
         case ("sce.kstop"                    ); call get_value(subtable, trim(keys(j)%key), info%config%kstop           , stat=istat)
         case ("sce.pcento"                   ); call get_value(subtable, trim(keys(j)%key), info%config%pcento          , stat=istat)
 
+        ! --- output: desired variables ---
+
         ! ---- default case (something in the table that is not specified above) -----
         case default
           message = trim(message)// "unexpected entry: section = "//trim(sections(i)%key)//"; sub-section = "//trim(keys(j)%key)
-          err=20; return
+          ierr=20; return
       
       end select ! (select key/value pair based on lookup)
 
       ! ---- error checking -----
       if(istat /= 0)then
         message=trim(message)// "get_value error: section = "//trim(sections(i)%key)//"; sub-section = "//trim(keys(j)%key)
-        err=20; return
+        ierr=20; return
       endif
 
     end do  ! (looping through sub-sections)
   end do  ! (looping through sections)
+
+  ! ----- no model write for calibration -----
+
+  if (trim(info%config%cli_opts%runmode) == 'sce')  info%config%write_timeseries = .false.
+
+  ! ---- process list of output variables ----
+ 
+  ! get number of output variables 
+  if ( associated(outputvars) ) then
+    info%config%nOutput = len(outputvars)
+  else
+    info%config%nOutput = 0
+  endif
+
+  ! allocate space in the FUSE info data structures (includes nOutput=0)
+  allocate(info%config%outvar_names(info%config%nOutput), stat=ierr)
+  if (ierr /= 0) then
+    message=trim(message)//"unable to allocate space for the outputvars vector"
+    return
+  endif
+
+  ! get list of output variables: does not execute loop when nOutput = 0
+  do k = 1, info%config%nOutput
+
+    ! parse toml value
+    call get_value(outputvars, k, name, stat=ierr)
+    if (ierr /= 0) then
+      write(message,'(A,I0)') trim(message)//"unable to read variable, k =", k
+      return
+    endif
+
+    ! populate FUSE structure
+    info%config%outvar_names(k) = trim(name)
+    
+  end do
 
   ! ---- populate legacy strings ----
   write(info%config%maxn_str,  '(i0)'     ) info%config%maxn
@@ -254,11 +297,15 @@ contains
   write(info%config%pcento_str,'(es20.10)') info%config%pcento
 
   ! ---- domain id, run mode and tag for output files ----
-  dom_id   = trim(opts%domain_id)
-  run_mode = trim(opts%runmode)
+  dom_id   = trim(info%config%cli_opts%domain_id)
+  run_mode = trim(info%config%cli_opts%runmode)
 
   tag = ""
-  if(allocated(opts%tag)) tag = trim(opts%tag)
+  if(allocated(info%config%cli_opts%tag)) tag = trim(info%config%cli_opts%tag)
+
+  ! ---- runtime options inferred from available control files ----
+  do_remapping = allocated(info%remap%remap_file)
+  do_mizuRoute = allocated(info%ntopo%hfabric_file)
 
   ! ---- derived input filenames ----
   info%files%hydromet_file  = trim(dom_id)//trim(info%files%suffix_hydromet)
@@ -303,7 +350,6 @@ contains
   M_DECISIONS       = trim(info%files%m_decisions)
 
   FMODEL_ID         = trim(info%config%fmodel_id)
-  Q_ONLY            = info%config%q_only
 
   date_start_sim    = trim(info%config%date_start_sim)
   date_end_sim      = trim(info%config%date_end_sim)
@@ -347,8 +393,6 @@ contains
   print *, 'date_start_eval:', trim(info%config%date_start_eval)
   print *, 'date_end_eval:',   trim(info%config%date_end_eval)
   print *, 'numtim_sub_str:',  trim(info%config%numtim_sub_str)
-  
-  print *, 'Q_ONLY', info%config%q_only
   
   end subroutine export_domain_to_legacy
 

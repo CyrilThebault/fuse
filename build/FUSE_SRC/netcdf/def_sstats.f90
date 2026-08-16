@@ -19,7 +19,8 @@ contains
   USE model_defn                                        ! model definition (includes filename)
   USE meta_stats                                        ! metadata for summary statistics
   USE model_numerix                                     ! model numerix decisions
-  USE fuse_globaldata, only: ncid_out                        ! NetCDF output file ID
+  USE fuse_globaldata, only: ncid_out                   ! NetCDF output file ID
+  USE handle_err_module, only: handle_err               ! handle netCDF errors
   IMPLICIT NONE
   ! internal
   INTEGER(I4B)                           :: IERR        ! error code; NetCDF ID

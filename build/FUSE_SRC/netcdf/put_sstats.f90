@@ -14,6 +14,7 @@ USE model_defn                                        ! model definition structu
 USE meta_stats                                        ! metadata for summary statistics
 USE model_numerix                                     ! model numerix parameters and arrays
 USE sumextract_module                                 ! module to extract summary statistics
+ USE handle_err_module, only: handle_err              ! handle NetCDF errors
 IMPLICIT NONE
 ! input
 type(SUMMARY), intent(in)              :: stats       ! structures that depend on nState/nPar

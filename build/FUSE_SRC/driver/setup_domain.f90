@@ -13,7 +13,7 @@ module setup_domain_module
 
 contains
 
-  subroutine setup_domain(opts, info, domain, ierr, message)
+  subroutine setup_domain(info, domain, ierr, message)
 
   ! access subroutines
   use netcdf, only: nf90_open, nf90_nowrite, nf90_strerror      ! NetCDF functions
@@ -37,7 +37,6 @@ contains
   implicit none
   
   ! input
-  type(cli_options)   , intent(in)                  :: opts            ! command line interface options
   type(fuse_info)     , intent(inout)               :: info            ! domain info
   type(domain_data)   , intent(inout)               :: domain          ! domain data
   
@@ -53,7 +52,7 @@ contains
   ! ----- set paths and file names -------------------------------------------------------
   
   ! read fuse control file (set paths/filenames etc.)
-  call read_fuse_control_file(trim(opts%control_file), opts, info, ierr, cmessage) 
+  call read_fuse_control_file(info, ierr, cmessage) 
   if (ierr/=0)then; message=trim(message)//trim(cmessage); ierr=20; return; endif
 
   ! ----- read domain metadata -----------------------------------------------------------
@@ -62,17 +61,6 @@ contains
   !   -- nx_global, ny_global, nt_global, n_bands
   call get_domain_dims(info, ierr, cmessage)
   if (ierr/=0)then; message=trim(message)//trim(cmessage); ierr=20; return; endif
-
-  ! ----- initialize the mizuRoute data structures used by FUSE --------------------------
-
-  call init_mizuroute_domain(info, domain, ierr, cmessage)
-  if (ierr/=0)then; message=trim(message)//trim(cmessage); ierr=20; return; endif
-
-  ! ----- MPI decomposition of the spatial domain ----------------------------------------
-
-  ! get indices for MPI decomposition of the spatial domain: y_start_global, ny_local 
-  ! NOTE: These indices will be used later to read different subsets of hydromet data for different ranks
-  call get_domain_decomp_indices(info)
 
   ! ----- read grid info and define indices for MPI domain decomposition ------------------
 
@@ -90,6 +78,17 @@ contains
   !     (and optional subperiod chunks) stored in info%time
   call get_time_windows(info%files%ncid_hydromet, info, ierr, cmessage)
   if (ierr/=0)then; message=trim(message)//trim(cmessage); ierr=20; return; endif
+
+  ! ----- initialize the mizuRoute data structures used by FUSE --------------------------
+
+  call init_mizuroute_domain(info, domain, ierr, cmessage)
+  if (ierr/=0)then; message=trim(message)//trim(cmessage); ierr=20; return; endif
+
+  ! ----- MPI decomposition of the spatial domain ----------------------------------------
+
+  ! get indices for MPI decomposition of the spatial domain: y_start_global, ny_local 
+  ! NOTE: These indices will be used later to read different subsets of hydromet data for different ranks
+  call get_domain_decomp_indices(info)
 
   ! ----- Allocate space for domain data --------------------------------------------------
 
