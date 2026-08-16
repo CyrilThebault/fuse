@@ -43,6 +43,10 @@ module info_types
    ! observation dimension
    integer(i4b) :: nobs = 1
 
+   ! HRU and stream segment dimensions
+   integer(i4b) :: n_hru = 1
+   integer(i4b) :: n_seg = 1
+
    ! global dimensions (full forcing file)
    integer(i4b) :: nx_global = 1
    integer(i4b) :: ny_global = 1
@@ -161,6 +165,8 @@ module info_types
    character(len=:), allocatable :: namelist_path       ! namelist path
    character(len=:), allocatable :: namelist_file       ! namelist file
 
+   character(len=:), allocatable :: methods             ! string of integers defining methods
+
    real(wp)                      :: dt = 3600._wp       ! routing time step (s)
 
  end type mizu_info
@@ -231,8 +237,12 @@ module info_types
   integer(i4b)       :: nState = -9999
   integer(i4b)       :: nParam = -9999
  
-  ! number of input variables (3 = ppt, temp, pet; 4 = + obsq)
+  ! number of input/output variables
   integer(i4b)       :: nInput
+  integer(i4b)       :: nOutput
+
+  ! list of output variables
+  character(len=strLen), allocatable :: outvar_names(:)
 
   ! list of model parameters
   type(par_id), allocatable  :: listParam(:)

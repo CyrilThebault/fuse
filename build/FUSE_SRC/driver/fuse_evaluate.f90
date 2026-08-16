@@ -348,7 +348,8 @@ MODULE fuse_evaluate_module
       ! ---------------------------------------------------------------------------------------------------------------
 
       ! route flow through the river network
-      call network_routing(domain%river_network,   &  ! network data: network topology and runoff data (FUSE simulations)
+      call network_routing(sub_idx,                &  ! time index
+                           domain%river_network,   &  ! network data: network topology and runoff data (FUSE simulations)
                            domain%remap%routing,   &  ! routing map (grid->HRU or HRU->HRU) 
                            ierr, cmessage)            ! error control
       

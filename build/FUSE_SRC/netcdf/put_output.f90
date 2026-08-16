@@ -10,7 +10,10 @@ module put_output_module
       NF90_WRITE, NF90_NOERR, &
       nf90_open, nf90_close, nf90_inq_varid, nf90_put_var
 
+  use fuse_globaldata, only: VAR_OBS, VAR_BAND, VAR_BASIN, VAR_REACH
+
   implicit none
+
   private
   public :: put_output
 
@@ -35,7 +38,7 @@ contains
 
   ! metadata / config
   use model_defn,    only: fname_netcdf_runs
-  use metaoutput,    only: noutvar, vname, isband
+  use metaoutput,    only: noutvar, vname, vtype
   use multiparam,    only: numpar
   use multibands,    only: n_bands
   use multiforce,    only: time_steps, nspat1, nspat2
@@ -56,21 +59,22 @@ contains
   integer(i4b),      intent(in)     :: numtim
 
   ! locals
-  logical(lgt) :: write_var
   integer(i4b) :: ierr
+  integer(i4b) :: iOut
   integer(i4b) :: ivar
   integer(i4b) :: ivar_id
 
-  integer(i4b), dimension(2) :: start2, count2
-  integer(i4b), dimension(3) :: start3, count3
-  integer(i4b), dimension(4) :: start4_band, count4_band
+  integer(i4b), dimension(2) :: start2_obs,   count2_obs
+  integer(i4b), dimension(2) :: start2_reach, count2_reach
+  integer(i4b), dimension(3) :: start3_basin, count3_basin
+  integer(i4b), dimension(4) :: start4_band,  count4_band
   integer(i4b), dimension(4) :: start4_param, count4_param
 
   real(real32), dimension(nspat1, nspat2, numtim)              :: avar_3d
-
   real(real32), dimension(nspat1, nspat2, n_bands, numtim)     :: avar_4d_band
-  ! placeholder for future param-derivative write
   real(real32), dimension(nspat1, nspat2, numpar,  numtim)     :: avar_4d_param
+
+  real(real32), dimension(info%space%n_seg, numtim)            :: avar_2d_reach
 
   real(real32), dimension(numtim) :: time_steps_sub
 
@@ -78,12 +82,20 @@ contains
   subname="put_output.f90/"
 
   ! -----------------------------------------------------------------------------
-  ! dimension lists (Fortran nf90 uses 1-based indices)
-  start3 = (/1, 1, istart_sim/)
-  count3 = (/nspat1, nspat2, numtim/)
 
-  start4_band = (/1, 1, 1, istart_sim/)
-  count4_band = (/nspat1, nspat2, n_bands, numtim/)
+  ! dimension lists (Fortran nf90 uses 1-based indices)
+  
+  start2_obs   = (/              1, istart_sim/)
+  count2_obs   = (/info%space%nobs, numtim/)
+
+  start2_reach = (/               1, istart_sim/)
+  count2_reach = (/info%space%n_seg, numtim/)
+
+  start3_basin = (/1, 1, istart_sim/)
+  count3_basin = (/nspat1, nspat2, numtim/)
+
+  start4_band  = (/1, 1, 1, istart_sim/)
+  count4_band  = (/nspat1, nspat2, n_bands, numtim/)
 
   start4_param = (/1, 1, 1, istart_sim/)
   count4_param = (/nspat1, nspat2, numpar,  numtim/)
@@ -91,62 +103,67 @@ contains
   ! open file (already defined elsewhere via DEF_OUTPUT)
   ierr = nf90_open(trim(fname_netcdf_runs), NF90_WRITE, ncid_out)
   call handle_err(ierr, trim(subname)//":nf90_open")
+    
+  ! loop through desired output variables
+  ! NOTE: Does not execute loop if nOutput=0
+  do iOut = 1, info%config%nOutput
 
-  ! loop through variables with time-varying model output
-  do ivar = 1, noutvar
-
-    ! optional "Q_ONLY" filter
-    if (q_only) then
-      select case (trim(vname(ivar)))
-        case ('q_instnt', 'q_routed');  write_var = .true.
-        case default;                   write_var = .false.
-      end select
-    end if
-
-    if (.not. write_var) cycle
+    ! find index of the variable name
+    ivar = findloc(VNAME, info%config%outvar_names(iOut), dim=1)
+    if (ivar == 0) cycle ! allow some names not in the metadata structure
 
     ! get var id
     ierr = nf90_inq_varid(ncid_out, trim(vname(ivar)), ivar_id)
     call handle_err(ierr, trim(subname)//":nf90_inq_varid:"//trim(vname(ivar)))
 
-    if (.not. isband(ivar)) then
+    select case ( vtype(ivar) )
 
-      ! 3-d variable -- extract from the output buffers in the domain structure
-      call varextract_3d(domain, vname(ivar), nspat1, nspat2, numtim, avar_3d)
+      case (VAR_BASIN)
 
-      ierr = nf90_put_var(ncid_out, ivar_id, avar_3d, start=start3, count=count3)
-      call handle_err(ierr, trim(subname)//":nf90_put_var(3d):"//trim(vname(ivar)))
+        ! 3-d variable -- extract from the output buffers in the domain structure
+        call varextract_3d(domain, vname(ivar), nspat1, nspat2, numtim, avar_3d)
 
-    else
+        ierr = nf90_put_var(ncid_out, ivar_id, avar_3d, start=start3_basin, count=count3_basin)
+        call handle_err(ierr, trim(subname)//":nf90_put_var(3d):"//trim(vname(ivar)))
 
-      ! 4-d elevation band variable (stored in domain%bands_var)
-      select case (trim(vname(ivar)))
-        case ('swe_z');     avar_4d_band = domain%bands_var(:,:,:,1:numtim)%swe
-        case ('snwacml_z'); avar_4d_band = domain%bands_var(:,:,:,1:numtim)%snowaccmltn
-        case ('snwmelt_z'); avar_4d_band = domain%bands_var(:,:,:,1:numtim)%snowmelt
-        case default;       stop trim(subname)//":unknown band var:"//trim(vname(ivar))
-      end select
+      case (VAR_REACH)
 
-      ierr = nf90_put_var(ncid_out, ivar_id, avar_4d_band, start=start4_band, count=count4_band)
-      call handle_err(ierr, trim(subname)//":nf90_put_var(4d band):"//trim(vname(ivar)))
+        ! 2-d stream network variable (stored in domain%river_network)
+        select case (trim(vname(ivar)))
+          case ('q_reach'); avar_2d_reach = domain%river_network%method(1)%streamflow(:,:)
+          case default;     stop trim(subname)//":unknown band var:"//trim(vname(ivar))
+        end select
 
-    end if
+        ierr = nf90_put_var(ncid_out, ivar_id, avar_2d_reach, start=start2_reach, count=count2_reach)
+        call handle_err(ierr, trim(subname)//":nf90_put_var(2d):"//trim(vname(ivar)))
+
+      case (VAR_BAND)
+
+        ! 4-d elevation band variable (stored in domain%bands_var)
+        select case (trim(vname(ivar)))
+          case ('swe_z');     avar_4d_band = domain%bands_var(:,:,:,1:numtim)%swe
+          case ('snwacml_z'); avar_4d_band = domain%bands_var(:,:,:,1:numtim)%snowaccmltn
+          case ('snwmelt_z'); avar_4d_band = domain%bands_var(:,:,:,1:numtim)%snowmelt
+          case default;       stop trim(subname)//":unknown band var:"//trim(vname(ivar))
+        end select
+   
+        ierr = nf90_put_var(ncid_out, ivar_id, avar_4d_band, start=start4_band, count=count4_band)
+        call handle_err(ierr, trim(subname)//":nf90_put_var(4d band):"//trim(vname(ivar)))
+
+      case (VAR_OBS)
+
+        ierr = nf90_put_var(ncid_out, ivar_id, work%obs%q, start=start2_obs, count=count2_obs)
+        call handle_err(ierr, trim(subname)//":nf90_put_var(2d):"//trim(vname(ivar)))
+
+      case default
+        stop 'PUT_OUTPUT/Unable to identify variable type'
+
+    end select
 
     ! future: param-derivative writes would go here using count4_param/start4_param
     ! e.g. name = trim(vname(ivar))//'__dFlux_dParam'
 
   end do
-
-  ! write observations
-
-  start2 = (/              1, istart_sim/)
-  count2 = (/info%space%nobs, numtim/)
-
-  ierr = nf90_inq_varid(ncid_out, trim(info%files%qobs_name), ivar_id)
-  call handle_err(ierr, trim(subname)//":nf90_inq_varid: obsq")
-
-  ierr = nf90_put_var(ncid_out, ivar_id, work%obs%q, start=start2, count=count2)
-  call handle_err(ierr, trim(subname)//":nf90_put_var(2d):"//trim(vname(ivar)))
 
   ! write time
   time_steps_sub = real(time_steps(istart_in:(istart_in + numtim - 1)), kind(real32))

@@ -63,17 +63,6 @@ contains
   call get_domain_dims(info, ierr, cmessage)
   if (ierr/=0)then; message=trim(message)//trim(cmessage); ierr=20; return; endif
 
-  ! ----- initialize the mizuRoute data structures used by FUSE --------------------------
-
-  call init_mizuroute_domain(info, domain, ierr, cmessage)
-  if (ierr/=0)then; message=trim(message)//trim(cmessage); ierr=20; return; endif
-
-  ! ----- MPI decomposition of the spatial domain ----------------------------------------
-
-  ! get indices for MPI decomposition of the spatial domain: y_start_global, ny_local 
-  ! NOTE: These indices will be used later to read different subsets of hydromet data for different ranks
-  call get_domain_decomp_indices(info)
-
   ! ----- read grid info and define indices for MPI domain decomposition ------------------
 
   ! open NetCDF hydromet file
@@ -90,6 +79,17 @@ contains
   !     (and optional subperiod chunks) stored in info%time
   call get_time_windows(info%files%ncid_hydromet, info, ierr, cmessage)
   if (ierr/=0)then; message=trim(message)//trim(cmessage); ierr=20; return; endif
+
+  ! ----- initialize the mizuRoute data structures used by FUSE --------------------------
+
+  call init_mizuroute_domain(info, domain, ierr, cmessage)
+  if (ierr/=0)then; message=trim(message)//trim(cmessage); ierr=20; return; endif
+
+  ! ----- MPI decomposition of the spatial domain ----------------------------------------
+
+  ! get indices for MPI decomposition of the spatial domain: y_start_global, ny_local 
+  ! NOTE: These indices will be used later to read different subsets of hydromet data for different ranks
+  call get_domain_decomp_indices(info)
 
   ! ----- Allocate space for domain data --------------------------------------------------
 

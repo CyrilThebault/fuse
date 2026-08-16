@@ -200,6 +200,7 @@ MIZU_LIB += $(MIZU_ROUTE)
 # variables expected by mizuRoute, initialize the river-network
 # structures, and perform network routing.
 MIZU_RUN =
+MIZU_RUN += $(FUSE_SOURCE_DIR)/mizuRoute/init_model_data_shim.f90
 MIZU_RUN += $(FUSE_SOURCE_DIR)/mizuRoute/init_mizuRoute.f90
 MIZU_RUN += $(FUSE_SOURCE_DIR)/mizuRoute/network_routing.f90
 
@@ -446,7 +447,13 @@ ifeq ($(FC),ifort)
 endif
 
 ifeq ($(FC),gfortran)
-  FFLAGS_NORMA = -O3 -ffree-line-length-none -fmax-errors=0 -cpp
+  #FFLAGS_NORMA = -O3 -ffree-line-length-none -fmax-errors=0 -cpp
+  FFLAGS_NORMA = -ffree-line-length-none -fmax-errors=0 -cpp \
+                 -g -O0 -fcheck=all -fbacktrace \
+                 -ffpe-trap=invalid,zero,overflow \
+                 -finit-real=snan \
+                 -finit-integer=-999999 \
+                 -finit-logical=false
   FFLAGS_DEBUG = -O0 -g -fno-omit-frame-pointer \
                  -Wall -Wextra -Wimplicit-interface \
                  -Wsurprising -Wconversion-extra \
