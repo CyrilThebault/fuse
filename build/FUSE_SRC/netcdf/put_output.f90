@@ -10,7 +10,9 @@ module put_output_module
       NF90_WRITE, NF90_NOERR, &
       nf90_open, nf90_close, nf90_inq_varid, nf90_put_var
 
-  use fuse_globaldata, only: VAR_OBS, VAR_BAND, VAR_BASIN, VAR_REACH
+  use handle_err_module, only: handle_err
+
+  use fuse_globaldata,   only: VAR_OBS, VAR_BAND, VAR_BASIN, VAR_REACH
 
   implicit none
 
@@ -42,10 +44,10 @@ contains
   use multiparam,    only: numpar
   use multibands,    only: n_bands
   use multiforce,    only: time_steps, nspat1, nspat2
-  use fuse_filemanager, only: q_only
 
   ! global
-  use fuse_globaldata,    only: ncid_out
+  USE fuse_globaldata,   only: do_mizuRoute
+  USE fuse_globaldata,   only: ncid_out
 
   implicit none
 
@@ -65,7 +67,7 @@ contains
   integer(i4b) :: ivar_id
 
   integer(i4b), dimension(2) :: start2_obs,   count2_obs
-  integer(i4b), dimension(2) :: start2_reach, count2_reach
+  integer(i4b), dimension(3) :: start3_reach, count3_reach
   integer(i4b), dimension(3) :: start3_basin, count3_basin
   integer(i4b), dimension(4) :: start4_band,  count4_band
   integer(i4b), dimension(4) :: start4_param, count4_param
@@ -78,8 +80,13 @@ contains
 
   real(real32), dimension(numtim) :: time_steps_sub
 
+  integer(i4b)  :: iRoute
+
   character(len=32) :: subname
   subname="put_output.f90/"
+
+  ! early return: no time-series output requested
+  if ( .not. info%config%write_timeseries ) return
 
   ! -----------------------------------------------------------------------------
 
@@ -87,9 +94,6 @@ contains
   
   start2_obs   = (/              1, istart_sim/)
   count2_obs   = (/info%space%nobs, numtim/)
-
-  start2_reach = (/               1, istart_sim/)
-  count2_reach = (/info%space%n_seg, numtim/)
 
   start3_basin = (/1, 1, istart_sim/)
   count3_basin = (/nspat1, nspat2, numtim/)
@@ -128,14 +132,24 @@ contains
 
       case (VAR_REACH)
 
-        ! 2-d stream network variable (stored in domain%river_network)
-        select case (trim(vname(ivar)))
-          case ('q_reach'); avar_2d_reach = domain%river_network%method(1)%streamflow(:,:)
-          case default;     stop trim(subname)//":unknown band var:"//trim(vname(ivar))
-        end select
+        if ( .not. do_mizuRoute )  &
+        stop trim(subname)//": output variable "//trim(VNAME(ivar))//" requires mizuRoute"
 
-        ierr = nf90_put_var(ncid_out, ivar_id, avar_2d_reach, start=start2_reach, count=count2_reach)
-        call handle_err(ierr, trim(subname)//":nf90_put_var(2d):"//trim(vname(ivar)))
+        ! 2-d stream network variable (stored in domain%river_network)
+        do iRoute = 1, size(domain%river_network%method)
+
+          start3_reach = (/iRoute,                1, istart_sim/)
+          count3_reach = (/     1, info%space%n_seg, numtim/)
+
+          select case (trim(vname(ivar)))
+            case ('q_reach'); avar_2d_reach = domain%river_network%method(iRoute)%streamflow(:,:)
+            case default;     stop trim(subname)//":unknown reach var:"//trim(vname(ivar))
+          end select
+
+          ierr = nf90_put_var(ncid_out, ivar_id, avar_2d_reach, start=start3_reach, count=count3_reach)
+          call handle_err(ierr, trim(subname)//":nf90_put_var(2d):"//trim(vname(ivar)))
+
+        end do  ! loop through routing methods
 
       case (VAR_BAND)
 

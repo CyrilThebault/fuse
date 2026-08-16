@@ -46,9 +46,6 @@ IMPLICIT NONE
 integer(i4b)                           :: err              ! error code
 character(len=1024)                    :: message          ! error message
 
-! command line arguments
-type(cli_options)                      :: cli_opts         ! command line argument options
-
 ! parameter set; parameter bounds
 REAL(WP), DIMENSION(:), ALLOCATABLE    :: BL      ! vector of lower parameter bounds
 REAL(WP), DIMENSION(:), ALLOCATABLE    :: BU      ! vector of upper parameter bounds
@@ -88,24 +85,24 @@ if(info%mpi%rank > 0) isPrint=.false.
 
 ! ----- parse command line arguments ----------------------------------------------------
 
-call parse_command_args(cli_opts,err,message)
+call parse_command_args(info%config%cli_opts,err,message)
 if(err/=0) stop trim(message)
 
 if(isPrint)then
-  print*, 'Control file = ', cli_opts%control_file
-  print*, 'Run mode     = ', cli_opts%runmode
+  print*, 'Control file = ', info%config%cli_opts%control_file
+  print*, 'Run mode     = ', info%config%cli_opts%runmode
 endif
 
 ! ----- initialize the model domain -----------------------------------------------------
 
 ! read hydromet metadata (space/time/coords), apply MPI decomposition, and allocate domain arrays
-call setup_domain(cli_opts, info, domain, err, message) 
+call setup_domain(info, domain, err, message) 
 if(err/=0) stop trim(message)
 
 ! ----- initialize model configurations -------------------------------------------------
 
 ! choose model, load parameter metadata, derive parameters, and define NetCDF output files
-call setup_model_definition(cli_opts, info, work, domain, APAR, BL, BU, err, message)
+call setup_model_definition(info, work, domain, APAR, BL, BU, err, message)
 if(err/=0) stop trim(message)
 
 ! ----- initialize work structures ------------------------------------------------------
@@ -125,7 +122,7 @@ work%run%n_evaluations = 0    ! counter for parameter sets evaluated
 ! ---------------------------------------------------------------------------------------
 
 ! select fuse mode
-select case(trim(cli_opts%runmode))
+select case(trim(info%config%cli_opts%runmode))
 
   ! ----- single parameter set ----------------------------------------------------------
 
@@ -134,13 +131,13 @@ select case(trim(cli_opts%runmode))
     OUTPUT_FLAG=.TRUE.
 
     ! load specific parameter set given index in vector into APAR
-    if (cli_opts%runmode=='idx') then
-     CALL GET_PRE_PARAM(cli_opts%sets_file, cli_opts%indx, ONEMOD, info%config%nParam, APAR)
+    if (info%config%cli_opts%runmode=='idx') then
+     CALL GET_PRE_PARAM(info%config%cli_opts%sets_file, info%config%cli_opts%indx, ONEMOD, info%config%nParam, APAR)
     endif
 
     ! load best parameter set from NetCDF file into APAR
-    if (cli_opts%runmode=='opt') then
-     CALL GET_SCE_PARAM(cli_opts%sets_file, ONEMOD, info%config%nParam, APAR)
+    if (info%config%cli_opts%runmode=='opt') then
+     CALL GET_SCE_PARAM(info%config%cli_opts%sets_file, ONEMOD, info%config%nParam, APAR)
     endif
 
     ! run FUSE

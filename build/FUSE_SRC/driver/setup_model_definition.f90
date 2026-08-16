@@ -14,7 +14,7 @@ module setup_model_definition_MODULE
 
 contains
 
-  subroutine setup_model_definition(opts, info, work, domain, APAR, BL, BU, err, message)
+  subroutine setup_model_definition(info, work, domain, APAR, BL, BU, err, message)
 
   ! access subroutines
   use uniquemodl_module, only: uniquemodl                   ! Defines unique strings for all FUSE models
@@ -42,7 +42,6 @@ contains
   implicit none
 
   ! input
-  type(cli_options)   , intent(in)                  :: opts            ! command line interface options
   type(fuse_info)     , intent(inout)               :: info            ! the fuse info structure that stores "everything"
   type(fuse_work)     , intent(inout)               :: work            ! structures that depend on nState/nPar
   type(domain_data)   , intent(in)                  :: domain          ! the fuse domain structure that stores data arrays
@@ -91,7 +90,7 @@ contains
 
   ! get number of parameter sets
   ! will be used to define the parameter set dimension of the NetCDF files
-  select case(trim(opts%runmode))
+  select case(trim(info%config%cli_opts%runmode))
 
     ! options that run with a single parameter set
     case('def', 'idx', 'opt'); NUMPSET = 1
@@ -101,7 +100,7 @@ contains
 
     ! check
     case default
-     message=trim(message)//'opts%runmode is unknown: '//trim(opts%runmode)
+     message=trim(message)//'opts%runmode is unknown: '//trim(info%config%cli_opts%runmode)
      err=20; return
 
   end select

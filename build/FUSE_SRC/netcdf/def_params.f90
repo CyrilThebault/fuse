@@ -24,7 +24,8 @@ MODULE DEF_PARAMS_MODULE
   
   ! subroutines
   USE metaparams, only: PARDESCRIBE                     ! define metadata for model parameters
-  
+  USE handle_err_module, only: handle_err               ! handle netCDF errors
+
   ! data modules
   USE metaparams, only: NOUTPAR                         ! number of model parameters
   USE metaparams, only: PNAME, PDESC, PUNIT             ! metadata for all model parameters

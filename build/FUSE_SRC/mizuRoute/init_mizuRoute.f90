@@ -58,6 +58,7 @@ implicit none
 
 private
 public :: init_mizuroute_domain
+public :: route_method_name
 
 CONTAINS
 
@@ -214,7 +215,7 @@ CONTAINS
                         ierr, cmessage)                                 ! output: error control
     if(ierr/=0)then; message=trim(message)//trim(cmessage); return; endif
     
-      domain%remap%routing%hru_ix = match_index(domain%coords%hru_id, domain%remap%routing%hru_id, ierr, cmessage)
+    domain%remap%routing%hru_ix = match_index(domain%coords%hru_id, domain%remap%routing%hru_id, ierr, cmessage)
     if(ierr/=0)then; message=trim(message)//trim(cmessage); return; endif
 
   endif  ! (if remapping file exists)
@@ -235,6 +236,29 @@ CONTAINS
   if(ierr/=0)then; message=trim(message)//trim(cmessage); return; endif
 
  end subroutine init_mizuroute_domain
+
+ ! ---------------------------------------------------------------------
+ ! ---------------------------------------------------------------------
+
+ ! *********************************************************************
+ ! public function: get the name of a given routing method
+ ! *********************************************************************
+ function route_method_name(method) result(name)
+
+  integer(i4b), intent(in)      :: method
+  character(len=:), allocatable :: name
+
+  select case (method)
+    case (accumRunoff);           name = 'runoff accumulation'
+    case (impulseResponseFunc);   name = 'impulse response function'
+    case (kinematicWaveTracking); name = 'Lagrangian kinematic wave'
+    case (kinematicWave);         name = 'Eulerian kinematic wave'
+    case (muskingumCunge);        name = 'Muskingum-Cunge'
+    case (diffusiveWave);         name = 'diffusive wave'
+    case default;                 name = 'unknown routing method'
+  end select
+
+ end function route_method_name
 
  ! ---------------------------------------------------------------------
  ! ---------------------------------------------------------------------
@@ -427,6 +451,9 @@ CONTAINS
    integer(i4b)                                :: n_time
    integer(i4b)                                :: idxRoute
 
+   ierr = 0
+   message = 'allocate_mizuroute_domain/'
+
    n_hru  = info%space%n_hru
    n_seg  = info%space%n_seg
    n_time = info%time%nt_window
@@ -489,8 +516,8 @@ CONTAINS
                     source=0._dp, stat=ierr)
          
          case (accumRunoff, impulseResponseFunc, kinematicWaveTracking)
-           write(message,'(A,I0,A,I0)') trim(message)//'routing method =', routeMethods(idxRoute), &
-                                        'not implemented in FUSE: use standalone mizuRoute'
+           write(message,'(A,I0,A,I0)') trim(message)//'routing method ', routeMethods(idxRoute), &
+                                        ' not implemented in FUSE: use standalone mizuRoute'
            ierr=10; return
 
          case default

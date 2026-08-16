@@ -14,7 +14,8 @@ SUBROUTINE GET_SMODEL(NETCDF_FILE,IMOD)
 ! MODULE model_defn -- populate structure SMODL
 ! ---------------------------------------------------------------------------------------
 USE nrtype                                            ! data types, etc.
-USE fuse_fileManager, only : OUTPUT_PATH              ! define output path
+USE fuse_fileManager,  only: OUTPUT_PATH              ! define output path
+USE handle_err_module, only: handle_err               ! error handling routine
 USE model_defn                                        ! model definition structures
 USE model_defnames
 IMPLICIT NONE

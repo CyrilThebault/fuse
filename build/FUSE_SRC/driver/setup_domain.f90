@@ -13,7 +13,7 @@ module setup_domain_module
 
 contains
 
-  subroutine setup_domain(opts, info, domain, ierr, message)
+  subroutine setup_domain(info, domain, ierr, message)
 
   ! access subroutines
   use netcdf, only: nf90_open, nf90_nowrite, nf90_strerror      ! NetCDF functions
@@ -37,7 +37,6 @@ contains
   implicit none
   
   ! input
-  type(cli_options)   , intent(in)                  :: opts            ! command line interface options
   type(fuse_info)     , intent(inout)               :: info            ! domain info
   type(domain_data)   , intent(inout)               :: domain          ! domain data
   
@@ -53,7 +52,7 @@ contains
   ! ----- set paths and file names -------------------------------------------------------
   
   ! read fuse control file (set paths/filenames etc.)
-  call read_fuse_control_file(trim(opts%control_file), opts, info, ierr, cmessage) 
+  call read_fuse_control_file(info, ierr, cmessage) 
   if (ierr/=0)then; message=trim(message)//trim(cmessage); ierr=20; return; endif
 
   ! ----- read domain metadata -----------------------------------------------------------

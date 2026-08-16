@@ -56,7 +56,7 @@ module globalData
 
   ! ---------- routing methods  -------------------------------------------------------------------------
   type(routeContainer), allocatable , public :: rch_routes(:)           ! a collection of routing method objects
-  integer(i4b)                   , public :: nRoutes                    ! number of active routing methods
+  integer(i4b)                   , public :: nRoutes = 0                ! number of active routing methods
   integer(i4b)    , allocatable  , public :: routeMethods(:)            ! active routing method id
   logical(lgt)                   , public :: onRoute(0:nRouteMethods-1) ! logical to indicate active routing method(s)
   integer(i4b)                   , public :: idxSUM                     ! index of SUM method

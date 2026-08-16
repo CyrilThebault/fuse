@@ -393,8 +393,7 @@ FUSE_RUNTIME += initfluxes.f90
 FUSE_RUNTIME += set_all.f90
 FUSE_RUNTIME += ode_int.f90
 FUSE_RUNTIME += fuse_solve.f90
-FUSE_RUNTIME += comp_stats.f90
-FUSE_RUNTIME += mean_stats.f90
+FUSE_RUNTIME += run_statistics.f90
 RUNTIME = $(patsubst %, $(RUNTIME_DIR)/%, $(FUSE_RUNTIME))
 
 # NetCDF routines
@@ -447,13 +446,7 @@ ifeq ($(FC),ifort)
 endif
 
 ifeq ($(FC),gfortran)
-  #FFLAGS_NORMA = -O3 -ffree-line-length-none -fmax-errors=0 -cpp
-  FFLAGS_NORMA = -ffree-line-length-none -fmax-errors=0 -cpp \
-                 -g -O0 -fcheck=all -fbacktrace \
-                 -ffpe-trap=invalid,zero,overflow \
-                 -finit-real=snan \
-                 -finit-integer=-999999 \
-                 -finit-logical=false
+  FFLAGS_NORMA = -O3 -ffree-line-length-none -fmax-errors=0 -cpp
   FFLAGS_DEBUG = -O0 -g -fno-omit-frame-pointer \
                  -Wall -Wextra -Wimplicit-interface \
                  -Wsurprising -Wconversion-extra \
@@ -462,7 +455,8 @@ ifeq ($(FC),gfortran)
                  -fcheck=all \
                  -ffpe-trap=invalid,zero,overflow \
                  -finit-real=snan \
-                 -finit-integer=-999999
+                 -finit-integer=-999999 \
+                 -finit-logical=false
   FFLAGS_FIXED = -O2 -c -ffixed-form
 endif
 

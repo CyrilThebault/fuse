@@ -248,7 +248,7 @@ module info_types
   type(par_id), allocatable  :: listParam(:)
 
   ! run flags
-  logical(lgt) :: q_only = .false.
+  logical(lgt) :: write_timeseries = .true.
 
   ! requested time windows (strings as read from filemanager)
   character(len=:), allocatable :: date_start_sim

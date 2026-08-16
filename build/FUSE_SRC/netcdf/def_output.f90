@@ -19,13 +19,18 @@ contains
 
   SUBROUTINE DEF_OUTPUT(info, coords)
 
-    USE metaoutput, only: VARDESCRIBE
-    USE fuse_globaldata, only: FUSE_VERSION, FUSE_BUILDTIME, FUSE_GITBRANCH, FUSE_GITHASH
-    USE metaoutput, only: NOUTVAR, VNAME, LNAME, VUNIT, VTYPE, isFlux
-    USE model_defn, only: FNAME_NETCDF_RUNS
-    USE fuse_fileManager, only: Q_ONLY
-    USE multiforce, only: timeUnits
-    USE fuse_globaldata, only: ncid_out
+    USE fuse_globaldata,   only: FUSE_VERSION, FUSE_BUILDTIME, FUSE_GITBRANCH, FUSE_GITHASH
+    USE fuse_globaldata,   only: do_mizuRoute
+    USE fuse_globaldata,   only: ncid_out
+    
+    USE globaldata,        only: routeMethods ! mizuRoute
+    
+    USE handle_err_module, only: handle_err
+
+    USE metaoutput,        only: VARDESCRIBE
+    USE metaoutput,        only: NOUTVAR, VNAME, LNAME, VUNIT, VTYPE, isFlux
+
+    USE init_mizuRoute,    only: route_method_name
 
     implicit none
 
@@ -34,10 +39,13 @@ contains
 
     ! locals
     integer(i4b) :: nPar, nObs, nSpat1, nSpat2, n_bands, n_seg
-    integer(i4b) :: ierr, ivar, varid, varid_time, varid_lat, varid_lon, varid_band, varid_param, varid_seg
-    integer(i4b) :: dim_time, dim_x, dim_y, dim_band, dim_par, dim_obs, dim_seg
+    integer(i4b) :: ierr, ivar 
+    integer(i4b) :: varid, varid_time, varid_lat, varid_lon
+    integer(i4b) :: varid_band, varid_param, varid_seg, varid_method
+    integer(i4b) :: dim_time, dim_x, dim_y 
+    integer(i4b) :: dim_band, dim_par, dim_obs, dim_seg, dim_method
     integer(i4b), dimension(3) :: dimids_basin
-    integer(i4b), dimension(2) :: dimids_reach
+    integer(i4b), dimension(3) :: dimids_reach
     integer(i4b), dimension(4) :: dimids_band
     integer(i4b), dimension(4) :: dimids_par
     integer(i4b), dimension(2) :: dimids_obs
@@ -55,6 +63,12 @@ contains
 
     real(real32), parameter                :: NA_VALUE_OUT = -9999._real32
 
+    character(len=32) :: attName
+    integer(i4b)      :: iRoute
+
+    character(len=32) :: subname
+    subname="put_output.f90/"
+
     nPar    = info%config%nParam
 
     nObs    = info%space%nObs
@@ -65,29 +79,44 @@ contains
     n_seg   = info%space%n_seg
     n_bands = info%snow%n_bands
 
-    call VARDESCRIBE()
+    ! check the routing model is active
+    do_mizuRoute = allocated(routeMethods)
+
+    ! build metadata vectors for all variables
+    call VARDESCRIBE() ! NOUTVAR, VNAME, LNAME, VUNIT, VTYPE, isFlux
+
+    ! early return: no time-series output requested
+    if ( .not. info%config%write_timeseries ) return
 
     print *, 'Create NetCDF file for runs:'
-    print *, trim(FNAME_NETCDF_RUNS)
+    print *, trim(info%files%fname_netcdf_runs)
 
     ! Create NetCDF-4 file (HDF5 container)
-    ierr = nf90_create(trim(FNAME_NETCDF_RUNS), NF90_CLASSIC_MODEL, ncid_out)
+    ierr = nf90_create(trim(info%files%fname_netcdf_runs), NF90_CLASSIC_MODEL, ncid_out)
     call handle_err(ierr)
 
-    ! Dimensions
+    ! Dimensions (land model)
     ierr = nf90_def_dim(ncid_out, "time",  NF90_UNLIMITED, dim_time); call handle_err(ierr)
     ierr = nf90_def_dim(ncid_out, "band",  n_bands,        dim_band); call handle_err(ierr)
     ierr = nf90_def_dim(ncid_out, "param", nPar,           dim_par);  call handle_err(ierr)
     ierr = nf90_def_dim(ncid_out, "obs",   nObs,           dim_obs);  call handle_err(ierr)
-    ierr = nf90_def_dim(ncid_out, "seg",   n_seg,          dim_seg);  call handle_err(ierr)
     ierr = nf90_def_dim(ncid_out, "x",     nSpat1,         dim_x);    call handle_err(ierr)
     ierr = nf90_def_dim(ncid_out, "y",     nSpat2,         dim_y);    call handle_err(ierr)
 
     dimids_basin = (/ dim_x, dim_y,           dim_time /)
-    dimids_reach = (/               dim_seg,  dim_time /)
     dimids_band  = (/ dim_x, dim_y, dim_band, dim_time /)
     dimids_par   = (/ dim_x, dim_y, dim_par,  dim_time /)
     dimids_obs   = (/               dim_obs,  dim_time /)
+    
+    ! Dimensions (routing model)
+    if ( do_mizuRoute ) then
+    
+     ierr = nf90_def_dim(ncid_out, "seg",    n_seg,              dim_seg);     call handle_err(ierr)
+     ierr = nf90_def_dim(ncid_out, "method", size(routeMethods), dim_method);  call handle_err(ierr)
+    
+     dimids_reach = (/dim_method, dim_seg, dim_time /)
+
+    end if
 
     ! loop through desired output variables
     ! NOTE: Does not execute loop if nOutput=0
@@ -96,6 +125,9 @@ contains
       ! find index of the variable name
       ivar = findloc(VNAME, info%config%outvar_names(iOut), dim=1)
       if (ivar == 0) cycle ! allow some names not in the metadata structure
+
+      if ( VTYPE(ivar) == VAR_REACH .and. .not. do_mizuRoute)  &
+      stop trim(subname)//": output variable "//trim(VNAME(ivar))//" requires mizuRoute"
 
       ! define variable
       select case( VTYPE(ivar) )
@@ -123,7 +155,7 @@ contains
 
     ! Coordinate variables
     ierr = nf90_def_var(ncid_out, "time", NF90_FLOAT, (/dim_time/), varid_time);         call handle_err(ierr)
-    ierr = nf90_put_att(ncid_out, varid_time, "units", trim(timeUnits));                 call handle_err(ierr)
+    ierr = nf90_put_att(ncid_out, varid_time, "units", trim(info%time%units));           call handle_err(ierr)
 
     ierr = nf90_def_var(ncid_out, "latitude",  NF90_FLOAT, (/dim_x, dim_y/), varid_lat); call handle_err(ierr)
     ierr = nf90_put_att(ncid_out, varid_lat, "standard_name", "latitude");               call handle_err(ierr)
@@ -139,8 +171,24 @@ contains
     ierr = nf90_def_var(ncid_out, "band", NF90_INT, (/dim_band/), varid_band);           call handle_err(ierr)
     ierr = nf90_put_att(ncid_out, varid_band, "units", "-");                             call handle_err(ierr)
 
-    ierr = nf90_def_var(ncid_out, "seg", NF90_INT, (/dim_seg/), varid_seg);              call handle_err(ierr)
-    ierr = nf90_put_att(ncid_out, varid_seg, "units", "-");                              call handle_err(ierr)
+    if (do_mizuRoute) then
+
+      ierr = nf90_def_var(ncid_out, "seg", NF90_INT, (/dim_seg/), varid_seg);            call handle_err(ierr)
+      ierr = nf90_put_att(ncid_out, varid_seg, "units", "-");                            call handle_err(ierr)
+
+      ierr = nf90_def_var(ncid_out, "method", NF90_INT, (/dim_method/), varid_method);   call handle_err(ierr)
+      ierr = nf90_put_att(ncid_out, varid_method, "long_name", "routing method");        call handle_err(ierr)
+      ierr = nf90_put_att(ncid_out, varid_method, "source", "mizuRoute");                call handle_err(ierr)
+
+      ! add decription of routing methods
+      do iRoute = 1, size(routeMethods)
+        write(attName,'("method_",I0)') routeMethods(iRoute)
+        ierr = nf90_put_att(ncid_out, varid_method, trim(attName), &
+                            route_method_name(routeMethods(iRoute)))
+        call handle_err(ierr, trim(subname)//":nf90_put_att(method:"//trim(attName)//")")                 
+      end do
+
+    end if
 
     ! Global attributes
     ierr = nf90_put_att(ncid_out, NF90_GLOBAL, "software",        "FUSE");               call handle_err(ierr)
@@ -165,7 +213,10 @@ contains
     ierr = nf90_put_var(ncid_out, varid_band,  band_i);  call handle_err(ierr)
     ierr = nf90_put_var(ncid_out, varid_param, param_i); call handle_err(ierr)
     
-    ierr = nf90_put_var(ncid_out, varid_seg, coords%seg_id); call handle_err(ierr)
+    if (do_mizuRoute) then
+      ierr = nf90_put_var(ncid_out, varid_seg,    coords%seg_id); call handle_err(ierr)
+      ierr = nf90_put_var(ncid_out, varid_method, routeMethods);  call handle_err(ierr)
+    endif
 
     ierr = nf90_close(ncid_out); call handle_err(ierr)
 

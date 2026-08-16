@@ -24,7 +24,7 @@ MODULE fuse_filemanager
   public :: SETNGS_PATH, INPUT_PATH, OUTPUT_PATH
   public :: suffix_hydromet, suffix_elev_bands
   public :: M_DECISIONS, CONSTRAINTS, MOD_NUMERIX, MBANDS_NC
-  public :: FMODEL_ID, Q_ONLY_STR, Q_ONLY
+  public :: FMODEL_ID 
   public :: date_start_sim, date_end_sim, date_start_eval, date_end_eval, numtim_sub_str
   public :: METRIC, TRANSFO
   public :: KSTOP_str, MAXN_str, PCENTO_str
@@ -51,8 +51,6 @@ MODULE fuse_filemanager
   
   ! content of output directory
   CHARACTER(LEN=64)           :: FMODEL_ID         ! string defining FUSE model
-  CHARACTER(LEN=64)           :: Q_ONLY_STR        ! TRUE = restrict attention to simulated runoff
-  LOGICAL                     :: Q_ONLY            ! .TRUE. = restrict attention to simulated runoff
   
   ! define simulation and evaluation periods
   CHARACTER(len=20)           :: date_start_sim    ! date start simulation
@@ -75,7 +73,7 @@ contains
   ! -------------------------------------------------------------------------------------
   ! -------------------------------------------------------------------------------------
 
-  subroutine read_fuse_control_file(fuseFileManagerIn, opts, info, ierr, message)
+  subroutine read_fuse_control_file(info, ierr, message)
   use tomlf_all, only: toml_table, toml_array, toml_error, toml_key, toml_value ! data types
   use tomlf_all, only: toml_load, get_value, len                                ! procedures
   
@@ -84,8 +82,6 @@ contains
   implicit none
 
   ! dummies
-  character(*),      intent(in)     :: fuseFileManagerIn
-  type(cli_options), intent(in)     :: opts
   type(fuse_info),   intent(inout)  :: info
   integer(i4b),      intent(out)    :: ierr
   character(*),      intent(out)    :: message
@@ -111,17 +107,20 @@ contains
   ierr = 0
   message = "read_fuse_control_file/"
 
+  ! ----- initialize flag to write time series (modified if exist in the TOML) -----
+  info%config%write_timeseries = .true.
+
   ! ----- load the root TOML table -----
-  call toml_load(tbl, trim(fuseFileManagerIn), error=error)
+  call toml_load(tbl, trim(info%config%cli_opts%control_file), error=error)
   if (allocated(error)) then
-    message = "problem loading toml file['"//trim(fuseFileManagerIn)//"']: "//trim(error%message)
+    message = "problem loading toml file['"//trim(info%config%cli_opts%control_file)//"']: "//trim(error%message)
     ierr=10; return
   endif
 
   ! ----- get the top-level sections -----
   call tbl%get_keys(sections)
   if(.not.allocated(sections)) then
-    message = "problem loading toml sections['"//trim(fuseFileManagerIn)//"']"
+    message = "problem loading toml sections['"//trim(info%config%cli_opts%control_file)//"']"
     ierr=10; return
   endif
 
@@ -131,7 +130,7 @@ contains
     ! ----- load the TOML sub-table for the current section -----
     call get_value(tbl, trim(sections(i)%key), subtable, requested=.false.) 
     if(.not.associated(subtable)) then
-      message = "problem loading toml sub-sections['"//trim(fuseFileManagerIn)//"']:"//trim(sections(i)%key)
+      message = "problem loading toml sub-sections['"//trim(info%config%cli_opts%control_file)//"']:"//trim(sections(i)%key)
       ierr=10; return
     endif
 
@@ -219,9 +218,9 @@ contains
         case ("remapping.vname_j_index"      ); call get_value(subtable, trim(keys(j)%key), info%remap%vname_j_index    , stat=istat)
 
         ! ---- config: output ----
+        case ("output.write_timeseries"      ); call get_value(subtable, trim(keys(j)%key), info%config%write_timeseries, stat=istat)
         case ("output.variables"             ); call get_value(subtable, trim(keys(j)%key), outputvars                  , stat=istat)
         case ("output.model_id"              ); call get_value(subtable, trim(keys(j)%key), info%config%fmodel_id       , stat=istat)
-        case ("output.q_only"                ); call get_value(subtable, trim(keys(j)%key), info%config%q_only          , stat=istat)
 
         ! ---- config: periods ----
         case ("run_periods.date_start_sim"   ); call get_value(subtable, trim(keys(j)%key), info%config%date_start_sim  , stat=istat)
@@ -257,6 +256,10 @@ contains
     end do  ! (looping through sub-sections)
   end do  ! (looping through sections)
 
+  ! ----- no model write for calibration -----
+
+  if (trim(info%config%cli_opts%runmode) == 'sce')  info%config%write_timeseries = .false.
+
   ! ---- process list of output variables ----
  
   ! get number of output variables 
@@ -265,7 +268,7 @@ contains
   else
     info%config%nOutput = 0
   endif
-  
+
   ! allocate space in the FUSE info data structures (includes nOutput=0)
   allocate(info%config%outvar_names(info%config%nOutput), stat=ierr)
   if (ierr /= 0) then
@@ -294,11 +297,11 @@ contains
   write(info%config%pcento_str,'(es20.10)') info%config%pcento
 
   ! ---- domain id, run mode and tag for output files ----
-  dom_id   = trim(opts%domain_id)
-  run_mode = trim(opts%runmode)
+  dom_id   = trim(info%config%cli_opts%domain_id)
+  run_mode = trim(info%config%cli_opts%runmode)
 
   tag = ""
-  if(allocated(opts%tag)) tag = trim(opts%tag)
+  if(allocated(info%config%cli_opts%tag)) tag = trim(info%config%cli_opts%tag)
 
   ! ---- runtime options inferred from available control files ----
   do_remapping = allocated(info%remap%remap_file)
@@ -347,7 +350,6 @@ contains
   M_DECISIONS       = trim(info%files%m_decisions)
 
   FMODEL_ID         = trim(info%config%fmodel_id)
-  Q_ONLY            = info%config%q_only
 
   date_start_sim    = trim(info%config%date_start_sim)
   date_end_sim      = trim(info%config%date_end_sim)
@@ -391,8 +393,6 @@ contains
   print *, 'date_start_eval:', trim(info%config%date_start_eval)
   print *, 'date_end_eval:',   trim(info%config%date_end_eval)
   print *, 'numtim_sub_str:',  trim(info%config%numtim_sub_str)
-  
-  print *, 'Q_ONLY', info%config%q_only
   
   end subroutine export_domain_to_legacy
 

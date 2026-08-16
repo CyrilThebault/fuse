@@ -14,14 +14,14 @@ module init_state_module
 
 contains
 
-  SUBROUTINE INIT_STATE(FRAC, MPARAM, DPARAM, FSTATE, MBANDS)
+  SUBROUTINE INIT_STATE(FRAC, MPARAM, DPARAM, FSTATE)
   ! ---------------------------------------------------------------------------------------
   ! Creator:
   ! --------
   ! Martyn Clark, 2007
   ! Modified by Brian Henn to include snow model, 6/2013
   ! Modified by Cyril Thebault to include interception, 7/2026
-  ! Modified by Cyril Thebault to use new data structures, 8/2026
+  ! Modified by Martyn Clark to use new data structures, 8/2026
   ! ---------------------------------------------------------------------------------------
   ! Purpose:
   ! --------
@@ -32,11 +32,10 @@ contains
   ! Model states in MODULE multistate
   ! ---------------------------------------------------------------------------------------
   IMPLICIT NONE
-  REAL(WP)         , INTENT(IN)      :: FRAC         ! fraction of capacity
+  REAL(WP)         , INTENT(IN)      :: FRAC        ! fraction of capacity
   type(PARADJ)     , intent(in)      :: MPARAM      ! adjustable model parameters (time delay)
   type(PARDVD)     , intent(in)      :: DPARAM      ! derived model parameters (FRAC_FUTURE, )
-  type(STATEV)     , intent(inout)   :: FSTATE       ! model states
-  type(BANDS_VAR)  , intent(inout)   :: MBANDS(:)    ! elevation bands
+  type(STATEV)     , intent(inout)   :: FSTATE      ! model states
   ! ---------------------------------------------------------------------------------------
   ! interception layer
   FSTATE%SINT_0 = 0._wp
@@ -52,8 +51,6 @@ contains
   FSTATE%FREE_2A = DPARAM%MAXFREE_2A * FRAC
   FSTATE%FREE_2B = DPARAM%MAXFREE_2B * FRAC
   FSTATE%WATR_2  = MPARAM%MAXWATR_2  * FRAC
-  ! snow model, assume no snow at start
-  MBANDS(:)%SWE = 0.0_wp
   ! ---------------------------------------------------------------------------------------
   END SUBROUTINE INIT_STATE
 

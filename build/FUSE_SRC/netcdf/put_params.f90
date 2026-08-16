@@ -27,6 +27,7 @@ MODULE PUT_PARAMS_MODULE
   USE metaparams, only: isBand                          ! logical flag to define vars with elevation dimension
   USE multibands, only: MBANDS, N_BANDS                 ! information for elevation bands
   USE parextract_module                                 ! extract parameters
+  USE handle_err_module, only: handle_err               ! handle NetCDF errors
   IMPLICIT NONE
   ! input
   INTEGER(I4B), INTENT(IN)               :: IPAR        ! parameter set index

@@ -9,7 +9,6 @@ module network_routing_module
   use mizuroute_types, only: spatial_remap_data
 
   use fuse_globaldata, only: isPrint
-  use fuse_globaldata, only: do_mizuRoute
   use fuse_globaldata, only: do_remapping
 
   use var_lookup,      only: ixNTOPO            ! index of variables for the network topology
@@ -51,12 +50,6 @@ contains
     ! initialize error control
     ierr    = 0
     message = 'network_routing/'
-
-    ! early return (not running mizuRoute)
-    if ( .not. do_mizuRoute ) then
-      if (isPrint) print*, 'mizuRoute hydrofabric file not defined: running lumped simulations'
-      return
-    endif
 
     n_seg = river_network%topology%n_seg
 
