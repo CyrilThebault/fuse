@@ -111,7 +111,7 @@ contains
 
     QSIM(1:NS) = domain%river_network%method(1)%streamflow( &
                  info%ntopo%ixSegOut, ixStart:ixEnd)     &
-                 * time_conv * length_conv / upsarea
+                 / (time_conv * length_conv * upsarea)
 
   ! no routing -- compute average weighted by overlap area
   else
