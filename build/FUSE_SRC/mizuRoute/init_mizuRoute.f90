@@ -192,14 +192,40 @@ CONTAINS
                        ierr, cmessage)
   if(ierr/=0)then; message=trim(message)//trim(cmessage); return; endif
 
+  domain%river_network%topology%is_initialized = .true.
+
+  !---------------------------------------------------------------------
+  ! Copy routing-domain metadata to the FUSE data structures
+  !---------------------------------------------------------------------
+
   info%space%n_hru = domain%river_network%topology%n_hru
   info%space%n_seg = domain%river_network%topology%n_seg
 
-  domain%coords%hru_id = [ (domain%river_network%topology%hru2seg(iHRU)%var(ixHRU2SEG%hruId)%dat(1), iHRU=1,info%space%n_hru) ]
-  domain%coords%seg_id = [ (domain%river_network%topology%ntopo  (iSeg)%var(ixNTOPO%segId  )%dat(1), iSeg=1,info%space%n_seg) ]
+  domain%reach%hru_id  = [ (domain%river_network%topology%hru2seg(iHRU)%var(ixHRU2SEG%hruId)%dat(1), iHRU=1,info%space%n_hru) ]
+  domain%reach%seg_id  = [ (domain%river_network%topology%ntopo  (iSeg)%var(ixNTOPO%segId  )%dat(1), iSeg=1,info%space%n_seg) ]
 
-  domain%river_network%topology%is_initialized = .true.
+  domain%reach%totArea = [ (domain%river_network%topology%seg    (iSeg)%var(ixSEG%totalArea)%dat(1), iSeg=1,info%space%n_seg) ]
 
+  !---------------------------------------------------------------------
+  ! Identify the output reach 
+  !---------------------------------------------------------------------
+
+  ! segment ID is not supplied: identify the reach with the largest upstream area
+  if (info%ntopo%idSegOut < 0) then
+    info%ntopo%ixSegOut = maxloc(domain%reach%totArea, dim=1)
+
+  ! segment ID supplied: find corresponding reach index
+  else
+    info%ntopo%ixSegOut = findloc(domain%reach%seg_id, info%ntopo%idSegOut, dim=1)
+    if (info%ntopo%ixSegOut == 0) then
+     write(message,'(a,i0,a)') trim(message)//'requested segment ID ', info%ntopo%idSegOut, ' not found in river network'
+     ierr=10; return
+    endif
+  endif
+
+  print*, domain%reach%totArea(info%ntopo%ixSegOut) / 1000000._dp
+  print*, domain%reach%seg_id(info%ntopo%ixSegOut)
+  
   !---------------------------------------------------------------------
   ! Read spatial remapping information
   !---------------------------------------------------------------------
@@ -215,7 +241,7 @@ CONTAINS
                         ierr, cmessage)                                 ! output: error control
     if(ierr/=0)then; message=trim(message)//trim(cmessage); return; endif
     
-    domain%remap%routing%hru_ix = match_index(domain%coords%hru_id, domain%remap%routing%hru_id, ierr, cmessage)
+    domain%remap%routing%hru_ix = match_index(domain%reach%hru_id, domain%remap%routing%hru_id, ierr, cmessage)
     if(ierr/=0)then; message=trim(message)//trim(cmessage); return; endif
 
   endif  ! (if remapping file exists)
@@ -456,7 +482,7 @@ CONTAINS
    river_network%runoff%fillvalue = realMissing
    
    ! 1-D HRU runoff
-   if ( .not. info%space%grid_flag ) then
+   if ( .not. info%space%is_gridded ) then
      message=trim(message)//'HRU spatial config not yet implemented'
      ierr=10; return
    
@@ -538,6 +564,11 @@ CONTAINS
   end do  ! * loop through stream segments
  
   ! ---- allocate space for routing outputs ---- 
+
+  if (nRoutes /= 1) then
+    message = trim(message)//'FUSE requires exactly one active mizuRoute routing method'
+    ierr = 20; return
+  endif
 
   allocate(river_network%method(nRoutes), stat=ierr)
   if (ierr /= 0) then

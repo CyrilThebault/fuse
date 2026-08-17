@@ -236,8 +236,9 @@ basin_area_km2=$(
 echo basin area: $basin_area_km2
 
 # create new variables basin area and runoff depth
-ncap2 -O -s "
+ncap2 -O -s " 
     basin_area = ${basin_area_km2}f;
+    cell_area_in_basin[hru] = ${basin_area_km2}f * 1000000.0f;
     runoff_obs[time] =
         q_obs * 86400.0f * 1000.0f /
         (basin_area * 1000000.0f);
@@ -251,6 +252,8 @@ ncks -O -x -v q_obs "${MERGED_FILE}" "${MERGED_FILE}"
 ncatted -O -h \
     -a long_name,basin_area,o,c,"basin area" \
     -a units,basin_area,o,c,"km2" \
+    -a long_name,cell_area_in_basin,o,c,"area of spatial element within basin" \
+    -a units,cell_area_in_basin,o,c,"m2" \
     -a long_name,runoff_obs,o,c,"observed runoff depth" \
     -a units,runoff_obs,o,c,"mm day-1" \
     "${MERGED_FILE}"
@@ -327,8 +330,8 @@ LEGACY_FILE="$(dirname "$MERGED_FILE")/${base}_legacy.nc"
 ncwa -O -h -a hru "${MERGED_FILE}" "${LEGACY_FILE}"
 
 # add latitude and longitude variables
-ncecat -O -h -u latitude -v prcp,temp,pet,pet_oudin "${LEGACY_FILE}" "${LEGACY_FILE}"
-ncecat -O -h -u longitude -v prcp,temp,pet,pet_oudin "${LEGACY_FILE}" "${LEGACY_FILE}"
+ncecat -O -h -u latitude -v prcp,temp,pet,pet_oudin,cell_area_in_basin "${LEGACY_FILE}" "${LEGACY_FILE}"
+ncecat -O -h -u longitude -v prcp,temp,pet,pet_oudin,cell_area_in_basin "${LEGACY_FILE}" "${LEGACY_FILE}"
 
 # put the dimensions in the correct order
 ncpdq -O -h -a time,latitude,longitude "${LEGACY_FILE}" "${LEGACY_FILE}"

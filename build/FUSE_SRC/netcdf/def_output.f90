@@ -4,7 +4,7 @@ MODULE DEF_OUTPUT_MODULE
   USE netcdf
 
   USE info_types,   only: fuse_info
-  USE domain_types, only: coord_data
+  USE domain_types, ONLY: domain_data
 
   USE fuse_globaldata, only: VAR_OBS, VAR_BAND, VAR_BASIN, VAR_REACH
 
@@ -17,7 +17,7 @@ MODULE DEF_OUTPUT_MODULE
 
 contains
 
-  SUBROUTINE DEF_OUTPUT(info, coords)
+  SUBROUTINE DEF_OUTPUT(info, domain)
 
     USE fuse_globaldata,   only: FUSE_VERSION, FUSE_BUILDTIME, FUSE_GITBRANCH, FUSE_GITHASH
     USE fuse_globaldata,   only: do_mizuRoute
@@ -35,7 +35,7 @@ contains
     implicit none
 
     type(fuse_info),    intent(in) :: info
-    type(coord_data),   intent(in) :: coords
+    type(domain_data),  intent(in) :: domain
 
     ! locals
     integer(i4b) :: nPar, nObs, nSpat1, nSpat2, n_bands, n_seg
@@ -201,8 +201,8 @@ contains
     ierr = nf90_enddef(ncid_out); call handle_err(ierr)
 
     ! Write coordinate data
-    latitude  = real(coords%lat_2d, kind(real32))
-    longitude = real(coords%lon_2d, kind(real32))
+    latitude  = real(domain%coords%lat_2d, kind(real32))
+    longitude = real(domain%coords%lon_2d, kind(real32))
 
     ierr = nf90_put_var(ncid_out, varid_lat, latitude);  call handle_err(ierr)
     ierr = nf90_put_var(ncid_out, varid_lon, longitude); call handle_err(ierr)
@@ -214,8 +214,8 @@ contains
     ierr = nf90_put_var(ncid_out, varid_param, param_i); call handle_err(ierr)
     
     if (do_mizuRoute) then
-      ierr = nf90_put_var(ncid_out, varid_seg,    coords%seg_id); call handle_err(ierr)
-      ierr = nf90_put_var(ncid_out, varid_method, routeMethods);  call handle_err(ierr)
+      ierr = nf90_put_var(ncid_out, varid_seg,    domain%reach%seg_id); call handle_err(ierr)
+      ierr = nf90_put_var(ncid_out, varid_method, routeMethods);        call handle_err(ierr)
     endif
 
     ierr = nf90_close(ncid_out); call handle_err(ierr)

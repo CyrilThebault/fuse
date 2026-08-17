@@ -19,7 +19,7 @@ MODULE multiforce
 
  public :: ncid_hydromet, ncid_var
 
- public :: nHydromet, nInput
+ public :: nHydromet
 
  public :: timDat
  public :: AFORCE, CFORCE, MFORCE
@@ -30,7 +30,7 @@ MODULE multiforce
  public :: istart, jdayRef
  public :: deltim
 
- public :: SUB_PERIODS_FLAG, GRID_FLAG
+ public :: SUB_PERIODS_FLAG
 
  public :: startSpat2, nSpat1, nSpat2
  public :: xlon, ylat, latitude, longitude
@@ -63,7 +63,6 @@ MODULE multiforce
  ! NetCDF
 
  INTEGER(i4b), PARAMETER               :: nHydromet = 7                ! number of hydromet variables
- INTEGER(i4b)                          :: nInput = 4                   ! number of variable to retrieve from input file
 
  INTEGER(i4b)                          :: ncid_hydromet = -1           ! NetCDF hydromet file ID
  INTEGER(i4b), DIMENSION(nHydromet)    :: ncid_var                     ! NetCDF hydromet variable ID
@@ -87,7 +86,6 @@ MODULE multiforce
  REAL(WP)                              :: deltim = -1._wp             ! length of time step (days)
 
  LOGICAL(LGT)                          :: SUB_PERIODS_FLAG            ! .true. if subperiods are used to run FUSE
- LOGICAL(LGT)                          :: GRID_FLAG                   ! spatial flag .true. if grid
 
  ! dimension information
  

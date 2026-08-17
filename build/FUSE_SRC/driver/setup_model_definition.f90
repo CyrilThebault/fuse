@@ -109,9 +109,9 @@ contains
   info%config%nSets = NUMPSET
 
   ! define NetCDF files
-  CALL DEF_PARAMS(info%config%nSets)    ! define model parameters
-  CALL DEF_OUTPUT(info, domain%coords)  ! define model output time series (nPar used for parameter derivatives)
-  CALL DEF_SSTATS()                     ! define summary statistics (REDEF)
+  CALL DEF_PARAMS(info%config%nSets)  ! define model parameters
+  CALL DEF_OUTPUT(info, domain)       ! define model output time series (nPar used for parameter derivatives)
+  CALL DEF_SSTATS()                   ! define summary statistics (REDEF)
 
   ! get parameter bounds and random numbers
   ALLOCATE(APAR(NUMPAR),BL(NUMPAR),BU(NUMPAR))

@@ -1,11 +1,14 @@
 module run_statistics
 
   use nrtype,      only: i4b, wp, lgt
+  use info_types,  only: fuse_info
   use work_types,  only: fuse_work
   use domain_types,only: domain_data
 
   use fuse_globaldata, only: isPrint
   use fuse_globaldata, only: do_mizuRoute
+
+  use globalData, only: length_conv,time_conv ! mizuRoute shim
 
   implicit none
   private
@@ -16,7 +19,7 @@ module run_statistics
 
 contains
 
-  SUBROUTINE compute_performance_stats(work,domain,ierr,message)
+  SUBROUTINE compute_performance_stats(info, work, domain, ierr,message)
   ! ---------------------------------------------------------------------------------------
   ! Creator:
   ! --------
@@ -38,10 +41,11 @@ contains
   USE metrics                                           ! available metrics and transformations
   USE multiforce, only: NA_VALUE                        ! model forcing structure (temporally constant)
   USE multiforce, only: sim_beg, eval_beg, eval_end     ! model forcing structure (temporally constant)
-  
+
   IMPLICIT NONE
 
   ! input/output
+  type(fuse_info),   intent(in)          :: info        ! domain info
   type(fuse_work),   intent(inout)       :: work        ! work structures that depend on npar/nState
   type(domain_data), intent(inout)       :: domain      ! data for the full domain
 
@@ -70,8 +74,12 @@ contains
   REAL(WP)                               :: SS_RAW      ! sum of squared differences in observed - simulated
   REAL(WP)                               :: SS_LOG      ! sum of squared differences in LOG observed - LOG simulated
   REAL(WP)                               :: NO_ZERO     ! avoid divide by zero
+  integer(i4b)                           :: iSeg        ! index of stream segment
+  integer(i4b)                           :: iSpat1      ! index of the 1st spatial dimension
+  integer(i4b)                           :: iSpat2      ! index of the 2nd spatial dimension
   integer(i4b)                           :: ixStart     ! start index for statistics
   integer(i4b)                           :: ixEnd       ! end index for statistics
+  real(wp)                               :: upsarea     ! upstream area (m2)
   character(len=256)                     :: cmessage    ! error message of downwind routine
 
   ierr = 0
@@ -95,19 +103,37 @@ contains
   ixStart = eval_beg-sim_beg+1
   ixEnd   = eval_end-sim_beg+1
 
-  ! extract OBS and SIM for evaluation period, 
+  ! ---- extract SIM for evaluation period ------------------------------------------------
+
   if ( do_mizuRoute ) then
 
-    message=trim(message)//'distributed routing not implemented yet'
-    ierr=10; return
+    upsarea    = domain%reach%totArea(info%ntopo%ixSegOut)
 
+    QSIM(1:NS) = domain%river_network%method(1)%streamflow( &
+                 info%ntopo%ixSegOut, ixStart:ixEnd)     &
+                 * time_conv * length_conv / upsarea
+
+  ! no routing -- compute average weighted by overlap area
   else
 
-    QSIM = domain%route(1, 1, ixStart:ixEnd)%Q_ROUTED
-    QOBS = work%obs%q(     1, ixStart:ixEnd) 
+    QSIM(:) = 0._wp
+
+    do iSpat2 = 1, size(domain%route,2)
+      do iSpat1 = 1, size(domain%route,1)
+        QSIM(1:NS) = QSIM(1:NS)  + domain%olap_area(iSpat1,iSpat2) * &
+                                   domain%route(iSpat1,iSpat2,ixStart:ixEnd)%Q_ROUTED
+      end do 
+    end do
+    
+    QSIM(:) = QSIM(:) / sum(domain%olap_area)
  
   endif
 
+  ! ---------------------------------------------------------------------------------------
+  
+  ! currently assuming one observation (checked earlier)
+  QOBS(:) = work%obs%q(1, ixStart:ixEnd) 
+  
   ! check for missing QOBS values
   QOBS_MASK = QOBS.ne.REAL(NA_VALUE, KIND(WP)) ! find the time steps for which QOBS is available
   NUM_AVAIL = COUNT(QOBS_MASK) ! number of time steps for which QOBS is available

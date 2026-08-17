@@ -25,9 +25,10 @@ contains
   USE time_windows_module,   only: get_time_windows             ! get info on the rolling time windows
   USE time_windows_module,   only: export_time_to_multiforce    ! populate legacy multiforce modules
 
-  USE get_hydromet_module,   only: get_hydromet_metadata        ! get hydromet metadata
-  USE get_hydromet_module,   only: read_latlon_2d               ! read lat/lon
+  USE read_spatial_attrs,    only: read_spatial_attributes      ! read lat/lon and cell overlap
   USE read_elevbands_module, only: read_elevbands               ! read elevation bands
+
+  USE read_hydromet_module,  only: read_hydromet_metadata       ! read hydromet metadata
 
   USE alloc_domain_module,   only: allocate_domain_data         ! allocate space for data arrays in the domain structure
   USE alloc_domain_module,   only: set_legacy_arrays            ! copy arrays in the domain%data structure to legacy arrays 
@@ -95,18 +96,20 @@ contains
   ! allocate space for the arrays in the domain%data structure
   call allocate_domain_data(info, domain, ierr, cmessage)
   if (ierr/=0)then; message=trim(message)//trim(cmessage); ierr=20; return; endif
-
-  ! ----- Read lat/lon, elevation band arrays, and hydromet var ids  -----------------------
+ 
+  ! ----- Read static spatial information -------------------------------------------------
 
   ! read lat/lon and store in the domain%data%coords structure
-  call read_latlon_2d(info%files%ncid_hydromet, info, domain%coords, ierr, message)
+  call read_spatial_attributes(info%files%ncid_hydromet, info, domain, ierr, message)
   if (ierr/=0)then; message=trim(message)//trim(cmessage); ierr=20; return; endif
 
   ! read elevation bands information and store in the domain%data structure
   call read_elevbands(info, domain, ierr, cmessage)
   if (ierr/=0)then; message=trim(message)//trim(cmessage); ierr=20; return; endif
 
-  call get_hydromet_metadata(info%files%ncid_hydromet, info, ierr, cmessage)
+  ! ----- Initialize time-varying hydromet inputs -----------------------------------------
+
+  call read_hydromet_metadata(info%files%ncid_hydromet, info, ierr, cmessage)
   if (ierr/=0)then; message=trim(message)//trim(cmessage); ierr=20; return; endif
 
   ! ----- Routines that use the old structures --------------------------------------------
