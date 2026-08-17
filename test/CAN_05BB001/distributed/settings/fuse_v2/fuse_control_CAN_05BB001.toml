@@ -80,6 +80,8 @@ varname_area   = "area"
 varname_slope  = "slope"
 varname_length = "length"
 
+seg_outlet = 710285850
+
 [remapping]
 
 remap_file     = "lumped_to_hru.nc"

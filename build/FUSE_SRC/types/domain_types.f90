@@ -29,21 +29,33 @@ module domain_types
     real(wp)    , allocatable :: lon_2d(:,:) ! (nx_local, ny_local)
     real(wp)    , allocatable :: lat_2d(:,:)
 
-    ! IDs for HRU and stream segments
-    integer(i4b), allocatable :: hru_id(:)
-    integer(i4b), allocatable :: seg_id(:)
-
     ! optional IDs (int is usually safest)
     integer(i4b), allocatable :: cell_id(:,:)  ! always stored locally as (nx_local, ny_local)
 
   end type coord_data
 
   ! -------------------------------------------------------------------------------------
+
+  type :: reach_data
+
+    ! IDs for HRU and stream segments
+    integer(i4b), allocatable :: hru_id(:)
+    integer(i4b), allocatable :: seg_id(:)
+
+    ! Reach properties needed for FUSE coupling
+    real(wp)    , allocatable :: totArea(:)
+
+  end type reach_data
+
+  ! -------------------------------------------------------------------------------------
   
   type :: domain_data
 
     ! coordinate information
-    type(coord_data)             :: coords
+    type(coord_data)              :: coords
+
+    ! reach properties
+    type(reach_data)              :: reach
 
     ! 3D forcing window
     type(FDATA), allocatable      :: force(:,:,:)       ! gForce_3d (nx_local, ny_local, nt_window)
@@ -60,6 +72,9 @@ module domain_types
     ! 2D elevation information
     logical(lgt), allocatable     :: elev_mask(:,:)     ! elev_mask (nx_local, ny_local)
     real(wp),     allocatable     :: z_forcing(:,:)     ! Z_FORCING_grid (nx_local, ny_local)
+    
+    ! basin averages
+    real(wp),     allocatable     :: olap_area(:,:)     ! cell/HRU area within basin [m2]
 
     ! 3D snow-band information
     type(BANDS_INFO), allocatable :: bands_info(:,:,:)  ! MBANDS_INFO_3d (nx_local, ny_local, n_bands)

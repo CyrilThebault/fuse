@@ -6,7 +6,7 @@ input_dir    = "test/CAN_05BB001/lumped/input/"
 output_dir   = "test/CAN_05BB001/lumped/work/"
 
 [input]
-hydromet_suffix   = "_daymet_qobs_merged_legacy.nc"
+hydromet_suffix   = "_daymet_qobs_merged.nc"
 elevbands_suffix = "_elev_bands.nc"
 
 [model]

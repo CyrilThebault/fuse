@@ -48,10 +48,14 @@ CONTAINS
   allocate(domain%route(nx,ny,nt), stat=ierr)
   if(ierr/=0)then; message=trim(message)//"cannot allocate route"; return; endif
 
-  ! allocate elevation grid
+  ! allocate elevation arrays
   allocate(domain%z_forcing(nx,ny), domain%elev_mask(nx,ny), stat=ierr)
-  if(ierr/=0)then; message=trim(message)//"cannot allocate elev grid"; return; endif
-  
+  if(ierr/=0)then; message=trim(message)//"cannot allocate elevation arrays"; return; endif
+
+  ! allocate overlap area
+  allocate(domain%olap_area(nx,ny), stat=ierr)
+  if(ierr/=0)then; message=trim(message)//"cannot allocate overlap area"; return; endif
+
   ! allocate elevation bands (info)
   allocate(domain%bands_info(nx,ny,nb), stat=ierr)
   if(ierr/=0)then; message=trim(message)//"cannot allocate elev bands (info)"; return; endif
@@ -83,7 +87,6 @@ CONTAINS
   USE multiforce, only: startSpat2                         ! starting y index for data read
   USE multiforce, only: ncid_hydromet
   use multiforce, only: timeUnits
-  use multiforce, only: nInput
   use multiBands, only: N_BANDS, MBANDS
   implicit none
 
@@ -110,8 +113,6 @@ CONTAINS
   startSpat2 = info%space%y_start_global
 
   ncid_hydromet  = info%files%ncid_hydromet
-
-  nInput     = info%config%nInput
 
   ! set bands
   N_BANDS = nb

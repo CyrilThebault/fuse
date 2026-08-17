@@ -57,19 +57,19 @@ contains
   character(*),    intent(out)   :: message
 
   integer(i4b) :: ncid
-  integer(i4b) :: varid
-  integer(i4b) :: ndims
+  integer(i4b) :: varid, varid_lat, varid_lon
+  integer(i4b) :: ndims, ndims_lat, ndims_lon
   integer(i4b) :: dimids(NF90_MAX_VAR_DIMS)
   character(len=NF90_MAX_NAME) :: dimname
   integer(i4b) :: idim,dimlen
   integer(i4b) :: time_varid
   
   associate(precip_name => info%files%precip_name, &
-            grid_flag   => info%space%grid_flag,   &
+            is_gridded  => info%space%is_gridded,  &
+            is_clinear  => info%space%is_clinear,  &
             nx_global   => info%space%nx_global,   &
             ny_global   => info%space%ny_global,   &
-            nt_global   => info%time%nt_global,    &
-            nInput      => info%config%nInput)
+            nt_global   => info%time%nt_global)
 
   ierr=0; message="read_forcing_dimensions/"
 
@@ -143,10 +143,53 @@ contains
   endif  ! (ndims=3)
 
   ! define grid
-  grid_flag = ndims == 3 
+  is_gridded = ndims==3 
 
-  ! set the number of input variables (3 = ppt, temp, pet; 4 = + obsq)
-  nInput = merge(3,4,grid_flag)
+  ! --- distinguish between rectilinear and curvilinear grid ---
+
+  !                           is_gridded    is_clinear
+  !  HRU / point list           F               F
+  !  regular lat/lon grid       T               F
+  !  rotated/curvilinear grid   T               T
+
+  if (is_gridded) then
+
+    ierr = nf90_inq_varid(ncid, trim(info%files%latitude_name), varid_lat)
+    if (ierr /= nf90_noerr) then
+      message = trim(message)//"cannot find latitude variable: "//trim(nf90_strerror(ierr))
+      return
+    endif
+   
+    ierr = nf90_inq_varid(ncid, trim(info%files%longitude_name), varid_lon)
+    if (ierr /= nf90_noerr) then
+      message = trim(message)//"cannot find longitude variable: "//trim(nf90_strerror(ierr))
+      return
+    endif
+   
+    ierr = nf90_inquire_variable(ncid, varid_lat, ndims=ndims_lat)
+    if (ierr /= nf90_noerr) then
+      message = trim(message)//"cannot inquire latitude variable: "//trim(nf90_strerror(ierr))
+      return
+    endif
+   
+    ierr = nf90_inquire_variable(ncid, varid_lon, ndims=ndims_lon)
+    if (ierr /= nf90_noerr) then
+      message = trim(message)//"cannot inquire longitude variable: "//trim(nf90_strerror(ierr))
+      return
+    endif
+   
+    if (ndims_lat /= ndims_lon) then
+      message = trim(message)//"latitude and longitude have different ranks"
+      ierr = 20; return
+    endif
+   
+    is_clinear = (ndims_lat == 2) ! curvilinear grid
+
+  else
+
+    is_clinear = .false.          ! rectilinear grid
+
+  endif
 
   ! --- close NetCDF file --- 
   ierr = nf90_close(ncid)

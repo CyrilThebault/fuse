@@ -1,4 +1,4 @@
-module get_hydromet_module
+module read_hydromet_module
 
 use nrtype
 use info_types, only: fuse_info
@@ -14,215 +14,13 @@ implicit none
 
 private
 
-public :: read_latlon_2d
-public :: get_met_data
-public :: get_qobs_data
-public :: get_hydromet_metadata
+public :: read_met_data
+public :: read_qobs_data
+public :: read_hydromet_metadata
 
 contains
 
-  ! --------------------------------------------------------------------------------------
-  ! --------------------------------------------------------------------------------------
-  ! --------------------------------------------------------------------------------------
-
-  subroutine read_latlon_2d(ncid, info, coord, ierr, message)
-
-  use netcdf
-  use nrtype
-  use info_types, only: fuse_info
-  use domain_types, only: coord_data
-  implicit none
-
-  integer(i4b),    intent(in)    :: ncid
-  type(fuse_info), intent(in)    :: info
-  type(coord_data),intent(inout) :: coord
-  integer(i4b),    intent(out)   :: ierr
-  character(*),    intent(out)   :: message
-
-  integer(i4b) :: vid_lat, vid_lon
-  integer(i4b) :: nd_lat, nd_lon
-  integer(i4b) :: dimids_lat(NF90_MAX_VAR_DIMS), dimids_lon(NF90_MAX_VAR_DIMS)
-  integer(i4b) :: nx, ny, ystart
-  integer(i4b) :: len_lat, len_lon
-  integer(i4b) :: start2(2), count2(2)
-  real(wp), allocatable :: lon_1d(:), lat_1d(:)
-
-  ierr = 0
-  message = "read_latlon_2d/"
-
-  nx     = info%space%nx_local
-  ny     = info%space%ny_local
-  ystart = info%space%y_start_global
-
-  ! Ensure 2D storage exists
-  if (.not. allocated(coord%lat_2d)) allocate(coord%lat_2d(nx, ny))
-  if (.not. allocated(coord%lon_2d)) allocate(coord%lon_2d(nx, ny))
-
-  ! --- get varids ---
-  ierr = nf90_inq_varid(ncid, trim(info%files%latitude_name), vid_lat)
-  if(ierr /= nf90_noerr) then
-    message = trim(message)//"missing var '"//trim(info%files%latitude_name)//"': "//trim(nf90_strerror(ierr))
-    return
-  endif
-
-  ierr = nf90_inq_varid(ncid, trim(info%files%longitude_name), vid_lon)
-  if(ierr /= nf90_noerr) then
-    message = trim(message)//"missing var '"//trim(info%files%longitude_name)//"': "//trim(nf90_strerror(ierr))
-    return
-  endif
-
-  ! --- ranks/dims ---
-  ierr = nf90_inquire_variable(ncid, vid_lat, ndims=nd_lat, dimids=dimids_lat)
-  if(ierr /= nf90_noerr) then
-    message = trim(message)//"inquire latitude failed: "//trim(nf90_strerror(ierr))
-    return
-  endif
-
-  ierr = nf90_inquire_variable(ncid, vid_lon, ndims=nd_lon, dimids=dimids_lon)
-  if(ierr /= nf90_noerr) then
-    message = trim(message)//"inquire longitude failed: "//trim(nf90_strerror(ierr))
-    return
-  endif
-
-  !----------------------------------------------------------------------------
-  ! Case A: Rectilinear OR point-list (lat 1D, lon 1D)
-  !----------------------------------------------------------------------------
-  if (nd_lat == 1 .and. nd_lon == 1) then
-
-    ! Read full 1D vectors (easiest because slice depends on grid shape)
-    ! NOTE: do MPI slice later
-    ierr = nf90_inquire_dimension(ncid, dimids_lat(1), len=len_lat)
-    if(ierr /= nf90_noerr) then
-      message = trim(message)//"inquire lat dim failed: "//trim(nf90_strerror(ierr))
-      return
-    endif
-    ierr = nf90_inquire_dimension(ncid, dimids_lon(1), len=len_lon)
-    if(ierr /= nf90_noerr) then
-      message = trim(message)//"inquire lon dim failed: "//trim(nf90_strerror(ierr))
-      return
-    endif
-
-    allocate(lat_1d(len_lat))
-    allocate(lon_1d(len_lon))
-
-    ierr = nf90_get_var(ncid, vid_lat, lat_1d)
-    if(ierr /= nf90_noerr) then
-      message = trim(message)//"get_var(latitude) failed: "//trim(nf90_strerror(ierr))
-      return
-    endif
-
-    ierr = nf90_get_var(ncid, vid_lon, lon_1d)
-    if(ierr /= nf90_noerr) then
-      message = trim(message)//"get_var(longitude) failed: "//trim(nf90_strerror(ierr))
-      return
-    endif
-
-    coord%is_curvilinear = .false.
-    coord%is_point_list  = (info%space%nx_global == 1)  ! our convention
-
-    if (coord%is_point_list) then
-      ! Point-list/HRU: lat(hru), lon(hru) -> store as (1,ny_local)
-      if (nx /= 1) then
-        message = trim(message)//"point-list detected but nx_local /= 1"
-        ierr = 20; return
-      endif
-      coord%lat_2d(1,:) = lat_1d(ystart:ystart+ny-1)
-      coord%lon_2d(1,:) = lon_1d(ystart:ystart+ny-1)
-
-    else
-      ! Rectilinear grid: lat(ny), lon(nx) -> broadcast to 2D
-
-      ! lon_1d is global length nx_global
-      coord%lon_2d(:,:) = spread(lon_1d(1:nx), dim=2, ncopies=ny)
-
-      ! lat_1d is global length ny_global; take this rank's slice then replicate across x
-      coord%lat_2d(:,:) = spread(lat_1d(ystart:ystart+ny-1), dim=1, ncopies=nx)
-
-    endif
-
-    deallocate(lat_1d, lon_1d)
-
-    return
-  endif
-
-  !----------------------------------------------------------------------------
-  ! Case B: Curvilinear (lat 2D, lon 2D)
-  !----------------------------------------------------------------------------
-  if (nd_lat == 2 .and. nd_lon == 2) then
-
-    ! Read local slab in file order: (spat1,spat2) with y split along dim2
-
-    start2 = (/ 1, ystart /)
-    count2 = (/ nx, ny /)
-
-    ierr = nf90_get_var(ncid, vid_lat, coord%lat_2d, start=start2, count=count2)
-    if(ierr /= nf90_noerr) then
-      message = trim(message)//"get_var(latitude 2D) failed: "//trim(nf90_strerror(ierr))
-      return
-    endif
-
-    ierr = nf90_get_var(ncid, vid_lon, coord%lon_2d, start=start2, count=count2)
-    if(ierr /= nf90_noerr) then
-      message = trim(message)//"get_var(longitude 2D) failed: "//trim(nf90_strerror(ierr))
-      return
-    endif
-
-    coord%is_curvilinear = .true.
-    coord%is_point_list  = .false.
-
-    return
-  endif
-
-  !----------------------------------------------------------------------------
-  ! Anything else is unsupported under preprocessing + layout rules
-  !----------------------------------------------------------------------------
-  ierr = 20
-  write(message,'(a,i0,a,i0,a)') trim(message)// &
-    "unsupported lat/lon ranks (lat_ndims=", nd_lat, ", lon_ndims=", nd_lon, &
-    "). If coords include time, preprocess to remove time from latitude/longitude."
-
-  end subroutine read_latlon_2d
-
-  ! --------------------------------------------------------------------------------------
-  ! --------------------------------------------------------------------------------------
-  ! --------------------------------------------------------------------------------------
-  subroutine get_dimIds(ncid, varid, nexpect, varDimIDs, ierr, message)
-  ! used to get the vector of dimension ids for a given variable
-
-  implicit none
-
-  ! input
-  integer(i4b),intent(in)   :: ncid     ! NetCDF file ID
-  integer(i4b),intent(in)   :: varid    ! NetCDF variable ID
-  integer(i4b),intent(in)   :: nexpect  ! number of dimensions expected
-
-  ! output
-  integer(i4b),intent(out)  :: varDimIDs(nexpect)  ! vector of dimension IDs
-  integer(i4b),intent(out)  :: ierr     ! error code
-  character(*), intent(out) :: message  ! error message
-
-  ! internal variables
-  integer(i4b)              :: nVarDims ! number of dimensions for given variable
-
-  ! initialize error control
-  ierr=0; message='get_dimIds/'
-
-  ! get number of dimensions
-  ierr = nf90_inquire_variable(ncid, varid, ndims=nVarDims)
-  if(ierr/=0)then; message=trim(message)//trim(nf90_strerror(ierr)); return; endif
-
-  ! check number of dimensions
-  if(nVarDims/=nexpect)then; message=trim(message)//'unexpected number of dimensions for variable'; return; endif
-
-  ! get vector of dimension IDs
-  ierr = nf90_inquire_variable(ncid, varid, dimids=varDimIDs(:nVarDims))
-  if(ierr/=0)then; message=trim(message)//trim(nf90_strerror(ierr)); return; endif
-
-  end subroutine get_dimIds
-
-  ! --------------------------------------------------------------------------------------
-
-  subroutine get_hydromet_metadata(ncid, info, ierr, message)
+  subroutine read_hydromet_metadata(ncid, info, ierr, message)
   implicit none
   integer(i4b), intent(in)       :: ncid
   type(fuse_info), intent(inout) :: info
@@ -233,7 +31,7 @@ contains
   character(len=256) :: cmessage
 
   ierr = 0
-  message = "get_hydromet_metadata/"
+  message = "read_hydromet_metadata/"
 
   ! get table of name/varid pairs (names set in TOML read)
   info%files%hydromet%name(iPRECIP) = info%files%precip_name
@@ -285,13 +83,13 @@ contains
 
   end do  ! ivar
 
-  end subroutine get_hydromet_metadata
+  end subroutine read_hydromet_metadata
 
   ! ---------------------------------------------------------------------------------------
   ! ---------------------------------------------------------------------------------------
   
-  SUBROUTINE get_met_data(info, itim_start, numtim, &
-                          domain, ierr, message)
+  SUBROUTINE read_met_data(info, itim_start, numtim, &
+                           domain, ierr, message)
   ! ---------------------------------------------------------------------------------------
   ! Creator:
   ! --------
@@ -326,7 +124,7 @@ contains
   integer(i4b), allocatable               :: nc_count(:) ! count in NetCDF file
 
   ! initialize error control
-  ierr=0; message='get_met_data/'
+  ierr=0; message='read_met_data/'
   ! ---------------------------------------------------------------------------------------
 
   ! get indices in the input file
@@ -397,13 +195,13 @@ contains
 
   end do  ! (loop thru forcing variables)
 
-  end subroutine get_met_data
+  end subroutine read_met_data
 
   ! ---------------------------------------------------------------------------------------
   ! ---------------------------------------------------------------------------------------
 
-  SUBROUTINE get_qobs_data(info, itim_start, numtim, &
-                           qobs, ierr, message)
+  SUBROUTINE read_qobs_data(info, itim_start, numtim, &
+                            qobs, ierr, message)
   ! ---------------------------------------------------------------------------------------
   ! Purpose:
   ! --------
@@ -427,7 +225,7 @@ contains
   integer(i4b)                            :: nc_count(2) ! count in NetCDF file
 
   ! initialize error control
-  ierr=0; message='get_qobs_data/'
+  ierr=0; message='read_qobs_data/'
   ! ---------------------------------------------------------------------------------------
 
   nc_start = (/              1, itim_start/)
@@ -445,7 +243,7 @@ contains
 
   qobs(:,1:numtim) = qobs(:,1:numtim) * info%files%hydromet%multiplier(iQOBS)
 
-  end subroutine get_qobs_data
+  end subroutine read_qobs_data
 
   ! -------------------------------------------------------------------------------------
   ! -------------------------------------------------------------------------------------
@@ -629,4 +427,4 @@ contains
 
   end subroutine get_input_flux_multiplier
 
-end module get_hydromet_module
+end module read_hydromet_module

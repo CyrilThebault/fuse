@@ -33,6 +33,7 @@ MODULE fuse_evaluate_module
     ! Modified by Martyn Clark to call differentiable modeling routines, 12/2025
     ! Modified by Martyn Clark to simplify/refactor, 02/2026
     ! Modified by Cyril Thébault to include interception, 7/2026
+    ! Modified by Cyril Thébault to use new spatial configurations, 8/2026
     ! ---------------------------------------------------------------------------------------
     ! Purpose:
     ! --------
@@ -91,7 +92,7 @@ MODULE fuse_evaluate_module
       call finalize_numerical_stats(work)  ! land model only
       
       if(isPrint) PRINT *, 'Calculating performance metrics...'
-      call compute_performance_stats(work, domain, ierr, cmessage)
+      call compute_performance_stats(info, work, domain, ierr, cmessage)
       if (ierr /= 0) then; message = trim(message)//trim(cmessage); return; end if
       
       metric_val = work%run%stats%metric_val
@@ -226,14 +227,14 @@ MODULE fuse_evaluate_module
 
   subroutine run_time_loop(info, work, domain, output_flag, ierr, message)
 
-  use fuse_globaldata, only: isPrint
-  use multiforce,      only: timDat  ! NOTE: used in legacy codes
-  use multiforce,      only: nspat1, nspat2, DELTIM, sim_beg, sim_end, numtim_sub
+  use fuse_globaldata,        only: isPrint
+  use multiforce,             only: timDat  ! NOTE: used in legacy codes
+  use multiforce,             only: nspat1, nspat2, DELTIM, sim_beg, sim_end, numtim_sub
   
-  use time_utils,          only: caldatss
-  use get_hydromet_module, only: get_met_data
-  use get_hydromet_module, only: get_qobs_data
-  use put_output_module,   only: put_output
+  use time_utils,             only: caldatss
+  use read_hydromet_module,   only: read_met_data
+  use read_hydromet_module,   only: read_qobs_data
+  use put_output_module,      only: put_output
 
   use network_routing_module, only: network_routing
 
@@ -308,14 +309,14 @@ MODULE fuse_evaluate_module
     
     ! load meteorological forcing data for desired period into the domain%force data structure
     ! NOTE: reads different spatial slice per MPI rank in the nSpat2 dimension
-    call get_met_data(info, chunk_start_in, chunk_len, &
-                      domain, ierr, cmessage)
+    call read_met_data(info, chunk_start_in, chunk_len, &
+                       domain, ierr, cmessage)
     if (ierr/=0) then; message=trim(message)//trim(cmessage); return; endif
 
     ! load streamflow observations for desired period into the domain%valid data structure
     ! NOTE: qobs replicated across MPI ranks
-    call get_qobs_data(info, chunk_start_in, chunk_len, &
-                       work%obs%q(:,1:chunk_len), ierr, cmessage)
+    call read_qobs_data(info, chunk_start_in, chunk_len, &
+                        work%obs%q(:,1:chunk_len), ierr, cmessage)
     if (ierr/=0) then; message=trim(message)//trim(cmessage); return; endif
 
     if(isPrint) PRINT *, 'Hydromet data loaded. Running FUSE...'
@@ -557,7 +558,7 @@ MODULE fuse_evaluate_module
     ! write routing to the mizuRoute data structures
     if ( do_mizuRoute ) then
 
-      if ( .not. info%space%grid_flag ) then
+      if ( .not. info%space%is_gridded ) then
         domain%river_network%runoff%sim(iSpat2) = work%step%route%q_routed
       else
         domain%river_network%runoff%sim2d(ispat1,iSpat2) = work%step%route%q_routed

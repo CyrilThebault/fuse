@@ -59,8 +59,9 @@ module info_types
    integer(i4b) :: y_start_global = 1
    integer(i4b) :: y_end_global   = 1
 
-   ! mode flag
-   logical(lgt) :: grid_flag = .false.
+   ! coordinate geometry
+   logical(lgt) :: is_gridded = .false.
+   logical(lgt) :: is_clinear = .false.
  
  end type space_info
 
@@ -196,6 +197,7 @@ module info_types
 
    ! Network topology
    integer(i4b)                  :: idSegOut = -9999   ! ID of outlet segment
+   integer(i4b)                  :: ixSegOut = -9999   ! index of outlet segment
 
  end type topo_info
 
@@ -237,8 +239,7 @@ module info_types
   integer(i4b)       :: nState = -9999
   integer(i4b)       :: nParam = -9999
  
-  ! number of input/output variables
-  integer(i4b)       :: nInput
+  ! number of output variables
   integer(i4b)       :: nOutput
 
   ! list of output variables
