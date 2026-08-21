@@ -91,7 +91,7 @@ existing parameter file and run the model.
 For example, for the Bow River test case, the NetCDF parameter file
 produced by calibration can be assigned to a shell variable:
 ```bash
-$calibration_file=test/CAN_05BB001/lumped/output/CAN_05BB001_2__para_sce.nc
+calibration_file=test/CAN_05BB001/lumped/output/CAN_05BB001_2__para_sce.nc
 ```
 The examples below use the `$calibration_file` shell variable to refer
 to this file.

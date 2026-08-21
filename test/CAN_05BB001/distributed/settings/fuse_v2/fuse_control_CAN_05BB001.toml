@@ -27,7 +27,7 @@ qobs   = "runoff_obs"
 
 [output]
 
-write_timeseries = false
+write_timeseries = true
 
 model_id  = "2"
 
@@ -67,6 +67,7 @@ dt = 86400
 
 hfabric_path = "test/CAN_05BB001/distributed/input/"
 hfabric_file = "hydrofabric_mizuRoute.nc"
+hfabric_newfile = "hydrofabric_mizuRoute_new.nc"
 
 dname_seg = "seg"
 dname_hru = "hru"

@@ -124,9 +124,6 @@ contains
           river_network%method(ix)%streamflow(jSeg, sub_idx) = river_network%method(ix)%streamflow(jSeg, sub_idx) + &
                                                                river_network%flux(jSeg)%ROUTE(ix)%REACH_Q * fracStep
 
-          !print*, 'river_network%reach_inflow(jSeg, sub_idx ) = ', river_network%reach_inflow(jSeg, sub_idx)
-          !print*, 'river_network%flux(jSeg)%ROUTE(ix)%REACH_Q = ', river_network%flux(jSeg)%ROUTE(ix)%REACH_Q
-
         end do  ! * loop through stream segments
 
         !stop 'check'

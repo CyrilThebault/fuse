@@ -147,6 +147,9 @@ CONTAINS
   nSpace(1) = info%space%ny_global ! latitude dimension
   nSpace(2) = info%space%nx_global ! longitude dimension
 
+  ! Write an augmented hydrofabric if an output filename is provided.
+  ntopAugmentMode = allocated(info%ntopo%hfabric_newfile) 
+
   ! Populate the shared mizuRoute control variables.
   call populate_mizu_modules(info, domain%river_network%time, ierr, cmessage)
   if(ierr/=0)then; message=trim(message)//trim(cmessage); return; endif
@@ -158,9 +161,6 @@ CONTAINS
   !---------------------------------------------------------------------
   ! Construct the river network topology
   !---------------------------------------------------------------------
-
-  ! Write an augmented hydrofabric if an output filename is provided.
-  ntopAugmentMode = allocated(info%ntopo%hfabric_newfile) 
 
   ! Enable all mizuRoute routing formulations during network initialization so that
   ! the complete set of routing-specific network data structures is available.
@@ -223,9 +223,6 @@ CONTAINS
     endif
   endif
 
-  print*, domain%reach%totArea(info%ntopo%ixSegOut) / 1000000._dp
-  print*, domain%reach%seg_id(info%ntopo%ixSegOut)
-  
   !---------------------------------------------------------------------
   ! Read spatial remapping information
   !---------------------------------------------------------------------
