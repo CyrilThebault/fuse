@@ -12,7 +12,7 @@
 FUSE_ROOT = $(abspath $(CURDIR)/..)
 
 # Core directory that contains FUSE source code
-FUSE_SOURCE_DIR = $(FUSE_ROOT)/build/FUSE_SRC/
+FUSE_SOURCE_DIR = $(FUSE_ROOT)/src/
 
 # Location of the compiled modules
 MOD_PATH = $(FUSE_ROOT)/build/
