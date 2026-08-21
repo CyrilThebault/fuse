@@ -28,7 +28,10 @@ module time_windows_module
 
     ! ----- read forcing time axis ------------------------------------------------------
 
-    call read_time_axis(ncid, info%time%time_steps, units_local, nt, ierr, cmessage)
+    call read_time_axis(ncid,                         &
+                        info%time%time_steps,         &
+                        info%time%time_bounds,        &
+                        units_local, nt, ierr, cmessage)
     if(ierr/=0)then; message=trim(message)//trim(cmessage); return; endif
 
     info%time%nt_global = nt
@@ -36,8 +39,13 @@ module time_windows_module
 
     ! ----- build julian-day axis -------------------------------------------------------
 
-    call build_julian_axis(info%time%time_steps, trim(units_local), &
-                           info%time%jdate_ref, info%time%jdate, info%time%deltim_days, ierr, cmessage)
+    call build_julian_axis(info%time%time_steps,      &
+                           info%time%time_bounds,     &
+                           trim(units_local),         &
+                           info%time%jdate_ref,       &
+                           info%time%jdate,           &
+                           info%time%deltim_days,     &
+                           ierr, cmessage)
     if(ierr/=0)then; message=trim(message)//trim(cmessage); return; endif
 
     ! ----- compute indices for sim/eval windows ----------------------------------------
@@ -125,21 +133,28 @@ module time_windows_module
 
   ! ----- helper: read time axis from NetCDF --------------------------------------------
 
-  subroutine read_time_axis(ncid, time_steps, units, nt, ierr, message)
+  subroutine read_time_axis(ncid, time_steps, time_bounds, units, nt, ierr, message)
 
     use netcdf
 
     implicit none
 
-    integer(i4b), intent(in) :: ncid
+    integer(i4b),          intent(in)  :: ncid
     real(wp), allocatable, intent(out) :: time_steps(:)
-    character(len=*), intent(out) :: units
-    integer(i4b), intent(out) :: nt, ierr
-    character(*), intent(out) :: message
+    real(wp), allocatable, intent(out) :: time_bounds(:,:)
+    character(len=*),      intent(out) :: units
+    integer(i4b),          intent(out) :: nt
+    integer(i4b),          intent(out) :: ierr
+    character(*),          intent(out) :: message
 
-    integer(i4b) :: varid, dimids(1)
+    integer(i4b)       :: varid, bnd_varid
+    integer(i4b)       :: dimids(1)
+    character(len=256) :: bounds_name
+
 
     ierr=0; message="read_time_axis/"
+
+    ! time dimension info
 
     ierr = nf90_inq_varid(ncid, "time", varid)
     if(ierr/=nf90_noerr) then
@@ -156,20 +171,42 @@ module time_windows_module
       message=trim(message)//trim(nf90_strerror(ierr)); return
     endif
 
+    ierr = nf90_get_att(ncid, varid, "units", units)
+    if(ierr/=nf90_noerr) then
+      message=trim(message)//"cannot read time units attribute"; return
+    endif
+
+    ! allocate space
+
     allocate(time_steps(nt), stat=ierr)
     if(ierr/=0) then
       message=trim(message)//"allocate(time_steps) failed"; return
     endif
 
-    ierr = nf90_get_var(ncid, varid, time_steps)
+    allocate(time_bounds(2,nt), stat=ierr)
+    if(ierr/=0) then
+      message=trim(message)//"allocate(time_bounds) failed"; return
+    endif
+   
+    ! time bounds
+
+    ierr = nf90_get_att(ncid, varid, "bounds", bounds_name)
     if(ierr/=nf90_noerr) then
-      message=trim(message)//trim(nf90_strerror(ierr)); return
+      message=trim(message)//"time variable must define a bounds attribute"; return
+    endif
+   
+    ierr = nf90_inq_varid(ncid, trim(bounds_name), bnd_varid)
+    if(ierr/=nf90_noerr) then
+      message=trim(message)//"cannot find time bounds variable"; return
+    endif
+   
+    ierr = nf90_get_var(ncid, bnd_varid, time_bounds)
+    if(ierr/=nf90_noerr) then
+      message=trim(message)//"cannot read time bounds"; return
     endif
 
-    ierr = nf90_get_att(ncid, varid, "units", units)
-    if(ierr/=nf90_noerr) then
-      message=trim(message)//"cannot read time units attribute"; return
-    endif
+    ! FUSE convention: time is the midpoint of the interval
+    time_steps = 0.5_wp * (time_bounds(1,:) + time_bounds(2,:))
 
   end subroutine read_time_axis
 
@@ -178,9 +215,10 @@ module time_windows_module
 
   ! ----- helper: build julian axis -----------------------------------------------------
 
-  subroutine build_julian_axis(time_steps, units, jref, jdate, deltim_days, ierr, message)
+  subroutine build_julian_axis(time_steps, time_bounds, units, jref, jdate, deltim_days, ierr, message)
 
     real(wp), intent(in) :: time_steps(:)
+    real(wp), intent(in) :: time_bounds(:,:)
     character(len=*), intent(in) :: units
     real(wp), intent(out) :: jref
     real(wp), allocatable, intent(out) :: jdate(:)
@@ -220,7 +258,7 @@ module time_windows_module
       return
     endif
 
-    deltim_days = (time_steps(2) - time_steps(1)) * scale_to_days
+    deltim_days = (time_bounds(2,1) - time_bounds(1,1)) * scale_to_days
 
     if (deltim_days <= 0._wp) then
       ierr = 1
@@ -231,13 +269,12 @@ module time_windows_module
     ! Allow for floating-point round-off in converted time coordinates
     tolerance = epsilon(deltim_days) * 100._wp
 
-
     ! Verify that the forcing time axis is increasing and regularly spaced.
     if (do_timeCheck) then
 
-      do i = 3, size(jdate)
+      do i = 1, size(time_steps)
 
-        dt_current = (time_steps(i) - time_steps(i-1)) * scale_to_days
+        dt_current = (time_bounds(2,i) - time_bounds(1,i)) * scale_to_days
 
         if (dt_current <= 0._wp) then
           ierr = 1

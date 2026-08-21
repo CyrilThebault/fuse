@@ -83,16 +83,18 @@ module info_types
   
    ! subperiod / windowing
    logical(lgt) :: use_subperiods = .false.
-   integer(i4b) :: nt_window      = 0       ! (= numtim_sub)
-   integer(i4b) :: nt_window_cur  = 0       ! runtime: current window length
+   integer(i4b) :: nt_window      = 0         ! (= numtim_sub)
+   integer(i4b) :: nt_window_cur  = 0         ! runtime: current window length
   
    ! bookkeeping for time axis
    character(len=:), allocatable :: units
    real(wp)       :: jdate_ref = 0._wp
-   real(wp), allocatable :: time_steps(:)   ! time since reference time (transferred to output)
-   real(wp), allocatable :: jdate(:)        ! julian day for each forcing record
+   real(wp), allocatable :: jdate(:)          ! julian day for each forcing record
 
-   real(wp)              :: deltim_days     ! forcing time step in units of days
+   real(wp), allocatable :: time_steps(:)     ! time since reference time (transferred to output)
+   real(wp), allocatable :: time_bounds(:,:)  ! (2, nt)
+
+   real(wp)              :: deltim_days       ! forcing time step in units of days
 
  end type time_info
 

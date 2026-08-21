@@ -40,9 +40,9 @@ contains
     ! locals
     integer(i4b) :: nPar, nObs, nSpat1, nSpat2, n_bands, n_seg
     integer(i4b) :: ierr, ivar 
-    integer(i4b) :: varid, varid_time, varid_lat, varid_lon
+    integer(i4b) :: varid, varid_time, varid_time_bnds, varid_lat, varid_lon
     integer(i4b) :: varid_band, varid_param, varid_seg, varid_method
-    integer(i4b) :: dim_time, dim_x, dim_y 
+    integer(i4b) :: dim_time, dim_bnds, dim_x, dim_y 
     integer(i4b) :: dim_band, dim_par, dim_obs, dim_seg, dim_method
     integer(i4b), dimension(3) :: dimids_basin
     integer(i4b), dimension(3) :: dimids_reach
@@ -67,7 +67,7 @@ contains
     integer(i4b)      :: iRoute
 
     character(len=32) :: subname
-    subname="put_output.f90/"
+    subname="put_output/"
 
     nPar    = info%config%nParam
 
@@ -97,6 +97,7 @@ contains
 
     ! Dimensions (land model)
     ierr = nf90_def_dim(ncid_out, "time",  NF90_UNLIMITED, dim_time); call handle_err(ierr)
+    ierr = nf90_def_dim(ncid_out, "nbnds", 2,              dim_bnds); call handle_err(ierr)
     ierr = nf90_def_dim(ncid_out, "band",  n_bands,        dim_band); call handle_err(ierr)
     ierr = nf90_def_dim(ncid_out, "param", nPar,           dim_par);  call handle_err(ierr)
     ierr = nf90_def_dim(ncid_out, "obs",   nObs,           dim_obs);  call handle_err(ierr)
@@ -154,8 +155,15 @@ contains
     end do  ! looping through variables
 
     ! Coordinate variables
-    ierr = nf90_def_var(ncid_out, "time", NF90_FLOAT, (/dim_time/), varid_time);         call handle_err(ierr)
-    ierr = nf90_put_att(ncid_out, varid_time, "units", trim(info%time%units));           call handle_err(ierr)
+    ierr = nf90_def_var(ncid_out, "time", NF90_DOUBLE, (/dim_time/), varid_time);        call handle_err(ierr)
+    ierr = nf90_put_att(ncid_out, varid_time, "axis", "T");                              call handle_err(ierr, trim(subname))
+    ierr = nf90_put_att(ncid_out, varid_time, "bounds", "time_bnds");                    call handle_err(ierr, trim(subname))
+    ierr = nf90_put_att(ncid_out, varid_time, "standard_name", "time");                  call handle_err(ierr, trim(subname))
+    ierr = nf90_put_att(ncid_out, varid_time, "units", trim(info%time%units));           call handle_err(ierr, trim(subname))
+    ierr = nf90_put_att(ncid_out, varid_time, "long_name", "midpoint of time interval"); call handle_err(ierr, trim(subname))
+
+    ierr = nf90_def_var(ncid_out, "time_bnds", NF90_DOUBLE, (/dim_bnds, dim_time/), varid_time_bnds); call handle_err(ierr)
+    ierr = nf90_put_att(ncid_out, varid_time_bnds, "units", trim(info%time%units));      call handle_err(ierr)
 
     ierr = nf90_def_var(ncid_out, "latitude",  NF90_FLOAT, (/dim_x, dim_y/), varid_lat); call handle_err(ierr)
     ierr = nf90_put_att(ncid_out, varid_lat, "standard_name", "latitude");               call handle_err(ierr)
