@@ -16,7 +16,7 @@
 ! --------------------------
 <case_name>             CAN_05BB001_lumped_route                     ! simulation name used to construct output NetCDF filenames
 <sim_start>             1989-01-01 12:00:00                          ! first runoff timestamp in the FUSE runoff file
-<sim_end>               1999-12-30 12:00:00                          ! last runoff timestamp in the FUSE runoff file
+<sim_end>               1990-07-01 12:00:00                          ! last runoff timestamp in the FUSE runoff file
 <dt_qsim>               3600                                         ! mizuRoute simulation time interval [s]
 <newFileFrequency>      single                                       ! output-file frequency: daily, monthly, yearly, or single
 <outputFrequency>       daily                                        ! temporal aggregation frequency for output variables

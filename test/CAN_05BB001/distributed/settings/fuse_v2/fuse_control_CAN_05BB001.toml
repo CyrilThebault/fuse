@@ -61,7 +61,7 @@ namelist_file = "param.nml.default"
 
 methods = "3"
 
-dt = 86400
+dt = 3600
 
 [hydrofabric]
 

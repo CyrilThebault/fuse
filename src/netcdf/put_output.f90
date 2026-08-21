@@ -8,7 +8,7 @@ module put_output_module
 
   use netcdf, only: &
       NF90_WRITE, NF90_NOERR, &
-      nf90_open, nf90_close, nf90_inq_varid, nf90_put_var
+      nf90_open, nf90_close, nf90_inq_varid, nf90_put_var, nf90_put_att
 
   use handle_err_module, only: handle_err
 
@@ -65,6 +65,7 @@ contains
   integer(i4b) :: iOut
   integer(i4b) :: ivar
   integer(i4b) :: ivar_id
+  integer(i4b) :: varid_time, varid_bnds
 
   integer(i4b), dimension(2) :: start2_obs,   count2_obs
   integer(i4b), dimension(3) :: start3_reach, count3_reach
@@ -78,7 +79,8 @@ contains
 
   real(real32), dimension(info%space%n_seg, numtim)            :: avar_2d_reach
 
-  real(real32), dimension(numtim) :: time_steps_sub
+  real(wp), dimension(numtim)   :: time_steps_sub
+  real(wp), dimension(2,numtim) :: time_bounds_sub
 
   integer(i4b)  :: iRoute
 
@@ -180,17 +182,20 @@ contains
   end do
 
   ! write time
-  time_steps_sub = real(time_steps(istart_in:(istart_in + numtim - 1)), kind(real32))
+  time_steps_sub  = info%time%time_steps(istart_in:istart_in+numtim-1)
+  time_bounds_sub = info%time%time_bounds(:,istart_in:istart_in+numtim-1)
 
-  ierr = nf90_inq_varid(ncid_out, 'time', ivar_id)
+  ierr = nf90_inq_varid(ncid_out, 'time', varid_time)
   call handle_err(ierr, trim(subname)//":nf90_inq_varid:time")
 
-  ierr = nf90_put_var(ncid_out, ivar_id, time_steps_sub, start=(/istart_sim/), count=(/numtim/))
+  ierr = nf90_put_var(ncid_out, varid_time, time_steps_sub, start=(/istart_sim/), count=(/numtim/))
   call handle_err(ierr, trim(subname)//":nf90_put_var:time")
 
-  ! close
-  ierr = nf90_close(ncid_out)
-  call handle_err(ierr, trim(subname)//":nf90_close")
+  ierr = nf90_inq_varid(ncid_out, 'time_bnds', varid_bnds)
+  call handle_err(ierr, trim(subname)//":nf90_inq_varid:time_bnds")
+
+  ierr = nf90_put_var(ncid_out, varid_bnds, time_bounds_sub, start=(/1, istart_sim/), count=(/2, numtim/))
+  call handle_err(ierr, trim(subname)//":nf90_put_var:time_bnds")
 
   end subroutine put_output
 
