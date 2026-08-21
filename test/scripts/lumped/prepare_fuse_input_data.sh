@@ -242,7 +242,7 @@ ncap2 -O -s "
     runoff_obs[time] =
         q_obs * 86400.0f * 1000.0f /
         (basin_area * 1000000.0f);
-" \
+    " \
     "${MERGED_FILE}" "${MERGED_FILE}"
 
 # Remove the original discharge variable
@@ -313,6 +313,7 @@ ncrename -O -h \
 ncatted -O -h \
     -a long_name,runoff_obs,o,c,"observed runoff depth" \
     -a units,runoff_obs,o,c,"mm day-1" \
+    -a _FillValue,runoff_obs,o,f,-9999.0 \
     "${MERGED_FILE}"
 
 echo

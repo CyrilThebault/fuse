@@ -24,7 +24,7 @@
 ! *************************************************************************************************************************
 ! DEFINE ROUTING OPTIONS
 ! ----------------------
-<route_opt>             2                                            ! routing schemes: 0=SUM, 1=IRF, 2=KWT, 3=KW, 4=MC, 5=DW
+<route_opt>             012345                                       ! routing schemes: 0=SUM, 1=IRF, 2=KWT, 3=KW, 4=MC, 5=DW
 <doesBasinRoute>        0                                            ! basin routing: 0=no basin UH, 1=apply basin UH
 ! *************************************************************************************************************************
 ! DEFINE RIVER NETWORK FILE
